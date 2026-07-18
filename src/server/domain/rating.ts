@@ -16,9 +16,6 @@ export function applyRating(
   }
 
   const ratingCount = agg.ratingCount
-  const ratingAvg =
-    ratingCount === 0
-      ? newStars
-      : (currentSum - previousStars + newStars) / ratingCount
+  const ratingAvg = (currentSum - previousStars + newStars) / ratingCount
   return { ratingAvg, ratingCount }
 }

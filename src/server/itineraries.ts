@@ -225,13 +225,19 @@ export async function searchItinerariesImpl(
 
   const whereClause = and(...conditions)!
 
+  // A single sort column isn't a stable sort key — rows can tie (equal
+  // ratings, equal publish timestamps), which would make page boundaries
+  // and ordering nondeterministic. `id DESC` is an arbitrary but fixed
+  // tie-breaker that makes the order fully deterministic without changing
+  // the primary intent.
   const orderBy =
     input.sort === 'top'
       ? [
           sql`${itinerary.ratingAvg} DESC NULLS LAST`,
           desc(itinerary.ratingCount),
+          desc(itinerary.id),
         ]
-      : [desc(itinerary.publishedAt)]
+      : [desc(itinerary.publishedAt), desc(itinerary.id)]
 
   const offset = (input.page - 1) * PAGE_SIZE
 
@@ -761,7 +767,12 @@ export async function listMyItinerariesImpl(
       })
       .from(itinerary)
       .where(whereClause)
-      .orderBy(desc(itinerary.createdAt))
+      // `createdAt` alone isn't a stable sort key — two itineraries can
+      // share a timestamp, which would make page boundaries and ordering
+      // nondeterministic. `id DESC` is an arbitrary but fixed tie-breaker
+      // that makes the order fully deterministic without changing the
+      // primary newest-first intent.
+      .orderBy(desc(itinerary.createdAt), desc(itinerary.id))
       .limit(PAGE_SIZE)
       .offset(offset),
     db
@@ -857,7 +868,13 @@ export async function listMyFavoritesImpl(
       .from(favorite)
       .innerJoin(itinerary, eq(favorite.itineraryId, itinerary.id))
       .where(whereClause)
-      .orderBy(desc(favorite.createdAt))
+      // `createdAt` alone isn't a stable sort key — two favorites can share
+      // a timestamp, which would make page boundaries and ordering
+      // nondeterministic. `itineraryId DESC` is an arbitrary but fixed
+      // tie-breaker (favorite has no single-column `id`) that makes the
+      // order fully deterministic without changing the primary
+      // newest-first intent.
+      .orderBy(desc(favorite.createdAt), desc(favorite.itineraryId))
       .limit(PAGE_SIZE)
       .offset(offset),
     db
