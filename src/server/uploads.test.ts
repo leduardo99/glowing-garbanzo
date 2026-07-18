@@ -1,13 +1,20 @@
 import { mkdtemp, readFile, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
-import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest'
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import { eq } from 'drizzle-orm'
 
 import { itinerary } from '#/db/schema'
 import { closeTestDb, createTestUser, resetTestDb, setupTestDb, testDb } from '#/test/db'
 import { createItineraryImpl } from './itineraries'
-import { resolveUploadPath, uploadCoverImpl } from './uploads'
+import { resolveUploadPath, selectStorage, uploadCoverImpl } from './uploads'
+
+// `vercelBlobStorage` (invoked by `selectStorage` when a token is present)
+// dynamically imports `@vercel/blob`; mocking the module here intercepts
+// that dynamic import too, so these tests never touch the real Vercel Blob
+// API — see the "storage selection" describe block below.
+const putMock = vi.hoisted(() => vi.fn())
+vi.mock('@vercel/blob', () => ({ put: putMock }))
 
 // A minimal valid 1x1 PNG (89 50 4E 47 0D 0A 1A 0A signature + IHDR/IDAT/IEND chunks).
 const PNG_BYTES = Uint8Array.from(
@@ -276,5 +283,47 @@ describe('uploads server functions', () => {
       expect(resolveUploadPath({ uploadsDir: '/data/uploads', requested: '.' })).toBeNull()
       expect(resolveUploadPath({ uploadsDir: '/data/uploads', requested: '' })).toBeNull()
     })
+  })
+})
+
+describe('selectStorage', () => {
+  afterEach(() => {
+    putMock.mockReset()
+  })
+
+  it('writes to disk when no blobReadWriteToken is given', async () => {
+    const uploadsDir = await mkdtemp(path.join(tmpdir(), 'select-storage-test-'))
+    try {
+      const storage = selectStorage({ uploadsDir, blobReadWriteToken: undefined })
+      const url = await storage.put({ filename: 'cover.png', bytes: PNG_BYTES, contentType: 'image/png' })
+
+      expect(url).toBe('/api/uploads/cover.png')
+      expect(putMock).not.toHaveBeenCalled()
+
+      const onDisk = await readFile(path.join(uploadsDir, 'cover.png'))
+      expect(new Uint8Array(onDisk)).toEqual(PNG_BYTES)
+    } finally {
+      await rm(uploadsDir, { recursive: true, force: true })
+    }
+  })
+
+  it('uploads to Vercel Blob when a blobReadWriteToken is given, without touching disk', async () => {
+    putMock.mockResolvedValue({ url: 'https://example.public.blob.vercel-storage.com/cover.png' })
+
+    // Deliberately pointed at a directory that doesn't exist: proves the
+    // blob path never falls back to (or touches) the filesystem.
+    const storage = selectStorage({
+      uploadsDir: '/nonexistent/uploads-dir',
+      blobReadWriteToken: 'test-token',
+    })
+    const url = await storage.put({ filename: 'cover.png', bytes: PNG_BYTES, contentType: 'image/png' })
+
+    expect(url).toBe('https://example.public.blob.vercel-storage.com/cover.png')
+    expect(putMock).toHaveBeenCalledTimes(1)
+    expect(putMock).toHaveBeenCalledWith(
+      'cover.png',
+      expect.anything(),
+      expect.objectContaining({ access: 'public', addRandomSuffix: false, contentType: 'image/png' }),
+    )
   })
 })

@@ -16,6 +16,16 @@
  *   - `resolveUploadPath` is the single choke point the serving route uses
  *     to turn a requested filename into an on-disk path; it rejects
  *     anything that would resolve outside `uploadsDir` (path traversal).
+ *
+ * Storage:
+ *   - Vercel's serverless functions have no persistent (or shared-across-
+ *     instances) local disk, so what actually stores the bytes is behind
+ *     the `Storage` interface below. `diskStorage` (default) is the
+ *     existing on-disk behavior served back by the `/api/uploads/$` route.
+ *     `vercelBlobStorage`, selected automatically when `BLOB_READ_WRITE_TOKEN`
+ *     is set (see DEPLOY.md), uploads to Vercel Blob and returns its own
+ *     absolute URL instead — the client only ever sees `coverImageUrl` as an
+ *     opaque URL, so this doesn't require any UI change.
  */
 import { mkdir, writeFile } from 'node:fs/promises'
 import path from 'node:path'
@@ -118,12 +128,82 @@ export function resolveUploadPath({ uploadsDir, requested }: { uploadsDir: strin
   return resolved
 }
 
+export interface StoragePutInput {
+  filename: string
+  bytes: Uint8Array
+  contentType: string
+}
+
+/**
+ * Storage back end used by `uploadCoverImpl` to persist a validated cover
+ * image. `filename` is already a unique, extension-carrying nanoid — no
+ * implementation needs to invent its own naming scheme.
+ */
+export interface Storage {
+  /** Stores the bytes and returns the URL the stored file is reachable at. */
+  put: (input: StoragePutInput) => Promise<string>
+}
+
+/**
+ * Default storage: writes to `uploadsDir` on local disk, served back by the
+ * `/api/uploads/$` route. Works anywhere the process has a persistent,
+ * writable filesystem — not on Vercel's serverless functions.
+ */
+export function diskStorage(uploadsDir: string): Storage {
+  return {
+    async put({ filename, bytes }) {
+      await mkdir(uploadsDir, { recursive: true })
+      await writeFile(path.join(uploadsDir, filename), bytes)
+      return `/api/uploads/${filename}`
+    },
+  }
+}
+
+/**
+ * Vercel Blob storage, selected automatically when `BLOB_READ_WRITE_TOKEN`
+ * is set (see DEPLOY.md). `addRandomSuffix: false` because `filename` is
+ * already a nanoid — Blob's own collision-avoidance suffix would just be
+ * redundant. Returns Blob's own absolute URL; there is no `/api/uploads`
+ * serving route involved for this path.
+ */
+export function vercelBlobStorage(): Storage {
+  return {
+    async put({ filename, bytes, contentType }) {
+      const { put } = await import('@vercel/blob')
+      const blob = await put(filename, Buffer.from(bytes), {
+        access: 'public',
+        addRandomSuffix: false,
+        contentType,
+      })
+      return blob.url
+    },
+  }
+}
+
+/**
+ * Picks the storage implementation for a single upload: Vercel Blob when a
+ * `blobReadWriteToken` is available, disk otherwise. Kept as a pure
+ * function (no direct `env` access) so it's unit-testable without touching
+ * `process.env` or the network — see `uploads.test.ts`.
+ */
+export function selectStorage({
+  uploadsDir,
+  blobReadWriteToken,
+}: {
+  uploadsDir: string
+  blobReadWriteToken: string | undefined
+}): Storage {
+  return blobReadWriteToken ? vercelBlobStorage() : diskStorage(uploadsDir)
+}
+
 export interface UploadCoverInput {
   itineraryId: string
   bytes: Uint8Array
   originalName: string
   declaredMime: string
   uploadsDir: string
+  /** Selects `vercelBlobStorage` over `diskStorage` when present (see `selectStorage`). */
+  blobReadWriteToken?: string
 }
 
 export interface UploadCoverResult {
@@ -133,8 +213,9 @@ export interface UploadCoverResult {
 /**
  * Validates and stores a cover image, then updates the itinerary's
  * `coverImageUrl`. Author only (see `requireItineraryAuthor`). Replacing an
- * existing cover simply overwrites `coverImageUrl`; the previous file on
- * disk is left in place (not deleted) — see the design doc's Risks section.
+ * existing cover simply overwrites `coverImageUrl`; the previous file (on
+ * disk or in Blob storage) is left in place (not deleted) — see the design
+ * doc's Risks section.
  */
 export async function uploadCoverImpl(
   db: Database,
@@ -155,11 +236,11 @@ export async function uploadCoverImpl(
     throw new Error(ERR_INVALID_FILE_TYPE)
   }
 
-  const filename = `${nanoid()}.${EXTENSION_BY_TYPE[sniffed]}`
-  await mkdir(input.uploadsDir, { recursive: true })
-  await writeFile(path.join(input.uploadsDir, filename), input.bytes)
+  const extension = EXTENSION_BY_TYPE[sniffed]
+  const filename = `${nanoid()}.${extension}`
+  const storage = selectStorage({ uploadsDir: input.uploadsDir, blobReadWriteToken: input.blobReadWriteToken })
+  const url = await storage.put({ filename, bytes: input.bytes, contentType: contentTypeForExtension(extension) })
 
-  const url = `/api/uploads/${filename}`
   await db.update(itinerary).set({ coverImageUrl: url }).where(eq(itinerary.id, input.itineraryId))
 
   return { url }
@@ -191,5 +272,6 @@ export const uploadCover = createServerFn({ method: 'POST' })
       originalName: data.file.name,
       declaredMime: data.file.type,
       uploadsDir: env.UPLOADS_DIR,
+      blobReadWriteToken: env.BLOB_READ_WRITE_TOKEN,
     })
   })

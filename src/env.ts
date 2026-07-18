@@ -6,6 +6,13 @@ export const env = createEnv({
     SERVER_URL: z.string().url().optional(),
     /** Directory where uploaded files (e.g. cover images) are stored on disk. */
     UPLOADS_DIR: z.string().min(1).default('./uploads'),
+    /**
+     * Vercel Blob read/write token. Disk writes don't persist on Vercel's
+     * serverless filesystem, so its presence switches cover-image uploads
+     * from disk storage to Vercel Blob storage (see `#/server/uploads`).
+     * Unset in local/self-hosted deployments, where disk storage is used.
+     */
+    BLOB_READ_WRITE_TOKEN: z.string().min(1).optional(),
   },
 
   /**
@@ -32,6 +39,7 @@ export const env = createEnv({
   runtimeEnv: {
     SERVER_URL: process.env.SERVER_URL,
     UPLOADS_DIR: process.env.UPLOADS_DIR,
+    BLOB_READ_WRITE_TOKEN: process.env.BLOB_READ_WRITE_TOKEN,
     VITE_APP_TITLE: import.meta.env.VITE_APP_TITLE,
   },
 

@@ -25,11 +25,14 @@ pnpm db:migrate
 pnpm dev # http://localhost:3000
 ```
 
+Para publicar em produção (Vercel + Neon), veja [DEPLOY.md](./DEPLOY.md).
+
 ## Scripts
 
 ```bash
 pnpm dev             # dev server na porta 3000
 pnpm build           # build de produção
+pnpm build:vercel    # build de produção alvo Vercel (Nitro, ver DEPLOY.md)
 pnpm test            # testes (Vitest)
 pnpm lint            # eslint
 pnpm format          # prettier + eslint --fix
