@@ -243,18 +243,36 @@ function DayCard({
   }
 
   return (
-    <Card className="gap-0 py-0">
+    <Card className="gap-0 overflow-hidden py-0">
       <CardHeader className="px-0">
         <button
           type="button"
           onClick={() => setCollapsed((value) => !value)}
           aria-expanded={!collapsed}
-          className="flex w-full items-center justify-between gap-2 px-6 py-5 text-left"
+          className="flex w-full items-center gap-3 px-5 py-4 text-left sm:px-6"
         >
-          <CardTitle className="flex items-baseline gap-2 text-headline">
-            <span className="tabular-nums">
-              {m.editor_day_label({ number: day.dayNumber })}
-            </span>
+          {/*
+            Day number as a designed element — a badge, not just a number
+            inline in the heading text — echoing the itinerary detail
+            page's logbook-spine day marker (`DayTimeline`).
+          */}
+          <span
+            aria-hidden="true"
+            className="flex size-9 shrink-0 items-center justify-center rounded-full bg-terracotta-soft text-title font-semibold tabular-nums text-terracotta-deep"
+          >
+            {day.dayNumber}
+          </span>
+          <CardTitle className="min-w-0 flex-1 truncate font-display text-headline text-ink">
+            {day.title ? (
+              <>
+                <span className="sr-only">
+                  {m.editor_day_label({ number: day.dayNumber })}:{' '}
+                </span>
+                {day.title}
+              </>
+            ) : (
+              m.editor_day_label({ number: day.dayNumber })
+            )}
           </CardTitle>
           <ChevronDownIcon
             aria-hidden="true"
@@ -310,28 +328,34 @@ function DayCard({
                 {m.editor_stop_empty()}
               </p>
             ) : (
-              <ol className="flex flex-col gap-2">
+              // Quiet divided rows, not boxed cards-within-a-card — DESIGN.md's
+              // Quiet Lift Rule and "don't nest a card inside a card" rule,
+              // matching the read-only `StopList`'s row treatment instead of
+              // the previous `rounded-md border p-3` boxed-list pattern.
+              <ol className="flex flex-col">
                 {day.stops.map((stop, index) => {
                   const Icon = CATEGORY_ICON[stop.category]
                   return (
                     <li
                       key={stop.id}
-                      className="flex items-start gap-3 rounded-md border p-3"
+                      className="flex items-start gap-3 border-b border-line py-3 first:pt-0 last:border-b-0 last:pb-0"
                     >
                       <span
-                        className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-full bg-muted text-foreground"
+                        className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-full bg-surface-sunken text-ink"
                         title={CATEGORY_LABEL[stop.category]()}
                       >
-                        <Icon className="size-4" />
+                        <Icon className="size-4" aria-hidden="true" />
                       </span>
                       <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-                        <span className="font-medium">{stop.name}</span>
+                        <span className="text-title font-medium text-ink">
+                          {stop.name}
+                        </span>
                         {stop.description ? (
-                          <span className="text-sm text-muted-foreground">
+                          <span className="measure-prose text-body text-ink-soft">
                             {stop.description}
                           </span>
                         ) : null}
-                        <div className="flex flex-wrap gap-x-3 gap-y-0.5 text-sm text-muted-foreground">
+                        <div className="flex flex-wrap gap-x-3 gap-y-0.5 text-caption tabular-nums text-ink-soft">
                           {stop.placeLabel ? (
                             <span>{stop.placeLabel}</span>
                           ) : null}

@@ -1,14 +1,12 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 
-import { Badge } from '#/components/ui/badge'
 import {
   Card,
   CardContent,
   CardDescription,
   CardFooter,
   CardHeader,
-  CardTitle,
 } from '#/components/ui/card'
 import { Button } from '#/components/ui/button'
 import { Field, FieldLabel } from '#/components/ui/field'
@@ -80,66 +78,65 @@ export function PublishCard({
     visibilityMutation.isPending
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-headline">{m.publish_title()}</CardTitle>
-        <CardDescription className="text-body">
-          {status === 'published'
-            ? m.publish_status_description_published()
-            : m.publish_status_description_draft()}
-        </CardDescription>
-      </CardHeader>
-
-      <CardContent className="flex flex-col gap-4">
-        <div className="flex items-center gap-2">
-          <Badge variant={status === 'published' ? 'default' : 'secondary'}>
+    <section className="flex flex-col gap-3">
+      <h2 className="text-headline font-semibold text-ink">
+        {m.publish_title()}
+      </h2>
+      <Card>
+        <CardHeader>
+          <CardDescription className="text-body">
             {status === 'published'
-              ? m.publish_status_published()
-              : m.publish_status_draft()}
-          </Badge>
-        </div>
+              ? m.publish_status_description_published()
+              : m.publish_status_description_draft()}
+          </CardDescription>
+        </CardHeader>
 
-        <Field className="max-w-56">
-          <FieldLabel htmlFor="publish-visibility">
-            {m.publish_field_visibility()}
-          </FieldLabel>
-          <Select
-            value={visibility}
-            disabled={isPending}
-            onValueChange={(value) =>
-              visibilityMutation.mutate(value as Visibility)
-            }
-          >
-            <SelectTrigger id="publish-visibility" className="w-full">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="public">
-                {m.publish_visibility_public()}
-              </SelectItem>
-              <SelectItem value="private">
-                {m.publish_visibility_private()}
-              </SelectItem>
-            </SelectContent>
-          </Select>
-        </Field>
-      </CardContent>
+        <CardContent className="flex flex-col gap-4">
+          <Field className="max-w-56">
+            <FieldLabel htmlFor="publish-visibility">
+              {m.publish_field_visibility()}
+            </FieldLabel>
+            <Select
+              value={visibility}
+              disabled={isPending}
+              onValueChange={(value) =>
+                visibilityMutation.mutate(value as Visibility)
+              }
+            >
+              <SelectTrigger id="publish-visibility" className="w-full">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="public">
+                  {m.publish_visibility_public()}
+                </SelectItem>
+                <SelectItem value="private">
+                  {m.publish_visibility_private()}
+                </SelectItem>
+              </SelectContent>
+            </Select>
+          </Field>
+        </CardContent>
 
-      <CardFooter>
-        {status === 'published' ? (
-          <Button
-            variant="outline"
-            disabled={isPending}
-            onClick={() => unpublishMutation.mutate()}
-          >
-            {m.publish_action_unpublish()}
-          </Button>
-        ) : (
-          <Button disabled={isPending} onClick={() => publishMutation.mutate()}>
-            {m.publish_action_publish()}
-          </Button>
-        )}
-      </CardFooter>
-    </Card>
+        <CardFooter>
+          {status === 'published' ? (
+            <Button
+              variant="outline"
+              disabled={isPending}
+              onClick={() => unpublishMutation.mutate()}
+            >
+              {m.publish_action_unpublish()}
+            </Button>
+          ) : (
+            <Button
+              disabled={isPending}
+              onClick={() => publishMutation.mutate()}
+            >
+              {m.publish_action_publish()}
+            </Button>
+          )}
+        </CardFooter>
+      </Card>
+    </section>
   )
 }

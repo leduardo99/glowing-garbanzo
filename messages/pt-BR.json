@@ -94,6 +94,7 @@
   "editor_field_tags_placeholder": "Adicionar tag e pressionar Enter",
   "editor_tag_remove": "Remover {tag}",
   "editor_field_cover": "Foto de capa",
+  "editor_cover_hint": "Clique para adicionar uma foto de capa",
   "editor_cover_uploading": "Enviando…",
   "editor_cover_error": "Não foi possível enviar a imagem de capa.",
   "editor_save": "Salvar",

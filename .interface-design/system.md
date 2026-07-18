@@ -450,6 +450,69 @@ except where noted. New decisions, not already covered above:
   fixed here only because this task's gate list requires `pnpm lint` to
   pass cleanly.
 
+## Implementation log — editor design pass + button-label audit
+
+Author feedback from production flagged two things: unlabeled buttons on
+`/new`/`/my`, and the editor (`/my/$id/edit`) reading as a generic stacked
+form ("slop"). New decisions from this pass, not already covered above:
+
+- **Button-label audit found nothing to fix.** Every button reachable from
+  `/new` and `/my` (locale switcher, tabs, pagination, `ItineraryCard`'s
+  badges, `UserMenu`'s tab/header variants, empty-state CTAs) already has
+  real text or an `aria-label`, verified against both rendered HTML (curled
+  with a live session, across empty/populated/paginated states) and both
+  locale JSONs. The original bug was very likely already closed by earlier
+  passes in this branch's history (the `aria-label`s on `ItineraryCard`'s
+  day-count/rating badges and `UserMenu`'s avatar tab button, in
+  particular) — nothing in this task touched `/new`, `/my`, or their shared
+  components' text.
+- **`EditorStatusPill`** (new, local to `src/routes/my.$id.edit.tsx`): a
+  read-only status (draft/published, dot + label) + visibility
+  (public/private) summary next to the itinerary title — `rounded-full`,
+  `shadow-resting`, `bg-success`/`bg-warning` dot per status. The actual
+  controls (publish/unpublish button, visibility `Select`) stay in
+  `PublishCard`; the pill exists so status is glanceable at the top of the
+  page instead of three sections down, per the task brief. `PublishCard`
+  dropped its own inline status `Badge` accordingly (redundant copy) but
+  kept its status-description sentence and every control.
+- **Section-header pattern, unified across all four editor sections.**
+  `MetadataForm`/`PublishCard`/`MembersCard` moved their heading from
+  `CardHeader > CardTitle` (inside the card) to a plain `<h2
+  className="text-headline font-semibold text-ink">` *above* the `Card`,
+  matching `DayEditor`'s pre-existing "Days" heading treatment. Four
+  sections, one consistent header pattern, instead of three identical
+  boxed-title cards plus one different heading-outside section.
+- **Cover upload as a full-width dropzone**: the whole `aspect-[21/9]` block
+  is a `<label htmlFor="editor-cover">` around a visually-`sr-only`
+  `<input type="file">` (same accept list/disabled/onChange as before —
+  purely a click-target/visual change, not new upload logic). Cover-present
+  state shows the image edge-to-edge with a hover-only "edit" pill
+  (`bg-ink/55` + `PencilIcon`); cover-absent state is a dashed
+  `border-line-strong`/`bg-surface-sunken` placeholder with `ImageUpIcon` +
+  a new `editor_cover_hint` message. Deliberately not reusing
+  `CoverPlaceholder` (the public-facing "no cover" brand mark, terracotta
+  diagonal hatch + compass) — this is an upload affordance for the author,
+  not the anonymous-viewer placeholder, so a plain dashed dropzone reads
+  correctly as "click to add," not as decorative branding.
+- **Day number as a designed element**: `DayCard`'s header gained a `size-9`
+  circular badge (`bg-terracotta-soft`/`text-terracotta-deep`,
+  `tabular-nums`) holding the day number, echoing `DayTimeline`'s
+  logbook-spine day marker on the public detail page. The heading text next
+  to it now shows the day's own title (`.font-display`) when set, falling
+  back to "Day N" — with a `sr-only` "Day N:" prefix in the title case so
+  the number stays in the accessible name even though it's visually only in
+  the badge.
+- **Ghost-card kill switch, applied to the editor's stop/member rows.**
+  `DayCard`'s stop list and `MembersCard`'s member list both used
+  `rounded-md border p-3`/`p-2` boxes — a bordered box nested inside a
+  `Card` that already carries `shadow-resting`, exactly DESIGN.md's "ghost
+  card" tell. Both switched to quiet `border-b border-line` divided rows
+  (last row `border-b-0`), reusing the read-only `StopList` component's
+  type scale (`text-title`/`text-body`/`text-caption`, `tabular-nums` for
+  cost/place) for the stop rows specifically, so the editor's stop list now
+  looks like the same signature component as the detail page's, not a
+  different generic list.
+
 ## Consistency checks
 
 Hold every future UI change to: spacing on the 4px grid, shadow-only elevation (no border+shadow combo), colors only from the table above, Fraunces only on content titles, and the component measurements listed here reused rather than reinvented.

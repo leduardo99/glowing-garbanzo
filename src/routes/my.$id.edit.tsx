@@ -19,7 +19,9 @@ import {
   EmptyTitle,
 } from '#/components/ui/empty'
 import { myItineraryQueryOptions } from '#/lib/queries'
+import { cn } from '#/lib/utils'
 import { m } from '#/paraglide/messages'
+import type { EditorItinerary } from '#/server/itineraries'
 
 /**
  * Editor route, loaded by id (author-only — see `getMyItineraryImpl`'s
@@ -72,6 +74,44 @@ function EditorNotFound() {
   )
 }
 
+/**
+ * Compact status/visibility indicator that sits next to the itinerary title
+ * instead of being buried inside the Publication card — DESIGN.md's "status
+ * near the title" instinct for anything currently in an active, changeable
+ * state. Read-only: the actual publish/unpublish and visibility controls
+ * still live in `PublishCard`, this is purely a glanceable summary.
+ */
+function EditorStatusPill({
+  status,
+  visibility,
+}: {
+  status: EditorItinerary['status']
+  visibility: EditorItinerary['visibility']
+}) {
+  return (
+    <div className="flex shrink-0 items-center gap-2 rounded-full bg-surface px-3 py-1.5 shadow-resting">
+      <span className="flex items-center gap-1.5 text-label font-medium text-ink">
+        <span
+          aria-hidden="true"
+          className={cn(
+            'size-1.5 shrink-0 rounded-full',
+            status === 'published' ? 'bg-success' : 'bg-warning',
+          )}
+        />
+        {status === 'published'
+          ? m.publish_status_published()
+          : m.publish_status_draft()}
+      </span>
+      <span aria-hidden="true" className="h-3 w-px bg-line-strong" />
+      <span className="text-label text-ink-soft">
+        {visibility === 'private'
+          ? m.publish_visibility_private()
+          : m.publish_visibility_public()}
+      </span>
+    </div>
+  )
+}
+
 function EditorPage() {
   const { id } = Route.useParams()
   const { data } = useSuspenseQuery(myItineraryQueryOptions({ id }))
@@ -85,6 +125,24 @@ function EditorPage() {
         <ArrowLeftIcon data-icon="inline-start" className="size-4" />
         {m.editor_back_to_my()}
       </Link>
+
+      {/*
+        The editor's own page heading: the itinerary's name in Fraunces
+        (Editorial Title Rule — this is content the author wrote, not
+        interface chrome), with status/visibility glanceable right beside
+        it instead of buried three sections down in Publication.
+      */}
+      <header className="flex flex-wrap items-start justify-between gap-3">
+        <div className="flex min-w-0 flex-col gap-1">
+          <h1 className="truncate font-display text-display text-ink">
+            {data.title}
+          </h1>
+          {data.destination ? (
+            <p className="text-title text-ink-soft">{data.destination}</p>
+          ) : null}
+        </div>
+        <EditorStatusPill status={data.status} visibility={data.visibility} />
+      </header>
 
       <MetadataForm itinerary={data} />
 
