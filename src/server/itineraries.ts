@@ -13,14 +13,33 @@
  * (UNAUTHORIZED / FORBIDDEN / NOT_FOUND) and the throw convention.
  */
 import { z } from 'zod'
-import { and, arrayOverlaps, asc, desc, eq, gte, ilike, inArray, lte, or, sql } from 'drizzle-orm'
+import {
+  and,
+  arrayOverlaps,
+  asc,
+  desc,
+  eq,
+  gte,
+  ilike,
+  inArray,
+  lte,
+  or,
+  sql,
+} from 'drizzle-orm'
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 import { createServerFn } from '@tanstack/react-start'
 import { getRequest } from '@tanstack/react-start/server'
 
 import { db as appDb } from '#/db'
 import type * as schema from '#/db/schema'
-import { favorite, itinerary, itineraryDay, rating, stop } from '#/db/schema'
+import {
+  favorite,
+  itinerary,
+  itineraryDay,
+  rating,
+  stop,
+  user,
+} from '#/db/schema'
 import { getOptionalSession, getSessionOrThrow } from './context'
 import type { AccessContext, ItineraryAccessData } from './domain/access'
 import { canEdit, canRead } from './domain/access'
@@ -28,7 +47,11 @@ import { buildForkRows } from './domain/fork'
 import type { StopCopy } from './domain/fork'
 import { makeSlug } from './domain/slug'
 import { ERR_NOT_FOUND, ERR_UNAUTHORIZED } from './errors'
-import { isItineraryMember, loadItineraryOrThrow, requireItineraryAuthor } from './shared'
+import {
+  isItineraryMember,
+  loadItineraryOrThrow,
+  requireItineraryAuthor,
+} from './shared'
 
 type Database = NodePgDatabase<typeof schema>
 
@@ -37,7 +60,8 @@ export interface SessionUser {
   user: { id: string }
 }
 
-const PAGE_SIZE = 12
+/** Page size for `searchItineraries` — exported so the discovery route can compute pagination. */
+export const PAGE_SIZE = 12
 
 export interface ItineraryCard {
   id: string
@@ -73,6 +97,17 @@ export interface DayView {
   stops: StopView[]
 }
 
+export interface AuthorView {
+  id: string
+  name: string
+  image: string | null
+}
+
+export interface ForkedFromView {
+  slug: string
+  title: string
+}
+
 export interface ItineraryDetail {
   id: string
   slug: string
@@ -84,7 +119,10 @@ export interface ItineraryDetail {
   status: 'draft' | 'published'
   visibility: 'public' | 'private'
   authorId: string
+  author: AuthorView
   forkedFromId: string | null
+  /** Source itinerary's slug + title, for the "forked from" credit link. `null` when not a fork. */
+  forkedFrom: ForkedFromView | null
   ratingAvg: number | null
   ratingCount: number
   publishedAt: Date | null
@@ -98,7 +136,10 @@ export interface ItineraryDetail {
   }
 }
 
-async function loadDaysWithStops(db: Database, itineraryId: string): Promise<DayView[]> {
+async function loadDaysWithStops(
+  db: Database,
+  itineraryId: string,
+): Promise<DayView[]> {
   const days = await db.query.itineraryDay.findMany({
     where: eq(itineraryDay.itineraryId, itineraryId),
     orderBy: asc(itineraryDay.dayNumber),
@@ -154,7 +195,10 @@ export async function searchItinerariesImpl(
   // `id` column inside the subquery's FROM. Force explicit qualification.
   const dayCountExpr = sql<number>`(select count(*)::int from ${itineraryDay} where ${itineraryDay.itineraryId} = ${sql.raw('"itinerary"."id"')})`
 
-  const conditions = [eq(itinerary.status, 'published'), eq(itinerary.visibility, 'public')]
+  const conditions = [
+    eq(itinerary.status, 'published'),
+    eq(itinerary.visibility, 'public'),
+  ]
 
   if (input.q) {
     const pattern = `%${input.q}%`
@@ -182,7 +226,10 @@ export async function searchItinerariesImpl(
 
   const orderBy =
     input.sort === 'top'
-      ? [sql`${itinerary.ratingAvg} DESC NULLS LAST`, desc(itinerary.ratingCount)]
+      ? [
+          sql`${itinerary.ratingAvg} DESC NULLS LAST`,
+          desc(itinerary.ratingCount),
+        ]
       : [desc(itinerary.publishedAt)]
 
   const offset = (input.page - 1) * PAGE_SIZE
@@ -207,7 +254,10 @@ export async function searchItinerariesImpl(
       .orderBy(...orderBy)
       .limit(PAGE_SIZE)
       .offset(offset),
-    db.select({ count: sql<number>`count(*)::int` }).from(itinerary).where(whereClause),
+    db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(itinerary)
+      .where(whereClause),
   ])
 
   const items: ItineraryCard[] = rows.map((row) => ({
@@ -252,13 +302,17 @@ export async function getItineraryBySlugImpl(
   session: SessionUser | null,
   input: GetItineraryBySlugInput,
 ): Promise<ItineraryDetail> {
-  const row = await db.query.itinerary.findFirst({ where: eq(itinerary.slug, input.slug) })
+  const row = await db.query.itinerary.findFirst({
+    where: eq(itinerary.slug, input.slug),
+  })
   if (!row) {
     throw new Error(ERR_NOT_FOUND)
   }
 
   const userId = session?.user.id ?? null
-  const isMember = userId ? await isItineraryMember(db, { itineraryId: row.id, userId }) : false
+  const isMember = userId
+    ? await isItineraryMember(db, { itineraryId: row.id, userId })
+    : false
 
   const accessData: ItineraryAccessData = {
     authorId: row.authorId,
@@ -282,14 +336,65 @@ export async function getItineraryBySlugImpl(
     throw new Error(ERR_NOT_FOUND)
   }
 
-  const days = await loadDaysWithStops(db, row.id)
+  const [days, authorRow, forkedFromRow, isMemberOfSource] =
+    await Promise.all([
+      loadDaysWithStops(db, row.id),
+      db.query.user.findFirst({
+        where: eq(user.id, row.authorId),
+        columns: { id: true, name: true, image: true },
+      }),
+      row.forkedFromId
+        ? db.query.itinerary.findFirst({
+            where: eq(itinerary.id, row.forkedFromId),
+            columns: {
+              slug: true,
+              title: true,
+              authorId: true,
+              status: true,
+              visibility: true,
+            },
+          })
+        : Promise.resolve(null),
+      row.forkedFromId && userId
+        ? isItineraryMember(db, { itineraryId: row.forkedFromId, userId })
+        : Promise.resolve(false),
+    ])
+  // authorId is a not-null FK to `user`, so authorRow is always present in
+  // practice; the fallback only guards against a pathological missing row
+  // rather than encoding a real product state.
+  const author: AuthorView = authorRow ?? {
+    id: row.authorId,
+    name: row.authorId,
+    image: null,
+  }
+  // Only credit the fork source if the current viewer can actually read it —
+  // otherwise a public fork of a private/draft itinerary would leak the
+  // source's slug/title to anyone.
+  let forkedFrom: ForkedFromView | null = null
+  if (forkedFromRow) {
+    const sourceAccessData: ItineraryAccessData = {
+      authorId: forkedFromRow.authorId,
+      status: forkedFromRow.status,
+      visibility: forkedFromRow.visibility,
+    }
+    const sourceAccessCtx: AccessContext = {
+      userId,
+      isMember: isMemberOfSource,
+    }
+    if (canRead(sourceAccessData, sourceAccessCtx)) {
+      forkedFrom = { slug: forkedFromRow.slug, title: forkedFromRow.title }
+    }
+  }
 
   let isFavorite = false
   let myStars: number | null = null
   if (userId) {
     const [favoriteRow, ratingRow] = await Promise.all([
       db.query.favorite.findFirst({
-        where: and(eq(favorite.userId, userId), eq(favorite.itineraryId, row.id)),
+        where: and(
+          eq(favorite.userId, userId),
+          eq(favorite.itineraryId, row.id),
+        ),
       }),
       db.query.rating.findFirst({
         where: and(eq(rating.userId, userId), eq(rating.itineraryId, row.id)),
@@ -310,7 +415,9 @@ export async function getItineraryBySlugImpl(
     status: row.status,
     visibility: row.visibility,
     authorId: row.authorId,
+    author,
     forkedFromId: row.forkedFromId,
+    forkedFrom,
     ratingAvg: row.ratingAvg === null ? null : parseFloat(row.ratingAvg),
     ratingCount: row.ratingCount,
     publishedAt: row.publishedAt,
@@ -366,7 +473,9 @@ export async function createItineraryImpl(
       })
       .returning({ id: itinerary.id, slug: itinerary.slug })
 
-    await tx.insert(itineraryDay).values({ itineraryId: created.id, dayNumber: 1 })
+    await tx
+      .insert(itineraryDay)
+      .values({ itineraryId: created.id, dayNumber: 1 })
 
     return created
   })
@@ -409,7 +518,8 @@ export async function updateItineraryImpl(
   if (input.destination !== undefined) updates.destination = input.destination
   if (input.tags !== undefined) updates.tags = input.tags
   if (input.visibility !== undefined) updates.visibility = input.visibility
-  if (input.coverImageUrl !== undefined) updates.coverImageUrl = input.coverImageUrl
+  if (input.coverImageUrl !== undefined)
+    updates.coverImageUrl = input.coverImageUrl
 
   if (Object.keys(updates).length === 0) {
     return
@@ -478,7 +588,10 @@ export async function unpublishItineraryImpl(
   input: PublishItineraryInput,
 ): Promise<void> {
   await requireItineraryAuthor(db, session, input.id)
-  await db.update(itinerary).set({ status: 'draft' }).where(eq(itinerary.id, input.id))
+  await db
+    .update(itinerary)
+    .set({ status: 'draft' })
+    .where(eq(itinerary.id, input.id))
 }
 
 export const publishItinerary = createServerFn({ method: 'POST' })
@@ -546,18 +659,16 @@ export async function forkItineraryImpl(
         dayNumber: d.dayNumber,
         title: d.title,
         note: d.note,
-        stops: d.stops.map(
-          (s): StopCopy => ({
-            position: s.position,
-            name: s.name,
-            category: s.category,
-            description: s.description,
-            costCents: s.costCents,
-            lat: s.lat,
-            lng: s.lng,
-            placeLabel: s.placeLabel,
-          }),
-        ),
+        stops: d.stops.map((s): StopCopy => ({
+          position: s.position,
+          name: s.name,
+          category: s.category,
+          description: s.description,
+          costCents: s.costCents,
+          lat: s.lat,
+          lng: s.lng,
+          placeLabel: s.placeLabel,
+        })),
       })),
     },
     { newOwnerId: userId, sourceItineraryId: row.id, newSlug },
@@ -581,7 +692,9 @@ export async function forkItineraryImpl(
         .returning({ id: itineraryDay.id })
 
       if (day.stops.length > 0) {
-        await tx.insert(stop).values(day.stops.map((s) => ({ ...s, dayId: newDay.id })))
+        await tx
+          .insert(stop)
+          .values(day.stops.map((s) => ({ ...s, dayId: newDay.id })))
       }
     }
 
