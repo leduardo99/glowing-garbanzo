@@ -1,25 +1,30 @@
-# Roteiros — guia para agentes
+# Roteiros — agent guide
 
-App de roteiros de viagem compartilhados. Stack: TanStack Start (React 19), shadcn/ui, Drizzle + Postgres, Better Auth, Paraglide (i18n pt-BR/en), TanStack Query/Form, Tailwind v4.
+Shared travel itineraries app. Stack: TanStack Start (React 19), shadcn/ui, Drizzle + Postgres, Better Auth, Paraglide (i18n pt-BR/en), TanStack Query/Form, Tailwind v4.
 
 @AGENTS.md
 
-## Política de documentação e boas práticas
+## Language convention
 
-Sempre siga as melhores práticas da biblioteca envolvida ANTES de escrever código:
+**Everything is written in English**: routes, code, identifiers, database schema, comments, docs, commits, and PRs. Portuguese (pt-BR) exists ONLY as a site UI language, delivered through Paraglide messages (`messages/pt-BR.json`). Never hardcode UI copy in any language — always go through `m.*` messages.
 
-1. **Skill primeiro.** Se existe uma skill instalada para a tarefa, use-a:
-   - Bibliotecas TanStack (Router, Start, Devtools) → mapeamentos TanStack Intent no `AGENTS.md` (rode o comando `load` indicado)
-   - shadcn/ui → skill `shadcn` (`.claude/skills/shadcn`)
-   - Padrões React/UI → skills `vercel-react-best-practices`, `vercel-composition-patterns`, `web-design-guidelines`
-2. **Sem skill? Use o Context7.** Para bibliotecas sem skill instalada — **Better Auth, Drizzle ORM, Paraglide/inlang, TanStack Query, TanStack Form, Tailwind, Zod, Vitest** — busque a documentação atual pelo MCP `context7` (configurado em `.mcp.json`) antes de implementar. Não confie apenas em conhecimento de treinamento para APIs dessas libs.
-3. Se o Context7 estiver inacessível (proxy restrito), consulte o repositório GitHub oficial da lib (raw.githubusercontent.com costuma ser permitido).
+## Documentation and best-practices policy
 
-## Convenções do projeto
+Always follow the involved library's best practices BEFORE writing code:
 
-- Alias de import: `#/` → `src/` (ex.: `#/components/ui/button`)
-- Schema do banco: tabelas em `src/db/`, sempre re-exportadas por `src/db/schema.ts`; migrations com `pnpm db:generate` + `pnpm db:migrate`
-- Auth: configuração em `src/lib/auth.ts` (server) e `src/lib/auth-client.ts` (client); rota em `src/routes/api/auth/$.ts`
-- i18n: mensagens em `messages/{pt-BR,en}.json`; use `m.chave()` de `#/paraglide/messages`; nunca hardcode texto de UI
-- UI: componentes shadcn em `src/components/ui`; para adicionar novos em ambiente com proxy restrito, copie do registry no GitHub (`shadcn-ui/ui`, `apps/v4/registry/new-york-v4/ui`) trocando `@/` por `#/`
-- Antes de commitar: `pnpm lint`, `npx tsc --noEmit` e `pnpm build` devem passar
+1. **Skill first.** If an installed skill covers the task, use it:
+   - TanStack libraries (Router, Start, Devtools) → TanStack Intent mappings in `AGENTS.md` (run the indicated `load` command)
+   - shadcn/ui → `shadcn` skill (`.claude/skills/shadcn`)
+   - React/UI patterns → `vercel-react-best-practices`, `vercel-composition-patterns`, `web-design-guidelines` skills
+2. **No skill? Use Context7.** For libraries without an installed skill — **Better Auth, Drizzle ORM, Paraglide/inlang, TanStack Query, TanStack Form, Tailwind, Zod, Vitest** — look up current docs through the `context7` MCP (configured in `.mcp.json`) before implementing. Do not rely on training knowledge alone for these libraries' APIs.
+3. If Context7 is unreachable (restricted proxy), consult the library's official GitHub repository (raw.githubusercontent.com is usually allowed).
+
+## Project conventions
+
+- Import alias: `#/` → `src/` (e.g. `#/components/ui/button`)
+- Database schema: tables live in `src/db/`, always re-exported by `src/db/schema.ts`; migrations via `pnpm db:generate` + `pnpm db:migrate`
+- Auth: configured in `src/lib/auth.ts` (server) and `src/lib/auth-client.ts` (client); route at `src/routes/api/auth/$.ts`
+- i18n: messages in `messages/{pt-BR,en}.json`; use `m.key()` from `#/paraglide/messages`; never hardcode UI copy
+- UI: shadcn components in `src/components/ui`; to add new ones in a restricted-proxy environment, copy from the GitHub registry (`shadcn-ui/ui`, `apps/v4/registry/new-york-v4/ui`) replacing `@/` with `#/`
+- Before committing: `pnpm lint`, `npx tsc --noEmit`, and `pnpm build` must pass
+- Workflow: every task gets its own branch and PR
