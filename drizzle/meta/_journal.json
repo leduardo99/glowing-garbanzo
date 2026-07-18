@@ -8,6 +8,13 @@
       "when": 1784366661006,
       "tag": "0000_awesome_anthem",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1784368765257,
+      "tag": "0001_gorgeous_mantis",
+      "breakpoints": true
     }
   ]
 }
