@@ -127,7 +127,9 @@ export const testDb: NodePgDatabase<typeof schema>
 - [ ] **Step 3–4:** Implement, run `pnpm test` → PASS.
 - [ ] **Step 5:** Gates + commit `feat: add integration test harness with dedicated test database`, push, PR.
 
----### Task 4: Itinerary server functions (CRUD, publish, search, get, fork)
+---
+
+### Task 4: Itinerary server functions (CRUD, publish, search, get, fork)
 
 **Branch:** `feat/itinerary-server-fns`
 
