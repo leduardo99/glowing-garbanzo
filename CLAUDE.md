@@ -29,3 +29,7 @@ Always follow the involved library's best practices BEFORE writing code:
 - Before committing: `pnpm lint`, `npx tsc --noEmit`, and `pnpm build` must pass
 - Workflow: every task gets its own branch and PR
 - Function params: >3 params, or 2+ consecutive same-typed params, become a single named options object; exception: the server `*Impl(db, session, input)` trio stays positional
+
+## Design Context
+
+Before any UI work, read `PRODUCT.md` (register, users, positioning, anti-references) and `DESIGN.md` (colors, typography, elevation, components) — both are the source of truth for the "Shared Logbook" direction: elegant/calm/editorial, one terracotta accent, Fraunces for content titles only, Karla everywhere else, mobile-native bottom-tab navigation. `.interface-design/system.md` mirrors the same concrete tokens for the `interface-design` skill. No UI code has been restyled to match these yet — the current `src/styles.css` still has an earlier, unused coastal-teal attempt; treat these docs as the target, not a description of the shipped app.
