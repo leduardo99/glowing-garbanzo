@@ -72,6 +72,7 @@ describe('searchPlaces', () => {
     expect(url.pathname).toBe('/search')
     expect(url.searchParams.get('format')).toBe('jsonv2')
     expect(url.searchParams.get('q')).toBe('Chapada Diamantina')
+    expect(url.searchParams.get('limit')).toBe('8')
   })
 
   it('returns [] without making a request for a blank query', async () => {

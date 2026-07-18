@@ -264,6 +264,35 @@ describe('days-stops server functions', () => {
         }),
       ).rejects.toThrow('FORBIDDEN')
     })
+
+    it('rejects out-of-range lat/lng', async () => {
+      const author = await createTestUser()
+      const created = await createItineraryImpl(testDb, { user: { id: author.id } }, {
+        title: 'x',
+        destination: 'y',
+      })
+      const [day1] = await daysOf(created.id)
+
+      await expect(
+        addStopImpl(testDb, { user: { id: author.id } }, {
+          dayId: day1.id,
+          name: 'Bad lat',
+          category: 'attraction',
+          lat: 91,
+          lng: 0,
+        }),
+      ).rejects.toThrow()
+
+      await expect(
+        addStopImpl(testDb, { user: { id: author.id } }, {
+          dayId: day1.id,
+          name: 'Bad lng',
+          category: 'attraction',
+          lat: 0,
+          lng: 181,
+        }),
+      ).rejects.toThrow()
+    })
   })
 
   describe('updateStopImpl', () => {
@@ -314,6 +343,28 @@ describe('days-stops server functions', () => {
       await expect(
         updateStopImpl(testDb, { user: { id: other.id } }, { id: s1.id, name: 'Hijacked' }),
       ).rejects.toThrow('FORBIDDEN')
+    })
+
+    it('rejects out-of-range lat/lng', async () => {
+      const author = await createTestUser()
+      const created = await createItineraryImpl(testDb, { user: { id: author.id } }, {
+        title: 'x',
+        destination: 'y',
+      })
+      const [day1] = await daysOf(created.id)
+      const s1 = await addStopImpl(testDb, { user: { id: author.id } }, {
+        dayId: day1.id,
+        name: 'First',
+        category: 'attraction',
+      })
+
+      await expect(
+        updateStopImpl(testDb, { user: { id: author.id } }, { id: s1.id, lat: -91, lng: 0 }),
+      ).rejects.toThrow()
+
+      await expect(
+        updateStopImpl(testDb, { user: { id: author.id } }, { id: s1.id, lat: 0, lng: -181 }),
+      ).rejects.toThrow()
     })
   })
 

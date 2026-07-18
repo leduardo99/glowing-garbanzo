@@ -213,8 +213,8 @@ const addStopSchema = z.object({
   category: stopCategorySchema,
   description: z.string().nullable().optional(),
   costCents: z.number().int().nullable().optional(),
-  lat: z.number().nullable().optional(),
-  lng: z.number().nullable().optional(),
+  lat: z.number().min(-90).max(90).nullable().optional(),
+  lng: z.number().min(-180).max(180).nullable().optional(),
   placeLabel: z.string().nullable().optional(),
 })
 
@@ -228,8 +228,15 @@ export type AddStopInput = z.infer<typeof addStopSchema>
 export async function addStopImpl(
   db: Database,
   session: SessionUser | null,
-  input: AddStopInput,
+  rawInput: AddStopInput,
 ): Promise<{ id: string; position: number }> {
+  // Re-validated here (not just in the `createServerFn` wrapper's
+  // `.validator`) because integration tests call `*Impl` directly against
+  // `testDb`, bypassing the wrapper entirely — see the file-level doc
+  // comment and `itineraries.ts`'s "Testability pattern" note. Without this,
+  // bounds like lat/lng's range would only ever be enforced on the HTTP
+  // path, never on the path our tests exercise.
+  const input = addStopSchema.parse(rawInput)
   const { day } = await requireDayAuthor(db, session, input.dayId)
 
   return db.transaction(async (tx) => {
@@ -275,8 +282,8 @@ const updateStopSchema = z.object({
   category: stopCategorySchema.optional(),
   description: z.string().nullable().optional(),
   costCents: z.number().int().nullable().optional(),
-  lat: z.number().nullable().optional(),
-  lng: z.number().nullable().optional(),
+  lat: z.number().min(-90).max(90).nullable().optional(),
+  lng: z.number().min(-180).max(180).nullable().optional(),
   placeLabel: z.string().nullable().optional(),
 })
 
@@ -286,8 +293,12 @@ export type UpdateStopInput = z.infer<typeof updateStopSchema>
 export async function updateStopImpl(
   db: Database,
   session: SessionUser | null,
-  input: UpdateStopInput,
+  rawInput: UpdateStopInput,
 ): Promise<void> {
+  // See the matching comment in `addStopImpl` — re-validated here so the
+  // lat/lng bounds are enforced on the direct-`Impl`-call path integration
+  // tests use, not only on the HTTP path via the wrapper's `.validator`.
+  const input = updateStopSchema.parse(rawInput)
   const { stop: stopRow } = await requireStopAuthor(db, session, input.id)
 
   const updates: Partial<typeof stop.$inferInsert> = {}

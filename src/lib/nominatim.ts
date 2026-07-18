@@ -78,6 +78,9 @@ export async function searchPlaces(
     const url = new URL(NOMINATIM_SEARCH_URL)
     url.searchParams.set('format', 'jsonv2')
     url.searchParams.set('q', trimmed)
+    // Cap results to a manageable size for the picker's dropdown list — the
+    // UI only ever needs a handful of candidates, not Nominatim's default.
+    url.searchParams.set('limit', '8')
 
     const response = await fetch(url.toString(), {
       signal: controller.signal,

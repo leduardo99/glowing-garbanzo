@@ -79,8 +79,24 @@ export default function PlacePicker({
     const controller = new AbortController()
     const timer = setTimeout(() => {
       searchPlaces(trimmed, controller.signal)
-        .then((found) => setResults(found))
-        .finally(() => setIsSearching(false))
+        .then((found) => {
+          // An aborted request still resolves (to `[]`, per `searchPlaces`'s
+          // never-throws contract) — if we applied that here regardless, a
+          // slow, now-stale response could clobber the results/spinner state
+          // of whatever newer query is currently in flight. Only the most
+          // recent request (the one whose controller is still un-aborted)
+          // gets to touch state.
+          if (controller.signal.aborted) {
+            return
+          }
+          setResults(found)
+        })
+        .finally(() => {
+          if (controller.signal.aborted) {
+            return
+          }
+          setIsSearching(false)
+        })
     }, DEBOUNCE_MS)
 
     return () => {

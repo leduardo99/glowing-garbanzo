@@ -1,13 +1,29 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import '@testing-library/jest-dom/vitest'
 
 import PlacePicker from './PlacePicker'
+import type { NominatimPlace } from '#/lib/nominatim'
 
 const searchPlacesMock = vi.hoisted(() => vi.fn())
 vi.mock('#/lib/nominatim', () => ({ searchPlaces: searchPlacesMock }))
+
+/**
+ * Every `FakeMarker` constructed during a test, in construction order — lets
+ * tests reach into the marker MapLibre would otherwise own privately (e.g.
+ * to fire its captured `dragend` handler) without exposing internals from
+ * `PlacePicker` itself.
+ */
+const markerInstances = vi.hoisted(
+  () =>
+    [] as Array<{
+      setLngLat: (lngLat: [number, number]) => unknown
+      getLngLat: () => { lat: number; lng: number }
+      trigger: (event: string) => void
+    }>,
+)
 
 /**
  * `PlacePicker` renders a real MapLibre map, which needs a WebGL canvas
@@ -20,7 +36,10 @@ vi.mock('#/lib/nominatim', () => ({ searchPlaces: searchPlacesMock }))
 vi.mock('maplibre-gl', () => {
   class FakeMarker {
     private lngLat: [number, number] = [0, 0]
-    constructor(public options?: { draggable?: boolean }) {}
+    private handlers: Record<string, (() => void) | undefined> = {}
+    constructor(public options?: { draggable?: boolean }) {
+      markerInstances.push(this)
+    }
     setLngLat(lngLat: [number, number]) {
       this.lngLat = lngLat
       return this
@@ -31,8 +50,12 @@ vi.mock('maplibre-gl', () => {
     addTo() {
       return this
     }
-    on() {
+    on(event: string, handler: () => void) {
+      this.handlers[event] = handler
       return this
+    }
+    trigger(event: string) {
+      this.handlers[event]?.()
     }
     remove() {
       return this
@@ -52,6 +75,7 @@ vi.mock('maplibre-gl', () => {
 afterEach(() => {
   cleanup()
   searchPlacesMock.mockReset()
+  markerInstances.length = 0
 })
 
 describe('PlacePicker', () => {
@@ -139,5 +163,64 @@ describe('PlacePicker', () => {
     await user.click(clearButton)
 
     expect(onChange).toHaveBeenCalledWith({ lat: null, lng: null })
+  })
+
+  it('maps the dragged marker position (lng, lat) to onChange({ lat, lng })', async () => {
+    const onChange = vi.fn()
+
+    render(<PlacePicker lat={48.8566} lng={2.3522} onChange={onChange} />)
+
+    expect(markerInstances).toHaveLength(1)
+    const marker = markerInstances[0]
+    // Simulate MapLibre updating the marker's own position mid-drag, then
+    // firing `dragend` — `PlacePicker` reads the final position back via
+    // `getLngLat()`, so this pins the lat/lng swap risk noted in
+    // `PlacePicker`'s `dragend` handler.
+    marker.setLngLat([-46.63, -23.55])
+    marker.trigger('dragend')
+
+    expect(onChange).toHaveBeenCalledWith({ lat: -23.55, lng: -46.63 })
+  })
+
+  it('ignores a stale aborted search result that resolves after a newer query is already in flight', async () => {
+    const pending: Array<{ query: string; resolve: (found: NominatimPlace[]) => void }> = []
+    searchPlacesMock.mockImplementation(
+      (q: string) =>
+        new Promise<NominatimPlace[]>((resolve) => {
+          pending.push({ query: q, resolve })
+        }),
+    )
+    vi.useFakeTimers()
+
+    try {
+      render(<PlacePicker lat={null} lng={null} onChange={vi.fn()} />)
+      const input = screen.getByLabelText(/buscar um local/i)
+
+      // First query debounces and its search starts (call #1, left pending).
+      fireEvent.change(input, { target: { value: 'Nowhereville' } })
+      await vi.advanceTimersByTimeAsync(400)
+      expect(pending).toHaveLength(1)
+
+      // Before #1 resolves, the user keeps typing: the effect's cleanup
+      // aborts #1's real AbortController, and a new debounce starts a
+      // second search (call #2, also left pending).
+      fireEvent.change(input, { target: { value: 'Nowhereville 2' } })
+      await vi.advanceTimersByTimeAsync(400)
+      expect(pending).toHaveLength(2)
+
+      // #1 finally settles late (resolving to `[]`, exactly like a real
+      // aborted `searchPlaces` call does) while #2 — the current, relevant
+      // request — is still in flight. This must not flash a false "no
+      // results" message or otherwise clobber state for #2.
+      await act(async () => {
+        pending[0].resolve([])
+        await Promise.resolve()
+        await Promise.resolve()
+      })
+
+      expect(screen.queryByText(/nenhum local encontrado/i)).not.toBeInTheDocument()
+    } finally {
+      vi.useRealTimers()
+    }
   })
 })
