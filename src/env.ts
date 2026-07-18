@@ -4,6 +4,8 @@ import { z } from 'zod'
 export const env = createEnv({
   server: {
     SERVER_URL: z.string().url().optional(),
+    /** Directory where uploaded files (e.g. cover images) are stored on disk. */
+    UPLOADS_DIR: z.string().min(1).default('./uploads'),
   },
 
   /**
