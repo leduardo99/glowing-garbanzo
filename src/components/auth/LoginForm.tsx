@@ -1,7 +1,9 @@
 import { useForm } from '@tanstack/react-form'
+import { useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 
 import { authClient } from '#/lib/auth-client'
+import { sessionQueryKey } from '#/lib/session'
 import { AuthField } from '#/components/auth/AuthField'
 import { Button } from '#/components/ui/button'
 import { FieldGroup } from '#/components/ui/field'
@@ -14,6 +16,7 @@ import { m } from '#/paraglide/messages'
  * param, see `src/lib/auth-redirect.ts`).
  */
 export function LoginForm({ onSuccess }: { onSuccess: () => void }) {
+  const queryClient = useQueryClient()
   const form = useForm({
     defaultValues: {
       email: '',
@@ -23,7 +26,10 @@ export function LoginForm({ onSuccess }: { onSuccess: () => void }) {
       await authClient.signIn.email(
         { email: value.email, password: value.password },
         {
-          onSuccess,
+          onSuccess: () => {
+            void queryClient.invalidateQueries({ queryKey: sessionQueryKey })
+            onSuccess()
+          },
           onError: () => {
             toast.error(m.auth_error_invalid())
           },

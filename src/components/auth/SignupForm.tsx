@@ -1,7 +1,9 @@
 import { useForm } from '@tanstack/react-form'
+import { useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 
 import { authClient } from '#/lib/auth-client'
+import { sessionQueryKey } from '#/lib/session'
 import { AuthField } from '#/components/auth/AuthField'
 import { Button } from '#/components/ui/button'
 import { FieldGroup } from '#/components/ui/field'
@@ -16,6 +18,7 @@ const PASSWORD_MIN_LENGTH = 8
  * param, see `src/lib/auth-redirect.ts`).
  */
 export function SignupForm({ onSuccess }: { onSuccess: () => void }) {
+  const queryClient = useQueryClient()
   const form = useForm({
     defaultValues: {
       name: '',
@@ -26,7 +29,10 @@ export function SignupForm({ onSuccess }: { onSuccess: () => void }) {
       await authClient.signUp.email(
         { name: value.name, email: value.email, password: value.password },
         {
-          onSuccess,
+          onSuccess: () => {
+            void queryClient.invalidateQueries({ queryKey: sessionQueryKey })
+            onSuccess()
+          },
           onError: () => {
             toast.error(m.auth_error_invalid())
           },

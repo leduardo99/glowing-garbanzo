@@ -1,7 +1,9 @@
+import { useQueryClient } from '@tanstack/react-query'
 import { Link, useRouter } from '@tanstack/react-router'
 import { LogOutIcon } from 'lucide-react'
 
 import { authClient } from '#/lib/auth-client'
+import { sessionQueryKey } from '#/lib/session'
 import { Avatar, AvatarFallback, AvatarImage } from '#/components/ui/avatar'
 import { Button } from '#/components/ui/button'
 import {
@@ -28,10 +30,12 @@ import { m } from '#/paraglide/messages'
  */
 export function AppHeader() {
   const router = useRouter()
+  const queryClient = useQueryClient()
   const { data: session, isPending } = authClient.useSession()
 
   async function handleLogout() {
     await authClient.signOut()
+    await queryClient.invalidateQueries({ queryKey: sessionQueryKey })
     await router.invalidate()
   }
 

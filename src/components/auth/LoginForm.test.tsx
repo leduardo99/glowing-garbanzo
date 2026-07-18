@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it, vi } from 'vitest'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { cleanup, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import '@testing-library/jest-dom/vitest'
@@ -19,9 +20,19 @@ afterEach(() => {
   signInEmail.mockReset()
 })
 
+/** Renders with a fresh `QueryClient` — `LoginForm` invalidates the session query on success. */
+function renderLoginForm(onSuccess: () => void) {
+  const queryClient = new QueryClient()
+  return render(
+    <QueryClientProvider client={queryClient}>
+      <LoginForm onSuccess={onSuccess} />
+    </QueryClientProvider>,
+  )
+}
+
 describe('LoginForm', () => {
   it('renders the email and password fields and a submit button', () => {
-    render(<LoginForm onSuccess={vi.fn()} />)
+    renderLoginForm(vi.fn())
 
     expect(screen.getByLabelText(/e-mail/i)).toBeInTheDocument()
     expect(screen.getByLabelText(/senha/i)).toBeInTheDocument()
@@ -32,7 +43,7 @@ describe('LoginForm', () => {
 
   it('shows validation errors and does not call signIn.email on empty submit', async () => {
     const user = userEvent.setup()
-    render(<LoginForm onSuccess={vi.fn()} />)
+    renderLoginForm(vi.fn())
 
     await user.click(screen.getByRole('button', { name: /entrar/i }))
 
@@ -48,7 +59,7 @@ describe('LoginForm', () => {
     })
     const user = userEvent.setup()
     const onSuccess = vi.fn()
-    render(<LoginForm onSuccess={onSuccess} />)
+    renderLoginForm(onSuccess)
 
     await user.type(screen.getByLabelText(/e-mail/i), 'jane@example.com')
     await user.type(screen.getByLabelText(/senha/i), 'correct-horse-battery')
