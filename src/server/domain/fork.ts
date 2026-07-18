@@ -53,9 +53,7 @@ export function buildForkRows(
       stops: StopCopy[]
     }>
   },
-  newOwnerId: string,
-  sourceItineraryId: string,
-  newSlug: string,
+  { newOwnerId, sourceItineraryId, newSlug }: { newOwnerId: string; sourceItineraryId: string; newSlug: string },
 ): ForkRows {
   return {
     itinerary: {

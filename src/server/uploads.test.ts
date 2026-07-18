@@ -65,8 +65,8 @@ describe('uploads server functions', () => {
             bytes: PNG_BYTES,
             originalName: 'cover.png',
             declaredMime: 'image/png',
+            uploadsDir,
           },
-          uploadsDir,
         ),
       ).rejects.toThrow('UNAUTHORIZED')
     })
@@ -88,8 +88,8 @@ describe('uploads server functions', () => {
             bytes: PNG_BYTES,
             originalName: 'cover.png',
             declaredMime: 'image/png',
+            uploadsDir,
           },
-          uploadsDir,
         ),
       ).rejects.toThrow('FORBIDDEN')
     })
@@ -113,8 +113,8 @@ describe('uploads server functions', () => {
             bytes: oversized,
             originalName: 'cover.png',
             declaredMime: 'image/png',
+            uploadsDir,
           },
-          uploadsDir,
         ),
       ).rejects.toThrow()
 
@@ -138,8 +138,8 @@ describe('uploads server functions', () => {
             bytes: TEXT_BYTES,
             originalName: 'cover.png',
             declaredMime: 'image/png',
+            uploadsDir,
           },
-          uploadsDir,
         ),
       ).rejects.toThrow()
 
@@ -162,8 +162,8 @@ describe('uploads server functions', () => {
           bytes: PNG_BYTES,
           originalName: 'whatever-the-user-called-it.txt',
           declaredMime: 'application/octet-stream',
+          uploadsDir,
         },
-        uploadsDir,
       )
 
       expect(result.url).toMatch(/^\/api\/uploads\/[\w-]+\.png$/)
@@ -191,8 +191,8 @@ describe('uploads server functions', () => {
           bytes: JPEG_BYTES,
           originalName: 'photo.png', // lies about its own type
           declaredMime: 'image/png', // lies too
+          uploadsDir,
         },
-        uploadsDir,
       )
 
       expect(result.url).toMatch(/\.jpg$/)
@@ -213,8 +213,8 @@ describe('uploads server functions', () => {
           bytes: WEBP_BYTES,
           originalName: 'cover.webp',
           declaredMime: 'image/webp',
+          uploadsDir,
         },
-        uploadsDir,
       )
 
       expect(result.url).toMatch(/\.webp$/)
@@ -235,8 +235,8 @@ describe('uploads server functions', () => {
           bytes: PNG_BYTES,
           originalName: 'cover.png',
           declaredMime: 'image/png',
+          uploadsDir,
         },
-        uploadsDir,
       )
       const second = await uploadCoverImpl(
         testDb,
@@ -246,8 +246,8 @@ describe('uploads server functions', () => {
           bytes: JPEG_BYTES,
           originalName: 'cover2.jpg',
           declaredMime: 'image/jpeg',
+          uploadsDir,
         },
-        uploadsDir,
       )
 
       expect(second.url).not.toBe(first.url)
@@ -259,22 +259,22 @@ describe('uploads server functions', () => {
 
   describe('resolveUploadPath', () => {
     it('resolves a plain filename inside the uploads dir', () => {
-      const resolved = resolveUploadPath('/data/uploads', 'abc123.png')
+      const resolved = resolveUploadPath({ uploadsDir: '/data/uploads', requested: 'abc123.png' })
       expect(resolved).toBe(path.resolve('/data/uploads', 'abc123.png'))
     })
 
     it('returns null for a traversal attempt that escapes the uploads dir', () => {
-      expect(resolveUploadPath('/data/uploads', '../../etc/passwd')).toBeNull()
-      expect(resolveUploadPath('/data/uploads', '../secret.txt')).toBeNull()
+      expect(resolveUploadPath({ uploadsDir: '/data/uploads', requested: '../../etc/passwd' })).toBeNull()
+      expect(resolveUploadPath({ uploadsDir: '/data/uploads', requested: '../secret.txt' })).toBeNull()
     })
 
     it('returns null for an absolute path outside the uploads dir', () => {
-      expect(resolveUploadPath('/data/uploads', '/etc/passwd')).toBeNull()
+      expect(resolveUploadPath({ uploadsDir: '/data/uploads', requested: '/etc/passwd' })).toBeNull()
     })
 
     it('returns null when the requested path resolves to the uploads dir itself', () => {
-      expect(resolveUploadPath('/data/uploads', '.')).toBeNull()
-      expect(resolveUploadPath('/data/uploads', '')).toBeNull()
+      expect(resolveUploadPath({ uploadsDir: '/data/uploads', requested: '.' })).toBeNull()
+      expect(resolveUploadPath({ uploadsDir: '/data/uploads', requested: '' })).toBeNull()
     })
   })
 })

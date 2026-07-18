@@ -23,7 +23,10 @@ export async function loadItineraryOrThrow(db: Database, id: string) {
 }
 
 /** Whether `userId` is a member (collaborator) of `itineraryId`. */
-export async function isItineraryMember(db: Database, itineraryId: string, userId: string): Promise<boolean> {
+export async function isItineraryMember(
+  db: Database,
+  { itineraryId, userId }: { itineraryId: string; userId: string },
+): Promise<boolean> {
   const membership = await db.query.itineraryMember.findFirst({
     where: and(eq(itineraryMember.itineraryId, itineraryId), eq(itineraryMember.userId, userId)),
   })
