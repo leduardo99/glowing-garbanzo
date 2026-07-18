@@ -71,13 +71,11 @@ export function AppHeader() {
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
               <DropdownMenuGroup>
-                {/*
-                  `/my` is created in a later task — a plain anchor keeps
-                  this link buildable (and 404-able) before that route
-                  tree entry exists; swap for a typed `Link` once it does.
-                */}
                 <DropdownMenuItem asChild>
-                  <a href="/my">{m.nav_my_itineraries()}</a>
+                  <Link to="/my">{m.nav_my_itineraries()}</Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link to="/new">{m.nav_new_itinerary()}</Link>
                 </DropdownMenuItem>
               </DropdownMenuGroup>
               <DropdownMenuSeparator />

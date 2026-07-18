@@ -11,10 +11,13 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as LoginRouteImport } from './routes/login'
+import { Route as NewRouteImport } from './routes/new'
 import { Route as SignupRouteImport } from './routes/signup'
 import { Route as ItinerariesSlugRouteImport } from './routes/itineraries.$slug'
+import { Route as MyIndexRouteImport } from './routes/my.index'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 import { Route as ApiUploadsSplatRouteImport } from './routes/api/uploads/$'
+import { Route as MyIdEditRouteImport } from './routes/my.$id.edit'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -24,6 +27,11 @@ const IndexRoute = IndexRouteImport.update({
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const NewRoute = NewRouteImport.update({
+  id: '/new',
+  path: '/new',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SignupRoute = SignupRouteImport.update({
@@ -36,6 +44,11 @@ const ItinerariesSlugRoute = ItinerariesSlugRouteImport.update({
   path: '/itineraries/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
+const MyIndexRoute = MyIndexRouteImport.update({
+  id: '/my/',
+  path: '/my/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
   id: '/api/auth/$',
   path: '/api/auth/$',
@@ -46,66 +59,92 @@ const ApiUploadsSplatRoute = ApiUploadsSplatRouteImport.update({
   path: '/api/uploads/$',
   getParentRoute: () => rootRouteImport,
 } as any)
+const MyIdEditRoute = MyIdEditRouteImport.update({
+  id: '/my/$id/edit',
+  path: '/my/$id/edit',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
+  '/new': typeof NewRoute
   '/signup': typeof SignupRoute
   '/itineraries/$slug': typeof ItinerariesSlugRoute
+  '/my/': typeof MyIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/uploads/$': typeof ApiUploadsSplatRoute
+  '/my/$id/edit': typeof MyIdEditRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
+  '/new': typeof NewRoute
   '/signup': typeof SignupRoute
   '/itineraries/$slug': typeof ItinerariesSlugRoute
+  '/my': typeof MyIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/uploads/$': typeof ApiUploadsSplatRoute
+  '/my/$id/edit': typeof MyIdEditRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
+  '/new': typeof NewRoute
   '/signup': typeof SignupRoute
   '/itineraries/$slug': typeof ItinerariesSlugRoute
+  '/my/': typeof MyIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/uploads/$': typeof ApiUploadsSplatRoute
+  '/my/$id/edit': typeof MyIdEditRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
     | '/login'
+    | '/new'
     | '/signup'
     | '/itineraries/$slug'
+    | '/my/'
     | '/api/auth/$'
     | '/api/uploads/$'
+    | '/my/$id/edit'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/login'
+    | '/new'
     | '/signup'
     | '/itineraries/$slug'
+    | '/my'
     | '/api/auth/$'
     | '/api/uploads/$'
+    | '/my/$id/edit'
   id:
     | '__root__'
     | '/'
     | '/login'
+    | '/new'
     | '/signup'
     | '/itineraries/$slug'
+    | '/my/'
     | '/api/auth/$'
     | '/api/uploads/$'
+    | '/my/$id/edit'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   LoginRoute: typeof LoginRoute
+  NewRoute: typeof NewRoute
   SignupRoute: typeof SignupRoute
   ItinerariesSlugRoute: typeof ItinerariesSlugRoute
+  MyIndexRoute: typeof MyIndexRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
   ApiUploadsSplatRoute: typeof ApiUploadsSplatRoute
+  MyIdEditRoute: typeof MyIdEditRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -124,6 +163,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LoginRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/new': {
+      id: '/new'
+      path: '/new'
+      fullPath: '/new'
+      preLoaderRoute: typeof NewRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/signup': {
       id: '/signup'
       path: '/signup'
@@ -136,6 +182,13 @@ declare module '@tanstack/react-router' {
       path: '/itineraries/$slug'
       fullPath: '/itineraries/$slug'
       preLoaderRoute: typeof ItinerariesSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/my/': {
+      id: '/my/'
+      path: '/my'
+      fullPath: '/my/'
+      preLoaderRoute: typeof MyIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/auth/$': {
@@ -152,16 +205,26 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiUploadsSplatRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/my/$id/edit': {
+      id: '/my/$id/edit'
+      path: '/my/$id/edit'
+      fullPath: '/my/$id/edit'
+      preLoaderRoute: typeof MyIdEditRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   LoginRoute: LoginRoute,
+  NewRoute: NewRoute,
   SignupRoute: SignupRoute,
   ItinerariesSlugRoute: ItinerariesSlugRoute,
+  MyIndexRoute: MyIndexRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
   ApiUploadsSplatRoute: ApiUploadsSplatRoute,
+  MyIdEditRoute: MyIdEditRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
