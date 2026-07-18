@@ -312,6 +312,7 @@ export async function getItineraryBySlugImpl(
     !hasAccess &&
     input.inviteToken &&
     row.visibility === 'private' &&
+    row.status === 'published' &&
     row.inviteToken &&
     row.inviteToken === input.inviteToken
   ) {

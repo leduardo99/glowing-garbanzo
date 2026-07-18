@@ -155,6 +155,27 @@ describe('itineraries server functions', () => {
         }),
       ).rejects.toThrow('NOT_FOUND')
     })
+
+    it('does not grant read access to a private draft via a matching invite token', async () => {
+      const author = await createTestUser()
+      const invitee = await createTestUser()
+      const created = await createItineraryImpl(testDb, { user: { id: author.id } }, {
+        title: 'Private draft trip',
+        destination: 'Somewhere',
+      })
+      await updateItineraryImpl(testDb, { user: { id: author.id } }, {
+        id: created.id,
+        visibility: 'private',
+      })
+      await testDb.update(itinerary).set({ inviteToken: 'secret-token' }).where(eq(itinerary.id, created.id))
+
+      await expect(
+        getItineraryBySlugImpl(testDb, { user: { id: invitee.id } }, {
+          slug: created.slug,
+          inviteToken: 'secret-token',
+        }),
+      ).rejects.toThrow('NOT_FOUND')
+    })
   })
 
   describe('updateItineraryImpl', () => {
