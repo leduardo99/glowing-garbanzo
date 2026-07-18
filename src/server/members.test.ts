@@ -335,7 +335,7 @@ describe('members & invite-link server functions', () => {
       ).rejects.toThrow('NOT_FOUND')
     })
 
-    it('lets the author "join" their own itinerary without error (no-op success)', async () => {
+    it('lets the author "join" their own itinerary as a true no-op (no member row inserted)', async () => {
       const author = await createTestUser()
       const created = await publishedPrivateItinerary(author.id)
       const { inviteToken } = await regenerateInviteTokenImpl(
@@ -355,6 +355,21 @@ describe('members & invite-link server functions', () => {
         },
       )
       expect(result).toEqual({ slug: created.slug })
+
+      const memberRows = await testDb.query.itineraryMember.findMany({
+        where: and(
+          eq(itineraryMember.itineraryId, created.id),
+          eq(itineraryMember.userId, author.id),
+        ),
+      })
+      expect(memberRows).toHaveLength(0)
+
+      const members = await listMembersImpl(
+        testDb,
+        { user: { id: author.id } },
+        { id: created.id },
+      )
+      expect(members.map((m) => m.member.id)).not.toContain(author.id)
     })
 
     it('is idempotent on repeat joins (no duplicate row, no error)', async () => {

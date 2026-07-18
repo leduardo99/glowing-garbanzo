@@ -21,8 +21,10 @@
  *     wrong/missing/revoked token, public itinerary, draft) collapses to
  *     NOT_FOUND so existence is never leaked. The insert is idempotent
  *     (`onConflictDoNothing`, same pattern as `toggleFavoriteImpl`), so
- *     repeat joins — including the author "joining" their own itinerary —
- *     always succeed rather than erroring.
+ *     repeat joins always succeed rather than erroring. The author
+ *     "joining" their own itinerary is a separate no-op short-circuit —
+ *     no row is ever inserted for the author, since they are the owner,
+ *     not a member.
  *   - listMembers / removeMember: author only. Removing a userId that isn't
  *     currently a member is NOT_FOUND (the member row doesn't exist).
  */
@@ -144,8 +146,9 @@ export type JoinByInviteTokenInput = z.infer<typeof joinByInviteTokenSchema>
 /**
  * Joins the caller as a member of the private itinerary identified by
  * `slug`, provided `token` matches its current, non-revoked invite token
- * AND the itinerary is published. Idempotent — repeat joins (including the
- * author joining their own itinerary) succeed without error.
+ * AND the itinerary is published. Idempotent — repeat joins succeed
+ * without error. If the caller is the itinerary's author, this is a
+ * no-op success: no `itinerary_member` row is ever inserted for them.
  */
 export async function joinByInviteTokenImpl(
   db: Database,
@@ -167,6 +170,13 @@ export async function joinByInviteTokenImpl(
     row.inviteToken !== input.token
   ) {
     throw new Error(ERR_NOT_FOUND)
+  }
+
+  // The author "joining" their own itinerary is a no-op success — they're
+  // not a member, they're the author, and listMembersImpl must never show
+  // them alongside real members.
+  if (session.user.id === row.authorId) {
+    return { slug: row.slug }
   }
 
   await db
