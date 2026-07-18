@@ -513,6 +513,84 @@ form ("slop"). New decisions from this pass, not already covered above:
   looks like the same signature component as the detail page's, not a
   different generic list.
 
+## Implementation log — login/signup redesign ("front door" pass)
+
+Author feedback: `/login` and `/signup` still read as raw/generic shadcn
+`Card` forms while the rest of the app had moved to the editorial system.
+Redesigned both as a brand moment, not a settings form. New decisions from
+this pass, not already covered above:
+
+- **`AuthShell`** (new, `src/components/auth/AuthShell.tsx`) — shared shell
+  both routes wrap their form in, replacing `ui/card`'s `Card`/
+  `CardHeader`/`CardContent`/`CardFooter`. No `Card` surface at all: the
+  form sits directly on the page's `paper` background inside a `max-w-[400px]`
+  centered column, full-height (`min-h-[calc(100dvh-10rem)]`, matching the
+  10rem chrome allowance the pre-existing login/signup layout already used,
+  swapped to `dvh` so the column re-centers against the *visible* viewport
+  once the on-screen keyboard opens on mobile). This is the deliberate
+  reading of the brief's "no giant empty card" instruction — a lifted
+  `Card` here would be exactly the "ghost card"/generic-SaaS-form look the
+  feedback was about, not just a nesting bug.
+- **Brand moment, Fraunces exception.** A `size-12` circular
+  `terracotta-soft`/`terracotta` badge holding `CompassIcon` (the same mark
+  `CoverPlaceholder` uses, at icon rather than pattern scale — one
+  recognizable "no photo yet"/compass motif across the app), then
+  `{m.app_name()}` set in `.font-display`/`text-display` (Fraunces) as an
+  `<h1>`. This is a **second**, deliberate exception to the Editorial Title
+  Rule (which DESIGN.md §3 scopes to "itinerary/day titles" and the
+  earlier shell pass already stretched slightly to itinerary cover/day
+  headings) — the brief explicitly names it: "Fraunces is appropriate here
+  as a brand-title moment." `AppHeader`'s nav wordmark stays Karla/Label
+  weight; only this one full-bleed brand moment on the two auth pages uses
+  Fraunces for the wordmark itself.
+- **Welcome line, new messages.** `auth_login_welcome` / `auth_signup_welcome`
+  (both locales) — one short `text-body`/`text-ink-soft` sentence under the
+  wordmark, distinct per page ("Welcome back…" vs "Join Roteiros…") so the
+  two pages read differently even though they now share one visual shell
+  and no longer show a page-specific card title. The old `auth_login_title`/
+  `auth_signup_title` strings are kept and still rendered — as an `sr-only`
+  `<h2>` under the `<h1>` — purely for the accessible heading hierarchy/tab
+  title distinction; screen-reader-only, not part of the visual design.
+- **Touch targets bumped to 44px on this pass specifically.** `AuthField`
+  (`src/components/auth/AuthField.tsx`) sets `h-11` (44px) on `Input`,
+  overriding the shared `ui/input.tsx` 36px default — same precedent as the
+  home route's search field (`src/routes/index.tsx`, also `h-11`). Submit
+  buttons in `LoginForm`/`SignupForm` are `h-11 w-full` (was the shared
+  `Button` default's 36px, non-full-width) plus `active:scale-[0.97]` per
+  DESIGN.md's button-primary spec (not wired into the shared `Button`
+  component itself, so applied at the call site here). Scope for this task
+  was `src/routes/login.tsx`/`signup.tsx` and `src/components/auth/*` only,
+  so `ui/input.tsx`/`ui/button.tsx` weren't touched — every other input/
+  button in the app keeps its existing 36-40px sizing.
+- **Loading state on submit.** Both forms show a spinning `Loader2Icon`
+  (matching `sonner.tsx`'s own loading-toast icon) inside the submit button
+  while `form.Subscribe`'s `isSubmitting` is true, in addition to the
+  pre-existing `disabled` state — previously the button just disabled with
+  no visible feedback.
+- **Error styling, no new pattern needed.** Field-level errors already
+  matched DESIGN.md's spec once traced through `ui/field.tsx`: `Input`'s
+  own `aria-invalid:border-destructive` handles the border, `Field`'s
+  `data-invalid=true` sets `text-destructive` on the group so the label
+  inherits it (removed a hardcoded `text-ink` class from `FieldLabel` that
+  would have fought this), and `FieldError` was already `role="alert"`/
+  `text-destructive`. Only change: `FieldError` now takes `text-label`
+  (13px) instead of the default `text-sm` (14px) to land on DESIGN.md's
+  literal "helper text at label size."
+- **Motion.** `AuthShell`'s content column gets a single `animate-in
+  fade-in slide-in-from-bottom-2 duration-500 fill-mode-both` on mount
+  (via `tw-animate-css`, already a dependency, already used by
+  `dialog.tsx`/`drawer.tsx`/`popover.tsx`/`dropdown-menu.tsx`/`select.tsx`
+  for their open/close transitions) — one quiet entrance, not a
+  choreographed sequence, and already covered by `styles.css`'s existing
+  blanket `prefers-reduced-motion` rule (`*, *::before, *::after` duration
+  → `0.01ms`) with no extra media query needed here.
+- **Behavior unchanged.** TanStack Form logic, `safeRedirectTarget`
+  handling, `sessionQueryKey` invalidation on success, and
+  `LoginForm.test.tsx`'s three tests (label/role queries by accessible
+  name) all verified passing without modification — only `AuthField`'s
+  markup grew (label/input className, `inputMode`), never the label text,
+  `htmlFor`/`id` association, or button accessible name the tests query by.
+
 ## Consistency checks
 
 Hold every future UI change to: spacing on the 4px grid, shadow-only elevation (no border+shadow combo), colors only from the table above, Fraunces only on content titles, and the component measurements listed here reused rather than reinvented.

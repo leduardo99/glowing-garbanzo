@@ -1,5 +1,6 @@
 import { useForm } from '@tanstack/react-form'
 import { useQueryClient } from '@tanstack/react-query'
+import { Loader2Icon } from 'lucide-react'
 import { toast } from 'sonner'
 
 import { authClient } from '#/lib/auth-client'
@@ -13,7 +14,7 @@ const PASSWORD_MIN_LENGTH = 8
 
 /**
  * The signup form itself, decoupled from the `/signup` route so it can be
- * unit-tested without a router. The route wraps this in a `Card` and
+ * unit-tested without a router. The route wraps this in `AuthShell` and
  * supplies `onSuccess` (navigates to the validated `redirect` search
  * param, see `src/lib/auth-redirect.ts`).
  */
@@ -80,6 +81,7 @@ export function SignupForm({ onSuccess }: { onSuccess: () => void }) {
               label={m.auth_email()}
               type="email"
               autoComplete="email"
+              inputMode="email"
             />
           )}
         </form.Field>
@@ -109,7 +111,14 @@ export function SignupForm({ onSuccess }: { onSuccess: () => void }) {
           selector={(state) => [state.canSubmit, state.isSubmitting] as const}
         >
           {([canSubmit, isSubmitting]) => (
-            <Button type="submit" disabled={!canSubmit || isSubmitting}>
+            <Button
+              type="submit"
+              disabled={!canSubmit || isSubmitting}
+              className="h-11 w-full text-label active:scale-[0.97]"
+            >
+              {isSubmitting && (
+                <Loader2Icon className="size-4 animate-spin" />
+              )}
               {m.auth_submit_signup()}
             </Button>
           )}
