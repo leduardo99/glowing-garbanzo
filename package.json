@@ -9,7 +9,7 @@
     "dev": "vite dev --port 3000",
     "generate-routes": "tsr generate",
     "build": "vite build",
-    "build:vercel": "TARGET=vercel vite build",
+    "build:vercel": "DEPLOY_TARGET=vercel vite build",
     "preview": "vite preview",
     "test": "vitest run",
     "db:generate": "drizzle-kit generate",

@@ -28,8 +28,15 @@ disk, since Vercel's serverless functions don't have a persistent filesystem —
 ## 3. Set environment variables
 
 In the Vercel project → **Settings → Environment Variables**, add these for the
-**Production** environment (and Preview, if you want preview deployments to work
-against the same database):
+**Production** environment only.
+
+> **Warning — do not set `DATABASE_URL` for Preview deployments by default.**
+> The build command runs `pnpm db:migrate` on every build, so a Preview
+> environment pointing at the same Neon database would run schema migrations
+> from every open PR — concurrently, on every push — against your production
+> schema. If you want working preview deployments, use Neon's branch-per-PR
+> feature (a separate database branch per preview) instead of sharing the
+> production connection string.
 
 | Variable | Value | Notes |
 | --- | --- | --- |
