@@ -51,8 +51,10 @@ pnpm db:studio       # Drizzle Studio
 
 O projeto está preparado para agentes de código:
 
-- `AGENTS.md` — mapeamentos do TanStack Intent (Router, Start, Query, Form, etc.)
-- `.agents/skills/` — skill oficial do shadcn/ui (symlink em `.claude/skills/`)
+- `AGENTS.md` — mapeamentos do TanStack Intent (Router, Start, Devtools, dotenv)
+- `.agents/skills/` (symlink em `.claude/skills/`) — skill oficial do shadcn/ui + boas práticas de React/UI da Vercel (`vercel-react-best-practices`, `vercel-composition-patterns`, `web-design-guidelines`)
+- `.mcp.json` — MCP [Context7](https://context7.com) para consultar documentação atual de libs sem skill própria (Better Auth, Drizzle, Paraglide, TanStack Query/Form, Tailwind…)
+- `CLAUDE.md` — política "skill primeiro, Context7 como fallback" e convenções do projeto
 - `.claude/settings.json` — plugin [Superpowers](https://github.com/obra/superpowers) habilitado
 
 ## shadcn/ui
