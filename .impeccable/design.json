@@ -1,0 +1,136 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-07-18T00:00:00.000Z",
+  "title": "Design System: Roteiros",
+  "extensions": {
+    "colorMeta": {
+      "ink": { "role": "neutral", "displayName": "Ink", "canonical": "oklch(0.24 0.02 45)" },
+      "ink-soft": { "role": "neutral", "displayName": "Ink Soft", "canonical": "oklch(0.45 0.02 45)" },
+      "paper": { "role": "neutral", "displayName": "Paper", "canonical": "oklch(0.985 0.004 60)" },
+      "surface": { "role": "neutral", "displayName": "Surface", "canonical": "oklch(0.97 0.006 55)" },
+      "surface-sunken": { "role": "neutral", "displayName": "Surface Sunken", "canonical": "oklch(0.94 0.008 55)" },
+      "terracotta": { "role": "primary", "displayName": "Terracotta", "canonical": "oklch(0.58 0.15 38)" },
+      "terracotta-deep": { "role": "primary", "displayName": "Terracotta Deep", "canonical": "oklch(0.49 0.16 35)" },
+      "terracotta-soft": { "role": "primary", "displayName": "Terracotta Soft", "canonical": "oklch(0.93 0.04 45)" },
+      "rating-gold": { "role": "secondary", "displayName": "Rating Gold", "canonical": "oklch(0.78 0.15 85)" },
+      "line": { "role": "neutral", "displayName": "Line", "canonical": "oklch(0.24 0.02 45 / 0.12)" },
+      "line-strong": { "role": "neutral", "displayName": "Line Strong", "canonical": "oklch(0.24 0.02 45 / 0.2)" },
+      "success": { "role": "semantic", "displayName": "Success", "canonical": "oklch(0.6 0.12 145)" },
+      "warning": { "role": "semantic", "displayName": "Warning", "canonical": "oklch(0.75 0.14 80)" },
+      "destructive": { "role": "semantic", "displayName": "Destructive", "canonical": "oklch(0.55 0.2 15)" }
+    },
+    "typographyMeta": {
+      "display": { "displayName": "Display (Fraunces)", "purpose": "Itinerary and trip titles only." },
+      "headline": { "displayName": "Headline", "purpose": "Section headers." },
+      "title": { "displayName": "Title", "purpose": "Card titles, day headers, stop names." },
+      "body": { "displayName": "Body", "purpose": "Prose: descriptions, comments, bios. Capped 70ch." },
+      "label": { "displayName": "Label", "purpose": "Nav, buttons, form labels, tabs." },
+      "caption": { "displayName": "Caption", "purpose": "Timestamps, counts, tag text, meta." }
+    },
+    "shadows": [
+      { "name": "resting", "value": "0 1px 2px rgba(36,20,10,0.04), 0 1px 1px rgba(36,20,10,0.03)", "purpose": "Cards and list rows at rest." },
+      { "name": "lifted", "value": "0 4px 12px rgba(36,20,10,0.08), 0 1px 2px rgba(36,20,10,0.04)", "purpose": "Card hover, open dropdown/menu." },
+      { "name": "elevated", "value": "0 12px 32px rgba(36,20,10,0.14), 0 2px 6px rgba(36,20,10,0.06)", "purpose": "Modal, sheet, popover." },
+      { "name": "dark-ring", "value": "0 0 0 1px rgba(255,255,255,0.08)", "purpose": "Dark-mode substitute for all shadow levels above." }
+    ],
+    "motion": [
+      { "name": "ease-out-expo", "value": "cubic-bezier(0.23, 1, 0.32, 1)", "purpose": "Entrances and interactive reveals (dropdowns, sheets, cards)." },
+      { "name": "ease-in-out", "value": "cubic-bezier(0.77, 0, 0.175, 1)", "purpose": "On-screen movement (route slide/fade, drag)." },
+      { "name": "duration-tap", "value": "150ms", "purpose": "Button/tab press feedback." },
+      { "name": "duration-panel", "value": "220ms", "purpose": "Dropdowns, popovers, sheets." },
+      { "name": "duration-route", "value": "260ms", "purpose": "Mobile route push/pop slide+fade." }
+    ],
+    "breakpoints": [
+      { "name": "sm", "value": "640px" },
+      { "name": "md", "value": "768px" },
+      { "name": "lg", "value": "1024px" },
+      { "name": "bottom-tab-max", "value": "767px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Primary call to action — publish, fork, save.",
+      "html": "<button class=\"ds-btn-primary\">Fork itinerary</button>",
+      "css": ".ds-btn-primary { background: oklch(0.58 0.15 38); color: oklch(0.985 0.004 60); padding: 10px 20px; height: 40px; border: none; border-radius: 10px; font-family: Karla, ui-sans-serif, system-ui, sans-serif; font-weight: 500; font-size: 0.8125rem; letter-spacing: 0.02em; transition: background-color 150ms cubic-bezier(0.23,1,0.32,1), transform 150ms cubic-bezier(0.23,1,0.32,1); } .ds-btn-primary:hover { background: oklch(0.49 0.16 35); } .ds-btn-primary:active { transform: scale(0.97); } .ds-btn-primary:focus-visible { outline: 2px solid oklch(0.58 0.15 38 / 0.5); outline-offset: 2px; }"
+    },
+    {
+      "name": "Itinerary Card",
+      "kind": "card",
+      "refersTo": "card-itinerary",
+      "description": "Discovery grid card — cover photo, title, destination, tags, day count, rating.",
+      "html": "<div class=\"ds-card\"><img class=\"ds-card-cover\" src=\"\" alt=\"\" /><div class=\"ds-card-body\"><h3 class=\"ds-card-title\">10 dias na Chapada Diamantina</h3><p class=\"ds-card-dest\">Bahia, Brasil</p></div></div>",
+      "css": ".ds-card { background: oklch(0.985 0.004 60); border-radius: 14px; overflow: hidden; box-shadow: 0 1px 2px rgba(36,20,10,0.04), 0 1px 1px rgba(36,20,10,0.03); transition: box-shadow 200ms cubic-bezier(0.23,1,0.32,1); } .ds-card:hover { box-shadow: 0 4px 12px rgba(36,20,10,0.08), 0 1px 2px rgba(36,20,10,0.04); } .ds-card-cover { width: 100%; height: 160px; object-fit: cover; } .ds-card-body { padding: 16px; } .ds-card-title { font-family: 'Fraunces', Georgia, serif; font-weight: 500; font-size: 1.0625rem; letter-spacing: -0.01em; color: oklch(0.24 0.02 45); margin: 0 0 4px; } .ds-card-dest { font-family: Karla, ui-sans-serif, system-ui, sans-serif; font-size: 0.8125rem; color: oklch(0.45 0.02 45); margin: 0; }"
+    },
+    {
+      "name": "Search Input",
+      "kind": "input",
+      "refersTo": "input-field",
+      "description": "Inset search / text field.",
+      "html": "<input class=\"ds-input\" type=\"text\" placeholder=\"Buscar por destino…\" />",
+      "css": ".ds-input { background: oklch(0.94 0.008 55); border: 1px solid oklch(0.24 0.02 45 / 0.12); border-radius: 6px; height: 40px; padding: 10px 12px; font-family: Karla, ui-sans-serif, system-ui, sans-serif; font-size: 0.9375rem; color: oklch(0.24 0.02 45); } .ds-input:focus-visible { border-color: oklch(0.58 0.15 38); outline: 2px solid oklch(0.58 0.15 38 / 0.2); outline-offset: 0; }"
+    },
+    {
+      "name": "Tag Chip",
+      "kind": "chip",
+      "refersTo": "badge-tag",
+      "description": "Style tag / filter chip, default and selected states.",
+      "html": "<span class=\"ds-chip\">praia</span><span class=\"ds-chip ds-chip-active\">trilha</span>",
+      "css": ".ds-chip { display: inline-flex; align-items: center; background: oklch(0.94 0.008 55); color: oklch(0.45 0.02 45); border-radius: 9999px; padding: 4px 10px; font-family: Karla, ui-sans-serif, system-ui, sans-serif; font-size: 0.75rem; } .ds-chip-active { background: oklch(0.93 0.04 45); color: oklch(0.49 0.16 35); }"
+    },
+    {
+      "name": "Bottom Tab Bar",
+      "kind": "nav",
+      "refersTo": "nav-mobile",
+      "description": "Mobile primary navigation — fixed bottom tab bar with safe-area inset.",
+      "html": "<nav class=\"ds-tabbar\"><a class=\"ds-tab ds-tab-active\">Início</a><a class=\"ds-tab\">Meus roteiros</a><a class=\"ds-tab\">Novo</a><a class=\"ds-tab\">Perfil</a></nav>",
+      "css": ".ds-tabbar { display: flex; background: oklch(0.97 0.006 55); border-top: 1px solid oklch(0.24 0.02 45 / 0.12); padding-bottom: env(safe-area-inset-bottom); } .ds-tab { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 56px; min-width: 44px; font-family: Karla, ui-sans-serif, system-ui, sans-serif; font-size: 0.6875rem; color: oklch(0.45 0.02 45); } .ds-tab-active { color: oklch(0.58 0.15 38); font-weight: 500; }"
+    },
+    {
+      "name": "Day/Stop Timeline",
+      "kind": "custom",
+      "refersTo": "signature-timeline",
+      "description": "Signature component: the itinerary detail page's vertical logbook spine — day markers with quiet stop rows, no nested cards.",
+      "html": "<div class=\"ds-timeline\"><div class=\"ds-day\">Dia 3 · Rio de Janeiro</div><div class=\"ds-stop\"><span class=\"ds-stop-name\">Pão de Açúcar</span><p class=\"ds-stop-note\">Subida de bondinho ao amanhecer.</p></div></div>",
+      "css": ".ds-timeline { position: relative; padding-left: 20px; border-left: 1px solid oklch(0.24 0.02 45 / 0.12); } .ds-day { font-family: Karla, ui-sans-serif, system-ui, sans-serif; font-weight: 600; font-size: 1.0625rem; color: oklch(0.24 0.02 45); margin: 24px 0 8px; } .ds-stop { padding: 8px 0; } .ds-stop-name { font-family: Karla, ui-sans-serif, system-ui, sans-serif; font-weight: 600; font-size: 1.0625rem; color: oklch(0.24 0.02 45); } .ds-stop-note { font-family: Karla, ui-sans-serif, system-ui, sans-serif; font-size: 0.9375rem; line-height: 1.55; color: oklch(0.45 0.02 45); max-width: 70ch; margin: 4px 0 0; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Shared Logbook",
+    "overview": "Roteiros feels like a well-kept travel logbook that gets handed from traveler to traveler, each one annotating, forking, and carrying it forward. That's the literal product (fork an itinerary, make it yours) and it's the visual idea too: warm paper tones, a serif hand for the things that matter (trip and day titles), a quiet sans for everything you use to navigate and act, and a single warm accent — terracotta, the color of a well-worn passport cover, sunbaked roof tiles, a leather journal strap — spent only where it means something. This system explicitly rejects the generic AI-tool look: no Inter-everywhere, no purple-to-blue gradient, no cards nested inside cards, no gray text sitting on a colored background, no rounded-square icon tile perched above every heading, no dense boxed-metric SaaS-dashboard chrome. It also rejects 'responsive as an afterthought' — most people open Roteiros on a phone, so the mobile layout is the native-feeling one (bottom tab bar, safe-area insets, ≥44px targets), not a squeezed desktop page.",
+    "keyCharacteristics": [
+      "Warm, editorial, unhurried — a travel journal, not a booking dashboard",
+      "One accent (terracotta) carries every call to action and every selected state; nothing else competes with it",
+      "Serif (Fraunces) marks content — itinerary titles, day headers; sans (Karla) runs the interface — nav, buttons, labels, data",
+      "Cards are quiet: shadow and warm-paper tone do the separating, not borders or nested boxes",
+      "Mobile is a native-feeling app shell: bottom tabs, safe areas, generous touch targets"
+    ],
+    "rules": [
+      { "name": "The One Warm Voice Rule", "body": "Terracotta is the only saturated brand color on any screen. Rating Gold is a semantic exception scoped strictly to ratings.", "section": "colors" },
+      { "name": "The No-Cream-Default Rule", "body": "The page background is a true off-white (chroma 0.004), not a saturated sand/parchment tone. Warmth comes from the terracotta accent and Fraunces display type, never from tinting the whole canvas beige.", "section": "colors" },
+      { "name": "The Editorial Title Rule", "body": "Fraunces is reserved for content titles a traveler wrote or is reading — the itinerary name and nothing else. Every piece of interface chrome stays in Karla.", "section": "typography" },
+      { "name": "The 70ch Rule", "body": "Day and stop descriptions, comments, and any long-form prose wrap at ≤70ch regardless of viewport width.", "section": "typography" },
+      { "name": "The Quiet Lift Rule", "body": "Shadow is how a surface separates from the page; borders are reserved for dividers, inputs, and rows. Never both a border and a shadow on the same card.", "section": "elevation" }
+    ],
+    "dos": [
+      "Do spend terracotta only on primary actions, the current selection, links, and focus rings.",
+      "Do set itinerary and trip titles in Fraunces; set every other piece of UI text in Karla.",
+      "Do build the mobile nav as a real bottom tab bar with safe-area insets and ≥44px targets.",
+      "Do use shadow, not borders, to lift cards, dropdowns, sheets, and modals.",
+      "Do keep body copy ≤70ch and verify Portuguese strings don't truncate or overflow labels, tabs, and buttons.",
+      "Do give rating-star and duration/day-count numbers tabular-nums so they don't jitter."
+    ],
+    "donts": [
+      "Don't default to Inter or any generic system-sans stack for headings.",
+      "Don't use a purple-to-blue gradient anywhere, on text or on a surface.",
+      "Don't nest a card inside a card.",
+      "Don't put ink-soft or any gray text directly on a terracotta or rating-gold background.",
+      "Don't put a rounded-square icon tile above section headings as a default decoration.",
+      "Don't combine a 1px border and a wide soft box-shadow on the same card.",
+      "Don't exceed 20px corner radius on cards, inputs, or sections.",
+      "Don't run choreographed page-load animations."
+    ]
+  }
+}
