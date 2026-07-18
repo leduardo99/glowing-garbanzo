@@ -7,10 +7,17 @@ import pg from 'pg'
 
 import * as schema from '#/db/schema'
 
-config({ path: ['.env.test'] })
+config({ path: ['.env.test'], override: true })
 
 const TEST_DATABASE_URL = process.env.DATABASE_URL!
 const TEST_DB_NAME = new URL(TEST_DATABASE_URL).pathname.replace(/^\//, '')
+
+if (TEST_DB_NAME !== 'itineraries_test') {
+  throw new Error(
+    `Refusing to run test db harness against database "${TEST_DB_NAME}" — expected "itineraries_test". ` +
+      'Check for a stray DATABASE_URL environment variable overriding .env.test.',
+  )
+}
 
 export const testDb = drizzle(TEST_DATABASE_URL, { schema })
 
@@ -34,6 +41,11 @@ export async function setupTestDb(): Promise<void> {
   }
 
   await migrate(testDb, { migrationsFolder: './drizzle' })
+}
+
+/** Closes the underlying connection pool. Call once after all tests finish. */
+export async function closeTestDb(): Promise<void> {
+  await testDb.$client.end()
 }
 
 /** Truncates every domain and auth table, resetting identities. */

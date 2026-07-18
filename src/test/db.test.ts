@@ -2,7 +2,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { eq } from 'drizzle-orm'
 
 import { itinerary, user } from '#/db/schema'
-import { createTestUser, resetTestDb, setupTestDb, testDb } from './db'
+import { closeTestDb, createTestUser, resetTestDb, setupTestDb, testDb } from './db'
 
 describe('test db harness', () => {
   beforeAll(async () => {
@@ -11,6 +11,7 @@ describe('test db harness', () => {
 
   afterAll(async () => {
     await resetTestDb()
+    await closeTestDb()
   })
 
   it('persists and reads back real rows, then reset empties every table', async () => {
