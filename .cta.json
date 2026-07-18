@@ -1,0 +1,30 @@
+{
+  "projectName": "roteiros",
+  "mode": "file-router",
+  "typescript": true,
+  "tailwind": true,
+  "packageManager": "pnpm",
+  "git": false,
+  "install": true,
+  "intent": true,
+  "addOnOptions": {
+    "drizzle": {
+      "database": "postgresql"
+    }
+  },
+  "includeExamples": false,
+  "envVarValues": {},
+  "routerOnly": false,
+  "version": 1,
+  "framework": "react",
+  "chosenAddOns": [
+    "shadcn",
+    "drizzle",
+    "better-auth",
+    "paraglide",
+    "tanstack-query",
+    "form",
+    "t3env",
+    "eslint"
+  ]
+}
