@@ -1,12 +1,12 @@
 import { useState } from 'react'
 import { useForm } from '@tanstack/react-form'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { XIcon } from 'lucide-react'
+import { ImageUpIcon, PencilIcon, XIcon } from 'lucide-react'
 import { toast } from 'sonner'
 
 import { Badge } from '#/components/ui/badge'
 import { Button } from '#/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '#/components/ui/card'
+import { Card, CardContent } from '#/components/ui/card'
 import {
   Field,
   FieldError,
@@ -15,6 +15,7 @@ import {
 } from '#/components/ui/field'
 import { Input } from '#/components/ui/input'
 import { Textarea } from '#/components/ui/textarea'
+import { cn } from '#/lib/utils'
 import { m } from '#/paraglide/messages'
 import { updateItinerary } from '#/server/itineraries'
 import type { EditorItinerary } from '#/server/itineraries'
@@ -98,194 +99,230 @@ export function MetadataForm({ itinerary }: { itinerary: EditorItinerary }) {
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-headline">
-          {m.editor_metadata_title()}
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        <form
-          onSubmit={(event) => {
-            event.preventDefault()
-            event.stopPropagation()
-            void form.handleSubmit()
-          }}
-        >
-          <FieldGroup>
-            <Field>
-              <FieldLabel htmlFor="editor-cover">
-                {m.editor_field_cover()}
-              </FieldLabel>
-              {itinerary.coverImageUrl ? (
-                <img
-                  src={itinerary.coverImageUrl}
-                  alt=""
-                  className="h-40 w-full max-w-md rounded-md object-cover"
-                />
-              ) : null}
-              <input
-                id="editor-cover"
-                type="file"
-                accept="image/png,image/jpeg,image/webp"
-                disabled={coverMutation.isPending}
-                onChange={(event) => {
-                  const file = event.target.files?.[0]
-                  if (file) {
-                    coverMutation.mutate(file)
-                  }
-                  event.target.value = ''
-                }}
-              />
-              {coverMutation.isPending ? (
-                <p className="text-sm text-muted-foreground">
-                  {m.editor_cover_uploading()}
-                </p>
-              ) : null}
-            </Field>
-
-            <form.Field
-              name="title"
-              validators={{
-                onChange: ({ value }) =>
-                  value.trim() ? undefined : m.editor_title_required(),
-              }}
-            >
-              {(field) => {
-                const errors = field.state.meta.errors.filter(
-                  (error: unknown): error is string =>
-                    typeof error === 'string' && error.length > 0,
-                )
-                return (
-                  <Field data-invalid={errors.length > 0 || undefined}>
-                    <FieldLabel htmlFor={field.name}>
-                      {m.editor_field_title()}
-                    </FieldLabel>
-                    <Input
-                      id={field.name}
-                      name={field.name}
-                      value={field.state.value}
-                      aria-invalid={errors.length > 0}
-                      onBlur={field.handleBlur}
-                      onChange={(event) =>
-                        field.handleChange(event.target.value)
-                      }
-                    />
-                    <FieldError
-                      errors={errors.map((message) => ({ message }))}
-                    />
-                  </Field>
-                )
-              }}
-            </form.Field>
-
-            <form.Field
-              name="destination"
-              validators={{
-                onChange: ({ value }) =>
-                  value.trim() ? undefined : m.editor_destination_required(),
-              }}
-            >
-              {(field) => {
-                const errors = field.state.meta.errors.filter(
-                  (error: unknown): error is string =>
-                    typeof error === 'string' && error.length > 0,
-                )
-                return (
-                  <Field data-invalid={errors.length > 0 || undefined}>
-                    <FieldLabel htmlFor={field.name}>
-                      {m.editor_field_destination()}
-                    </FieldLabel>
-                    <Input
-                      id={field.name}
-                      name={field.name}
-                      value={field.state.value}
-                      aria-invalid={errors.length > 0}
-                      onBlur={field.handleBlur}
-                      onChange={(event) =>
-                        field.handleChange(event.target.value)
-                      }
-                    />
-                    <FieldError
-                      errors={errors.map((message) => ({ message }))}
-                    />
-                  </Field>
-                )
-              }}
-            </form.Field>
-
-            <form.Field name="summary">
-              {(field) => (
-                <Field>
-                  <FieldLabel htmlFor={field.name}>
-                    {m.editor_field_summary()}
-                  </FieldLabel>
-                  <Textarea
-                    id={field.name}
-                    name={field.name}
-                    value={field.state.value}
-                    onBlur={field.handleBlur}
-                    onChange={(event) =>
-                      field.handleChange(event.target.value)
-                    }
-                  />
-                </Field>
-              )}
-            </form.Field>
-
-            <Field>
-              <FieldLabel htmlFor="editor-tags">
-                {m.editor_field_tags()}
-              </FieldLabel>
-              <Input
-                id="editor-tags"
-                placeholder={m.editor_field_tags_placeholder()}
-                value={tagDraft}
-                onChange={(event) => setTagDraft(event.target.value)}
-                onKeyDown={(event) => {
-                  if (event.key === 'Enter') {
-                    event.preventDefault()
-                    addTag()
-                  }
-                }}
-              />
-              {tags.length > 0 ? (
-                <div className="flex flex-wrap gap-1.5">
-                  {tags.map((tag) => (
-                    <Badge key={tag} variant="secondary" className="gap-1">
-                      {tag}
-                      <button
-                        type="button"
-                        onClick={() => removeTag(tag)}
-                        aria-label={m.editor_tag_remove({ tag })}
-                        className="cursor-pointer"
-                      >
-                        <XIcon className="size-3" />
-                      </button>
-                    </Badge>
-                  ))}
-                </div>
-              ) : null}
-            </Field>
-
-            <form.Subscribe
-              selector={(state) => [state.canSubmit, state.isSubmitting] as const}
-            >
-              {([canSubmit, isSubmitting]) => (
-                <Button
-                  type="submit"
-                  className="self-start"
-                  disabled={
-                    !canSubmit || isSubmitting || saveMutation.isPending
-                  }
+    <section className="flex flex-col gap-3">
+      <h2 className="text-headline font-semibold text-ink">
+        {m.editor_metadata_title()}
+      </h2>
+      <Card>
+        <CardContent>
+          <form
+            onSubmit={(event) => {
+              event.preventDefault()
+              event.stopPropagation()
+              void form.handleSubmit()
+            }}
+          >
+            <FieldGroup>
+              <Field>
+                <FieldLabel htmlFor="editor-cover">
+                  {m.editor_field_cover()}
+                </FieldLabel>
+                {/*
+                  Full-width dropzone-style block: the current cover fills
+                  it edge to edge (or a dashed placeholder invites a first
+                  upload), a `<label>` around the whole thing makes the
+                  entire block — not just a tiny file-input control — the
+                  click target, and the real `<input type="file">` stays
+                  functionally identical (same accept list, same disabled
+                  state, same onChange), just visually hidden.
+                */}
+                <label
+                  htmlFor="editor-cover"
+                  className={cn(
+                    'group relative flex aspect-[21/9] w-full cursor-pointer items-center justify-center overflow-hidden rounded-lg',
+                    coverMutation.isPending && 'pointer-events-none opacity-70',
+                    itinerary.coverImageUrl
+                      ? 'bg-surface-sunken'
+                      : 'border border-dashed border-line-strong bg-surface-sunken hover:border-terracotta',
+                  )}
                 >
-                  {m.editor_save()}
-                </Button>
-              )}
-            </form.Subscribe>
-          </FieldGroup>
-        </form>
-      </CardContent>
-    </Card>
+                  {itinerary.coverImageUrl ? (
+                    <>
+                      <img
+                        src={itinerary.coverImageUrl}
+                        alt=""
+                        className="h-full w-full object-cover transition-opacity group-hover:opacity-80"
+                      />
+                      <span className="pointer-events-none absolute right-3 bottom-3 flex items-center gap-1.5 rounded-full bg-ink/55 px-3 py-1.5 text-label text-paper opacity-0 backdrop-blur-sm transition-opacity group-hover:opacity-100">
+                        <PencilIcon className="size-3.5" aria-hidden="true" />
+                        {m.editor_field_cover()}
+                      </span>
+                    </>
+                  ) : (
+                    <span className="flex flex-col items-center gap-2 px-4 text-center text-ink-soft">
+                      <ImageUpIcon className="size-6" aria-hidden="true" />
+                      <span className="text-label">
+                        {m.editor_cover_hint()}
+                      </span>
+                    </span>
+                  )}
+                  {coverMutation.isPending ? (
+                    <span className="absolute inset-0 flex items-center justify-center bg-ink/45 text-label text-paper">
+                      {m.editor_cover_uploading()}
+                    </span>
+                  ) : null}
+                  <input
+                    id="editor-cover"
+                    type="file"
+                    accept="image/png,image/jpeg,image/webp"
+                    disabled={coverMutation.isPending}
+                    className="sr-only"
+                    onChange={(event) => {
+                      const file = event.target.files?.[0]
+                      if (file) {
+                        coverMutation.mutate(file)
+                      }
+                      event.target.value = ''
+                    }}
+                  />
+                </label>
+              </Field>
+
+              <form.Field
+                name="title"
+                validators={{
+                  onChange: ({ value }) =>
+                    value.trim() ? undefined : m.editor_title_required(),
+                }}
+              >
+                {(field) => {
+                  const errors = field.state.meta.errors.filter(
+                    (error: unknown): error is string =>
+                      typeof error === 'string' && error.length > 0,
+                  )
+                  return (
+                    <Field data-invalid={errors.length > 0 || undefined}>
+                      <FieldLabel htmlFor={field.name}>
+                        {m.editor_field_title()}
+                      </FieldLabel>
+                      <Input
+                        id={field.name}
+                        name={field.name}
+                        value={field.state.value}
+                        aria-invalid={errors.length > 0}
+                        onBlur={field.handleBlur}
+                        onChange={(event) =>
+                          field.handleChange(event.target.value)
+                        }
+                      />
+                      <FieldError
+                        errors={errors.map((message) => ({ message }))}
+                      />
+                    </Field>
+                  )
+                }}
+              </form.Field>
+
+              <form.Field
+                name="destination"
+                validators={{
+                  onChange: ({ value }) =>
+                    value.trim() ? undefined : m.editor_destination_required(),
+                }}
+              >
+                {(field) => {
+                  const errors = field.state.meta.errors.filter(
+                    (error: unknown): error is string =>
+                      typeof error === 'string' && error.length > 0,
+                  )
+                  return (
+                    <Field data-invalid={errors.length > 0 || undefined}>
+                      <FieldLabel htmlFor={field.name}>
+                        {m.editor_field_destination()}
+                      </FieldLabel>
+                      <Input
+                        id={field.name}
+                        name={field.name}
+                        value={field.state.value}
+                        aria-invalid={errors.length > 0}
+                        onBlur={field.handleBlur}
+                        onChange={(event) =>
+                          field.handleChange(event.target.value)
+                        }
+                      />
+                      <FieldError
+                        errors={errors.map((message) => ({ message }))}
+                      />
+                    </Field>
+                  )
+                }}
+              </form.Field>
+
+              <form.Field name="summary">
+                {(field) => (
+                  <Field>
+                    <FieldLabel htmlFor={field.name}>
+                      {m.editor_field_summary()}
+                    </FieldLabel>
+                    <Textarea
+                      id={field.name}
+                      name={field.name}
+                      value={field.state.value}
+                      onBlur={field.handleBlur}
+                      onChange={(event) =>
+                        field.handleChange(event.target.value)
+                      }
+                    />
+                  </Field>
+                )}
+              </form.Field>
+
+              <Field>
+                <FieldLabel htmlFor="editor-tags">
+                  {m.editor_field_tags()}
+                </FieldLabel>
+                <Input
+                  id="editor-tags"
+                  placeholder={m.editor_field_tags_placeholder()}
+                  value={tagDraft}
+                  onChange={(event) => setTagDraft(event.target.value)}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Enter') {
+                      event.preventDefault()
+                      addTag()
+                    }
+                  }}
+                />
+                {tags.length > 0 ? (
+                  <div className="flex flex-wrap gap-1.5">
+                    {tags.map((tag) => (
+                      <Badge key={tag} variant="secondary" className="gap-1">
+                        {tag}
+                        <button
+                          type="button"
+                          onClick={() => removeTag(tag)}
+                          aria-label={m.editor_tag_remove({ tag })}
+                          className="cursor-pointer"
+                        >
+                          <XIcon className="size-3" />
+                        </button>
+                      </Badge>
+                    ))}
+                  </div>
+                ) : null}
+              </Field>
+
+              <form.Subscribe
+                selector={(state) =>
+                  [state.canSubmit, state.isSubmitting] as const
+                }
+              >
+                {([canSubmit, isSubmitting]) => (
+                  <Button
+                    type="submit"
+                    className="self-start"
+                    disabled={
+                      !canSubmit || isSubmitting || saveMutation.isPending
+                    }
+                  >
+                    {m.editor_save()}
+                  </Button>
+                )}
+              </form.Subscribe>
+            </FieldGroup>
+          </form>
+        </CardContent>
+      </Card>
+    </section>
   )
 }

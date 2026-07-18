@@ -94,6 +94,7 @@
   "editor_field_tags_placeholder": "Add a tag and press Enter",
   "editor_tag_remove": "Remove {tag}",
   "editor_field_cover": "Cover photo",
+  "editor_cover_hint": "Click to add a cover photo",
   "editor_cover_uploading": "Uploading…",
   "editor_cover_error": "Couldn't upload the cover image.",
   "editor_save": "Save",

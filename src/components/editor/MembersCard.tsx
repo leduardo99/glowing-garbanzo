@@ -10,7 +10,6 @@ import {
   CardContent,
   CardDescription,
   CardHeader,
-  CardTitle,
 } from '#/components/ui/card'
 import { Field, FieldLabel } from '#/components/ui/field'
 import { Input } from '#/components/ui/input'
@@ -94,105 +93,113 @@ export function MembersCard({
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-headline">{m.members_title()}</CardTitle>
-        <CardDescription className="text-body">
-          {m.members_description()}
-        </CardDescription>
-      </CardHeader>
+    <section className="flex flex-col gap-3">
+      <h2 className="text-headline font-semibold text-ink">
+        {m.members_title()}
+      </h2>
+      <Card>
+        <CardHeader>
+          <CardDescription className="text-body">
+            {m.members_description()}
+          </CardDescription>
+        </CardHeader>
 
-      <CardContent className="flex flex-col gap-4">
-        <Field>
-          <FieldLabel htmlFor="invite-link">
-            {m.members_invite_link()}
-          </FieldLabel>
-          <div className="flex gap-2">
-            <Input
-              id="invite-link"
-              readOnly
-              value={invitePath ?? m.members_invite_none()}
-              onFocus={(event) => event.currentTarget.select()}
-            />
-            <Button
-              type="button"
-              variant="outline"
-              size="icon"
-              disabled={!invitePath}
-              aria-label={m.members_invite_copy()}
-              onClick={() => void copyInviteLink()}
-            >
-              <CopyIcon />
-            </Button>
-          </div>
-        </Field>
-
-        <div className="flex flex-wrap gap-2">
-          <ConfirmDialog
-            trigger={
-              <Button type="button" variant="outline" size="sm">
-                {m.members_invite_regenerate()}
+        <CardContent className="flex flex-col gap-4">
+          <Field>
+            <FieldLabel htmlFor="invite-link">
+              {m.members_invite_link()}
+            </FieldLabel>
+            <div className="flex gap-2">
+              <Input
+                id="invite-link"
+                readOnly
+                value={invitePath ?? m.members_invite_none()}
+                onFocus={(event) => event.currentTarget.select()}
+              />
+              <Button
+                type="button"
+                variant="outline"
+                size="icon"
+                disabled={!invitePath}
+                aria-label={m.members_invite_copy()}
+                onClick={() => void copyInviteLink()}
+              >
+                <CopyIcon />
               </Button>
-            }
-            title={m.members_invite_regenerate_confirm_title()}
-            description={m.members_invite_regenerate_confirm_description()}
-            variant="default"
-            onConfirm={() => regenerateMutation.mutateAsync()}
-          />
-          {inviteToken ? (
+            </div>
+          </Field>
+
+          <div className="flex flex-wrap gap-2">
             <ConfirmDialog
               trigger={
                 <Button type="button" variant="outline" size="sm">
-                  {m.members_invite_revoke()}
+                  {m.members_invite_regenerate()}
                 </Button>
               }
-              title={m.members_invite_revoke_confirm_title()}
-              description={m.members_invite_revoke_confirm_description()}
-              onConfirm={() => revokeMutation.mutateAsync()}
+              title={m.members_invite_regenerate_confirm_title()}
+              description={m.members_invite_regenerate_confirm_description()}
+              variant="default"
+              onConfirm={() => regenerateMutation.mutateAsync()}
             />
-          ) : null}
-        </div>
-
-        <div className="flex flex-col gap-2">
-          <h3 className="text-sm font-medium">{m.members_list_title()}</h3>
-          {membersQuery.data && membersQuery.data.length === 0 ? (
-            <p className="text-sm text-muted-foreground">
-              {m.members_list_empty()}
-            </p>
-          ) : null}
-          {membersQuery.data?.map(({ member }) => (
-            <div
-              key={member.id}
-              className="flex items-center justify-between gap-2 rounded-md border p-2"
-            >
-              <span className="flex items-center gap-2">
-                <Avatar size="sm">
-                  <AvatarImage src={member.image ?? undefined} alt="" />
-                  <AvatarFallback>
-                    {member.name.charAt(0).toUpperCase()}
-                  </AvatarFallback>
-                </Avatar>
-                <span className="text-sm">{member.name}</span>
-              </span>
+            {inviteToken ? (
               <ConfirmDialog
                 trigger={
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon-sm"
-                    aria-label={m.members_remove({ name: member.name })}
-                  >
-                    <Trash2Icon />
+                  <Button type="button" variant="outline" size="sm">
+                    {m.members_invite_revoke()}
                   </Button>
                 }
-                title={m.members_remove_confirm_title({ name: member.name })}
-                description={m.members_remove_confirm_description()}
-                onConfirm={() => removeMemberMutation.mutateAsync(member.id)}
+                title={m.members_invite_revoke_confirm_title()}
+                description={m.members_invite_revoke_confirm_description()}
+                onConfirm={() => revokeMutation.mutateAsync()}
               />
-            </div>
-          ))}
-        </div>
-      </CardContent>
-    </Card>
+            ) : null}
+          </div>
+
+          <div className="flex flex-col gap-2">
+            <h3 className="text-label font-medium text-ink-soft">
+              {m.members_list_title()}
+            </h3>
+            {membersQuery.data && membersQuery.data.length === 0 ? (
+              <p className="text-sm text-muted-foreground">
+                {m.members_list_empty()}
+              </p>
+            ) : null}
+            {membersQuery.data?.map(({ member }) => (
+              <div
+                key={member.id}
+                className="flex items-center justify-between gap-2 border-b border-line py-2 last:border-b-0"
+              >
+                <span className="flex items-center gap-2">
+                  <Avatar size="sm">
+                    <AvatarImage src={member.image ?? undefined} alt="" />
+                    <AvatarFallback>
+                      {member.name.charAt(0).toUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
+                  <span className="text-sm">{member.name}</span>
+                </span>
+                <ConfirmDialog
+                  trigger={
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon-sm"
+                      aria-label={m.members_remove({ name: member.name })}
+                    >
+                      <Trash2Icon />
+                    </Button>
+                  }
+                  title={m.members_remove_confirm_title({
+                    name: member.name,
+                  })}
+                  description={m.members_remove_confirm_description()}
+                  onConfirm={() => removeMemberMutation.mutateAsync(member.id)}
+                />
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+    </section>
   )
 }
