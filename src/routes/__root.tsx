@@ -9,6 +9,10 @@ import { TanStackDevtools } from '@tanstack/react-devtools'
 import TanStackQueryDevtools from '../integrations/tanstack-query/devtools'
 
 import { getLocale } from '#/paraglide/runtime'
+import { AppHeader } from '#/components/AppHeader'
+import { Toaster } from '#/components/ui/sonner'
+import { getSessionUser } from '#/server/auth'
+import type { SessionUserView } from '#/server/auth'
 
 import appCss from '../styles.css?url'
 
@@ -18,13 +22,26 @@ interface MyRouterContext {
   queryClient: QueryClient
 }
 
+/**
+ * Router context contributed by this route's `beforeLoad` (merged into
+ * `context` for every descendant route, on top of `MyRouterContext`).
+ * Protected routes (`/new`, `/my/*` — added in a later task) read
+ * `context.session` in their own `beforeLoad` and redirect to
+ * `/login?redirect=` when it's `null`.
+ */
+interface RootContext {
+  session: SessionUserView | null
+}
+
 export const Route = createRootRouteWithContext<MyRouterContext>()({
-  beforeLoad: async () => {
+  beforeLoad: async (): Promise<RootContext> => {
     // Other redirect strategies are possible; see
     // https://github.com/TanStack/router/tree/main/examples/react/i18n-paraglide#offline-redirect
     if (typeof document !== 'undefined') {
       document.documentElement.setAttribute('lang', getLocale())
     }
+    const session = await getSessionUser()
+    return { session }
   },
 
   head: () => ({
@@ -57,7 +74,9 @@ function RootDocument({ children }: { children: React.ReactNode }) {
         <HeadContent />
       </head>
       <body>
+        <AppHeader />
         {children}
+        <Toaster />
         <TanStackDevtools
           config={{
             position: 'bottom-right',
