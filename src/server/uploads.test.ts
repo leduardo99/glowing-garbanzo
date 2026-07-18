@@ -7,7 +7,12 @@ import { eq } from 'drizzle-orm'
 import { itinerary } from '#/db/schema'
 import { closeTestDb, createTestUser, resetTestDb, setupTestDb, testDb } from '#/test/db'
 import { createItineraryImpl } from './itineraries'
-import { resolveUploadPath, selectStorage, uploadCoverImpl } from './uploads'
+import {
+  ERR_BLOB_STORAGE_NOT_CONFIGURED,
+  resolveUploadPath,
+  selectStorage,
+  uploadCoverImpl,
+} from './uploads'
 
 // `vercelBlobStorage` (invoked by `selectStorage` when a token is present)
 // dynamically imports `@vercel/blob`; mocking the module here intercepts
@@ -108,7 +113,7 @@ describe('uploads server functions', () => {
         destination: 'Lisbon',
       })
 
-      const oversized = new Uint8Array(5 * 1024 * 1024 + 1)
+      const oversized = new Uint8Array(4 * 1024 * 1024 + 1)
       oversized.set(PNG_BYTES) // valid PNG signature, only size should trip the check
 
       await expect(
@@ -291,10 +296,10 @@ describe('selectStorage', () => {
     putMock.mockReset()
   })
 
-  it('writes to disk when no blobReadWriteToken is given', async () => {
+  it('writes to disk when no blobReadWriteToken is given and not on Vercel', async () => {
     const uploadsDir = await mkdtemp(path.join(tmpdir(), 'select-storage-test-'))
     try {
-      const storage = selectStorage({ uploadsDir, blobReadWriteToken: undefined })
+      const storage = selectStorage({ uploadsDir, blobReadWriteToken: undefined, isVercel: false })
       const url = await storage.put({ filename: 'cover.png', bytes: PNG_BYTES, contentType: 'image/png' })
 
       expect(url).toBe('/api/uploads/cover.png')
@@ -315,6 +320,7 @@ describe('selectStorage', () => {
     const storage = selectStorage({
       uploadsDir: '/nonexistent/uploads-dir',
       blobReadWriteToken: 'test-token',
+      isVercel: true,
     })
     const url = await storage.put({ filename: 'cover.png', bytes: PNG_BYTES, contentType: 'image/png' })
 
@@ -325,5 +331,12 @@ describe('selectStorage', () => {
       expect.anything(),
       expect.objectContaining({ access: 'public', addRandomSuffix: false, contentType: 'image/png' }),
     )
+  })
+
+  it('throws ERR_BLOB_STORAGE_NOT_CONFIGURED on Vercel with no blobReadWriteToken, instead of falling back to disk', () => {
+    expect(() =>
+      selectStorage({ uploadsDir: '/nonexistent/uploads-dir', blobReadWriteToken: undefined, isVercel: true }),
+    ).toThrow(ERR_BLOB_STORAGE_NOT_CONFIGURED)
+    expect(putMock).not.toHaveBeenCalled()
   })
 })

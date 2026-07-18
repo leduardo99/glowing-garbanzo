@@ -25,7 +25,9 @@
  *     `vercelBlobStorage`, selected automatically when `BLOB_READ_WRITE_TOKEN`
  *     is set (see DEPLOY.md), uploads to Vercel Blob and returns its own
  *     absolute URL instead — the client only ever sees `coverImageUrl` as an
- *     opaque URL, so this doesn't require any UI change.
+ *     opaque URL, so this doesn't require any UI change. On Vercel with no
+ *     token, `selectStorage` throws `ERR_BLOB_STORAGE_NOT_CONFIGURED` rather
+ *     than falling back to `diskStorage`, which would EROFS-crash there.
  */
 import { mkdir, writeFile } from 'node:fs/promises'
 import path from 'node:path'
@@ -47,8 +49,25 @@ type Database = NodePgDatabase<typeof schema>
 
 export const ERR_FILE_TOO_LARGE = 'FILE_TOO_LARGE'
 export const ERR_INVALID_FILE_TYPE = 'INVALID_FILE_TYPE'
+/**
+ * Thrown by `selectStorage` when running on Vercel (`isVercel: true`) with
+ * no `blobReadWriteToken`. Vercel's serverless functions have a read-only
+ * filesystem outside `/tmp`, so silently falling back to `diskStorage`
+ * there would EROFS-crash on the first write instead of failing with a
+ * clear, actionable error.
+ */
+export const ERR_BLOB_STORAGE_NOT_CONFIGURED = 'BLOB_STORAGE_NOT_CONFIGURED'
 
-const MAX_BYTES = 5 * 1024 * 1024 // 5 MB
+/**
+ * Vercel's request-body limit for serverless functions is ~4.5 MB and
+ * rejects with a platform-level 413 *before* app code runs. Staying under
+ * that (with headroom for multipart overhead) means our own validation is
+ * the one that actually fires, with a clear error, instead of the request
+ * never reaching this code at all. Exported so the client (the cover
+ * upload UI) can pre-check a file client-side and skip a doomed request —
+ * see `maybeDownscaleCoverImage` / `MetadataForm`.
+ */
+export const MAX_COVER_BYTES = 4 * 1024 * 1024 // 4 MB
 
 type SniffedType = 'jpeg' | 'png' | 'webp'
 
@@ -182,18 +201,30 @@ export function vercelBlobStorage(): Storage {
 
 /**
  * Picks the storage implementation for a single upload: Vercel Blob when a
- * `blobReadWriteToken` is available, disk otherwise. Kept as a pure
- * function (no direct `env` access) so it's unit-testable without touching
- * `process.env` or the network — see `uploads.test.ts`.
+ * `blobReadWriteToken` is available, disk otherwise — except on Vercel
+ * (`isVercel: true`) with no token, where disk storage would EROFS-crash on
+ * the platform's read-only filesystem, so this throws
+ * `ERR_BLOB_STORAGE_NOT_CONFIGURED` instead of silently picking a storage
+ * that can't work. Kept as a pure function (no direct `process.env` access
+ * — `isVercel` is a plain flag the caller supplies) so it's unit-testable
+ * without touching `process.env` or the network — see `uploads.test.ts`.
  */
 export function selectStorage({
   uploadsDir,
   blobReadWriteToken,
+  isVercel,
 }: {
   uploadsDir: string
   blobReadWriteToken: string | undefined
+  isVercel: boolean
 }): Storage {
-  return blobReadWriteToken ? vercelBlobStorage() : diskStorage(uploadsDir)
+  if (blobReadWriteToken) {
+    return vercelBlobStorage()
+  }
+  if (isVercel) {
+    throw new Error(ERR_BLOB_STORAGE_NOT_CONFIGURED)
+  }
+  return diskStorage(uploadsDir)
 }
 
 export interface UploadCoverInput {
@@ -204,6 +235,12 @@ export interface UploadCoverInput {
   uploadsDir: string
   /** Selects `vercelBlobStorage` over `diskStorage` when present (see `selectStorage`). */
   blobReadWriteToken?: string
+  /**
+   * Whether this process is running on Vercel (`process.env.VERCEL`, read
+   * by the `uploadCover` wrapper — see `selectStorage`). Defaults to
+   * `false` so existing (local/self-hosted) callers are unaffected.
+   */
+  isVercel?: boolean
 }
 
 export interface UploadCoverResult {
@@ -224,7 +261,7 @@ export async function uploadCoverImpl(
 ): Promise<UploadCoverResult> {
   await requireItineraryAuthor(db, session, input.itineraryId)
 
-  if (input.bytes.byteLength > MAX_BYTES) {
+  if (input.bytes.byteLength > MAX_COVER_BYTES) {
     throw new Error(ERR_FILE_TOO_LARGE)
   }
 
@@ -238,7 +275,11 @@ export async function uploadCoverImpl(
 
   const extension = EXTENSION_BY_TYPE[sniffed]
   const filename = `${nanoid()}.${extension}`
-  const storage = selectStorage({ uploadsDir: input.uploadsDir, blobReadWriteToken: input.blobReadWriteToken })
+  const storage = selectStorage({
+    uploadsDir: input.uploadsDir,
+    blobReadWriteToken: input.blobReadWriteToken,
+    isVercel: input.isVercel ?? false,
+  })
   const url = await storage.put({ filename, bytes: input.bytes, contentType: contentTypeForExtension(extension) })
 
   await db.update(itinerary).set({ coverImageUrl: url }).where(eq(itinerary.id, input.itineraryId))
@@ -273,5 +314,9 @@ export const uploadCover = createServerFn({ method: 'POST' })
       declaredMime: data.file.type,
       uploadsDir: env.UPLOADS_DIR,
       blobReadWriteToken: env.BLOB_READ_WRITE_TOKEN,
+      // `VERCEL` is a platform-provided runtime flag, not app config, so
+      // it's read directly here rather than added to `env.ts` — see
+      // `selectStorage`'s doc comment.
+      isVercel: Boolean(process.env.VERCEL),
     })
   })
