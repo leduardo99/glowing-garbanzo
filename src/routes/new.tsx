@@ -50,11 +50,13 @@ function NewItineraryPage() {
   })
 
   return (
-    <div className="mx-auto flex max-w-sm flex-col gap-6 p-8">
+    <div className="mx-auto flex min-h-[calc(100vh-10rem)] max-w-sm flex-col justify-center gap-6 p-4 sm:p-8">
       <Card>
         <CardHeader>
-          <CardTitle>{m.new_title()}</CardTitle>
-          <CardDescription>{m.new_description()}</CardDescription>
+          <CardTitle className="text-headline">{m.new_title()}</CardTitle>
+          <CardDescription className="text-body">
+            {m.new_description()}
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <form

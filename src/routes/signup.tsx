@@ -21,10 +21,12 @@ function SignupPage() {
   const { redirect } = Route.useSearch()
 
   return (
-    <div className="mx-auto flex max-w-sm flex-col gap-6 p-8">
+    <div className="mx-auto flex min-h-[calc(100vh-10rem)] max-w-sm flex-col justify-center gap-6 p-4 sm:p-8">
       <Card>
         <CardHeader>
-          <CardTitle>{m.auth_signup_title()}</CardTitle>
+          <CardTitle className="text-headline">
+            {m.auth_signup_title()}
+          </CardTitle>
         </CardHeader>
         <CardContent>
           <SignupForm
@@ -37,7 +39,7 @@ function SignupPage() {
           <Link
             to="/login"
             search={{ redirect }}
-            className="text-sm text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
+            className="text-label text-ink-soft underline-offset-4 hover:text-ink hover:underline"
           >
             {m.auth_switch_to_login()}
           </Link>

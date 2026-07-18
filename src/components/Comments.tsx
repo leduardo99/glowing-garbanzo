@@ -5,8 +5,10 @@ import { Trash2Icon } from 'lucide-react'
 import { toast } from 'sonner'
 
 import { ConfirmDialog } from '#/components/editor/ConfirmDialog'
+import { useItineraryView } from '#/components/itinerary/ItineraryViewContext'
 import { Avatar, AvatarFallback, AvatarImage } from '#/components/ui/avatar'
 import { Button } from '#/components/ui/button'
+import { Skeleton } from '#/components/ui/skeleton'
 import { Textarea } from '#/components/ui/textarea'
 import { useMutationErrorHandler } from '#/lib/mutation-errors'
 import { commentsQueryOptions } from '#/lib/queries'
@@ -16,7 +18,12 @@ import { getLocale } from '#/paraglide/runtime'
 import { addComment, deleteComment } from '#/server/engagement'
 
 /**
- * Comment list + add form for the view page.
+ * Comment list + add form for the itinerary view page. `itineraryId` /
+ * `redirectTarget` / `inviteToken` / the current viewer's id all come
+ * from `ItineraryViewProvider` (`useItineraryView`) rather than as props
+ * — this is the page's own comment thread, not a reusable widget, so
+ * there's nothing to gain from a wider prop surface, only more wiring to
+ * keep in sync at the call site.
  *
  * Pagination: an infinite query (`commentsQueryOptions`) rather than a
  * single page — "load more" appends the next page's items to what's
@@ -31,17 +38,10 @@ import { addComment, deleteComment } from '#/server/engagement'
  * access, including the invite-token bypass for a private itinerary's
  * anonymous invite-link viewer), only posting does.
  */
-export function Comments({
-  itineraryId,
-  currentUserId,
-  redirectTarget,
-  inviteToken,
-}: {
-  itineraryId: string
-  currentUserId: string | null
-  redirectTarget: string
-  inviteToken?: string
-}) {
+export function Comments() {
+  const { itineraryId, redirectTarget, inviteToken, session } =
+    useItineraryView()
+  const currentUserId = session?.id ?? null
   const queryClient = useQueryClient()
   const handleMutationError = useMutationErrorHandler(redirectTarget)
   const queryKey = commentsQueryOptions({ itineraryId, inviteToken }).queryKey
@@ -72,7 +72,9 @@ export function Comments({
 
   return (
     <section className="flex flex-col gap-4">
-      <h2 className="text-xl font-semibold">{m.comments_title()}</h2>
+      <h2 className="text-headline font-semibold text-ink">
+        {m.comments_title()}
+      </h2>
 
       {currentUserId ? (
         <form
@@ -107,8 +109,10 @@ export function Comments({
         </Button>
       )}
 
-      {comments.length === 0 && !commentsQuery.isLoading ? (
-        <p className="text-sm text-muted-foreground">{m.comments_empty()}</p>
+      {commentsQuery.isLoading ? (
+        <CommentsSkeleton />
+      ) : comments.length === 0 ? (
+        <p className="text-body text-ink-soft">{m.comments_empty()}</p>
       ) : (
         <ul className="flex flex-col gap-4">
           {comments.map((comment) => (
@@ -121,12 +125,16 @@ export function Comments({
               </Avatar>
               <div className="flex min-w-0 flex-1 flex-col gap-0.5">
                 <div className="flex items-center gap-2">
-                  <span className="font-medium">{comment.author.name}</span>
-                  <span className="text-xs text-muted-foreground">
+                  <span className="text-label font-medium text-ink">
+                    {comment.author.name}
+                  </span>
+                  <span className="text-caption tabular-nums text-ink-soft">
                     {formatRelativeTime(comment.createdAt, locale)}
                   </span>
                 </div>
-                <p className="text-sm whitespace-pre-wrap">{comment.body}</p>
+                <p className="measure-prose text-body whitespace-pre-wrap text-ink">
+                  {comment.body}
+                </p>
               </div>
               {currentUserId === comment.author.id ? (
                 <ConfirmDialog
@@ -163,5 +171,22 @@ export function Comments({
         </Button>
       ) : null}
     </section>
+  )
+}
+
+/** Branded loading state for the initial comments fetch (no SSR-preloaded page yet). */
+function CommentsSkeleton() {
+  return (
+    <div role="status" aria-label={m.app_loading()} className="flex flex-col gap-4">
+      {[0, 1].map((index) => (
+        <div key={index} className="flex items-start gap-3">
+          <Skeleton className="size-6 shrink-0 rounded-full" />
+          <div className="flex min-w-0 flex-1 flex-col gap-1.5">
+            <Skeleton className="h-3.5 w-32" />
+            <Skeleton className="h-3.5 w-full max-w-md" />
+          </div>
+        </div>
+      ))}
+    </div>
   )
 }

@@ -209,6 +209,29 @@
   --shadow-resting: var(--shadow-resting-value);
   --shadow-lifted: var(--shadow-lifted-value);
   --shadow-elevated: var(--shadow-elevated-value);
+
+  /* DESIGN.md §3 Hierarchy — the fixed (non-fluid) type scale as
+     `text-display` / `text-headline` / `text-title` / `text-body` /
+     `text-label` / `text-caption` utilities, each paired with its own
+     line-height via Tailwind v4's `--text-*--line-height` convention.
+     `text-display` sets size/line-height only — pair it with the
+     `.font-display` class below for the Fraunces family, weight, and
+     letter-spacing (content titles only, per the Editorial Title Rule).
+     Every other step stays in Karla (`font-sans`, already the body
+     default) at its listed weight, applied via Tailwind's `font-*`
+     utilities at the call site. */
+  --text-display: 2rem;
+  --text-display--line-height: 1.1;
+  --text-headline: 1.375rem;
+  --text-headline--line-height: 1.25;
+  --text-title: 1.0625rem;
+  --text-title--line-height: 1.3;
+  --text-body: 0.9375rem;
+  --text-body--line-height: 1.55;
+  --text-label: 0.8125rem;
+  --text-label--line-height: 1.4;
+  --text-caption: 0.75rem;
+  --text-caption--line-height: 1.4;
 }
 
 html,

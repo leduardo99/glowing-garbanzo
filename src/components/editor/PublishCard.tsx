@@ -82,8 +82,8 @@ export function PublishCard({
   return (
     <Card>
       <CardHeader>
-        <CardTitle>{m.publish_title()}</CardTitle>
-        <CardDescription>
+        <CardTitle className="text-headline">{m.publish_title()}</CardTitle>
+        <CardDescription className="text-body">
           {status === 'published'
             ? m.publish_status_description_published()
             : m.publish_status_description_draft()}

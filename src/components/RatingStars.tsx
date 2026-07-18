@@ -107,13 +107,13 @@ export function RatingStars({
               aria-label={m.rate_star_label({ count: value })}
               disabled={mutation.isPending}
               onClick={() => mutation.mutate(value)}
-              className="cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
+              className="flex min-h-11 min-w-6 cursor-pointer items-center justify-center disabled:cursor-not-allowed disabled:opacity-50"
             >
               <StarIcon
                 className={
                   activeStars >= value
-                    ? 'fill-current text-amber-500'
-                    : 'text-muted-foreground'
+                    ? 'size-5 fill-current text-rating-gold'
+                    : 'size-5 text-ink-soft'
                 }
               />
             </button>
@@ -123,14 +123,14 @@ export function RatingStars({
               aria-hidden="true"
               className={
                 activeStars >= value
-                  ? 'fill-current text-amber-500'
-                  : 'text-muted-foreground'
+                  ? 'size-5 fill-current text-rating-gold'
+                  : 'size-5 text-ink-soft'
               }
             />
           ),
         )}
       </div>
-      <span className="text-sm text-muted-foreground">
+      <span className="text-label tabular-nums text-ink-soft">
         {ratingAvg !== null
           ? `${ratingAvg.toFixed(1)} · ${m.view_rating_count({ count: ratingCount })}`
           : m.view_no_ratings()}

@@ -17,13 +17,14 @@ const MAX_VISIBLE_TAGS = 3
 /**
  * Discovery grid card. Purely presentational (no routing) so it renders
  * without a router context in tests — the home route wraps it in a `Link`
- * to `/itineraries/$slug`.
+ * to `/itineraries/$slug`. Shadow-only elevation (DESIGN.md's Quiet Lift
+ * Rule): Resting at rest, Lifted on hover, never a border.
  */
 export function ItineraryCard({ item }: { item: ItineraryCardData }) {
   const visibleTags = item.tags.slice(0, MAX_VISIBLE_TAGS)
 
   return (
-    <Card className="h-full gap-3 overflow-hidden py-0 transition-shadow hover:shadow-md">
+    <Card className="h-full gap-3 overflow-hidden py-0 transition-shadow hover:shadow-lifted">
       {item.coverImageUrl ? (
         <img
           src={item.coverImageUrl}
@@ -35,9 +36,11 @@ export function ItineraryCard({ item }: { item: ItineraryCardData }) {
       )}
 
       <CardHeader className="pt-4">
-        <CardTitle className="truncate">{item.title}</CardTitle>
+        <CardTitle className="truncate font-display text-title text-ink">
+          {item.title}
+        </CardTitle>
         {item.destination ? (
-          <CardDescription className="truncate">
+          <CardDescription className="truncate text-label text-ink-soft">
             {item.destination}
           </CardDescription>
         ) : null}
@@ -46,22 +49,22 @@ export function ItineraryCard({ item }: { item: ItineraryCardData }) {
       {visibleTags.length > 0 ? (
         <CardContent className="flex flex-wrap gap-1.5">
           {visibleTags.map((tag) => (
-            <Badge key={tag} variant="secondary">
+            <Badge key={tag} variant="tag">
               {tag}
             </Badge>
           ))}
         </CardContent>
       ) : null}
 
-      <CardFooter className="mt-auto flex items-center justify-between pb-4 text-sm text-muted-foreground">
+      <CardFooter className="mt-auto flex items-center justify-between pb-4 text-caption tabular-nums text-ink-soft">
         <span className="flex items-center gap-1">
-          <CalendarDaysIcon data-icon="inline-start" />
+          <CalendarDaysIcon data-icon="inline-start" className="size-3.5" />
           {m.view_days_count({ count: item.dayCount })}
         </span>
         <span className="flex items-center gap-1">
           <StarIcon
             data-icon="inline-start"
-            className="fill-current text-amber-500"
+            className="size-3.5 fill-current text-rating-gold"
           />
           <span>{item.ratingAvg !== null ? item.ratingAvg.toFixed(1) : '—'}</span>
           <span>({item.ratingCount})</span>

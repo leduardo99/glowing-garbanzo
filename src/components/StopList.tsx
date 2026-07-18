@@ -40,19 +40,21 @@ export function StopList({ stops }: { stops: StopView[] }) {
         return (
           <li key={stop.id} className="flex gap-3">
             <span
-              className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-full bg-muted text-foreground"
+              className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-full bg-muted text-ink"
               title={CATEGORY_LABEL[stop.category]()}
             >
               <Icon className="size-4" />
             </span>
             <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-              <span className="font-medium">{stop.name}</span>
+              <span className="text-title font-medium text-ink">
+                {stop.name}
+              </span>
               {stop.description ? (
-                <span className="text-sm text-muted-foreground">
+                <span className="measure-prose text-body text-ink-soft">
                   {stop.description}
                 </span>
               ) : null}
-              <div className="flex flex-wrap gap-x-3 gap-y-0.5 text-sm text-muted-foreground">
+              <div className="flex flex-wrap gap-x-3 gap-y-0.5 text-caption tabular-nums text-ink-soft">
                 {stop.placeLabel ? <span>{stop.placeLabel}</span> : null}
                 {stop.costCents !== null ? (
                   <span>

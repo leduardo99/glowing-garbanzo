@@ -100,7 +100,9 @@ export function MetadataForm({ itinerary }: { itinerary: EditorItinerary }) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>{m.editor_metadata_title()}</CardTitle>
+        <CardTitle className="text-headline">
+          {m.editor_metadata_title()}
+        </CardTitle>
       </CardHeader>
       <CardContent>
         <form

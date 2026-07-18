@@ -7,7 +7,13 @@ function Card({ className, ...props }: React.ComponentProps<'div'>) {
     <div
       data-slot="card"
       className={cn(
-        'flex flex-col gap-6 rounded-xl border bg-card py-6 text-card-foreground shadow-sm',
+        // DESIGN.md's Quiet Lift Rule: shadow lifts the card, never a
+        // border alongside it (the "ghost card" combination this
+        // explicitly avoids). Resting shadow at rest; call sites that
+        // want the hover-lift add `hover:shadow-lifted` themselves
+        // (not every card is interactive — e.g. form cards in the
+        // editor stay at rest).
+        'flex flex-col gap-6 rounded-lg bg-card py-6 text-card-foreground shadow-resting',
         className,
       )}
       {...props}
