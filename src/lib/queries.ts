@@ -92,12 +92,23 @@ export function membersQueryOptions({ id }: ListMembersInput) {
  * compares how many items have loaded so far against the server's `total`
  * and returns the next 1-indexed page number, or `undefined` once every
  * comment is loaded (which tells the query there's no next page).
+ *
+ * `inviteToken` is part of the key for the same reason as
+ * `itineraryQueryOptions` — it changes what the query is allowed to see
+ * (the anonymous invite-link viewer of a private itinerary), so it can't be
+ * a fire-and-forget side input.
  */
-export function commentsQueryOptions({ itineraryId }: { itineraryId: string }) {
+export function commentsQueryOptions({
+  itineraryId,
+  inviteToken,
+}: {
+  itineraryId: string
+  inviteToken?: string
+}) {
   return infiniteQueryOptions({
-    queryKey: ['itineraries', 'comments', itineraryId] as const,
+    queryKey: ['itineraries', 'comments', itineraryId, inviteToken ?? null] as const,
     queryFn: ({ pageParam }) =>
-      listComments({ data: { itineraryId, page: pageParam } }),
+      listComments({ data: { itineraryId, page: pageParam, inviteToken } }),
     initialPageParam: 1,
     getNextPageParam: (lastPage, allPages) => {
       const loaded = allPages.reduce((sum, page) => sum + page.items.length, 0)

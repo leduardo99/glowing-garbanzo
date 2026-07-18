@@ -358,6 +358,83 @@ describe('engagement server functions', () => {
       ).rejects.toThrow('NOT_FOUND')
     })
 
+    it('listCommentsImpl grants an anonymous caller access to a private published itinerary via a matching invite token', async () => {
+      const author = await createTestUser()
+      const created = await createItineraryImpl(testDb, { user: { id: author.id } }, {
+        title: 'Private trip',
+        destination: 'Somewhere',
+      })
+      await updateItineraryImpl(testDb, { user: { id: author.id } }, {
+        id: created.id,
+        visibility: 'private',
+      })
+      await publishItineraryImpl(testDb, { user: { id: author.id } }, { id: created.id })
+      await testDb
+        .update(itinerary)
+        .set({ inviteToken: 'secret-token' })
+        .where(eq(itinerary.id, created.id))
+
+      const result = await listCommentsImpl(testDb, null, {
+        itineraryId: created.id,
+        page: 1,
+        inviteToken: 'secret-token',
+      })
+      expect(result).toEqual({ items: [], total: 0 })
+    })
+
+    it('listCommentsImpl rejects an absent or wrong invite token on a private published itinerary (not found)', async () => {
+      const author = await createTestUser()
+      const created = await createItineraryImpl(testDb, { user: { id: author.id } }, {
+        title: 'Private trip',
+        destination: 'Somewhere',
+      })
+      await updateItineraryImpl(testDb, { user: { id: author.id } }, {
+        id: created.id,
+        visibility: 'private',
+      })
+      await publishItineraryImpl(testDb, { user: { id: author.id } }, { id: created.id })
+      await testDb
+        .update(itinerary)
+        .set({ inviteToken: 'secret-token' })
+        .where(eq(itinerary.id, created.id))
+
+      await expect(
+        listCommentsImpl(testDb, null, { itineraryId: created.id, page: 1 }),
+      ).rejects.toThrow('NOT_FOUND')
+
+      await expect(
+        listCommentsImpl(testDb, null, {
+          itineraryId: created.id,
+          page: 1,
+          inviteToken: 'wrong-token',
+        }),
+      ).rejects.toThrow('NOT_FOUND')
+    })
+
+    it('listCommentsImpl does not grant access to a private draft via a matching invite token', async () => {
+      const author = await createTestUser()
+      const created = await createItineraryImpl(testDb, { user: { id: author.id } }, {
+        title: 'Private draft trip',
+        destination: 'Somewhere',
+      })
+      await updateItineraryImpl(testDb, { user: { id: author.id } }, {
+        id: created.id,
+        visibility: 'private',
+      })
+      await testDb
+        .update(itinerary)
+        .set({ inviteToken: 'secret-token' })
+        .where(eq(itinerary.id, created.id))
+
+      await expect(
+        listCommentsImpl(testDb, null, {
+          itineraryId: created.id,
+          page: 1,
+          inviteToken: 'secret-token',
+        }),
+      ).rejects.toThrow('NOT_FOUND')
+    })
+
     it('deleteCommentImpl lets the author delete their own comment', async () => {
       const author = await createTestUser()
       const commenter = await createTestUser()

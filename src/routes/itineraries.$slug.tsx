@@ -93,12 +93,23 @@ export const Route = createFileRoute('/itineraries/$slug')({
     }
 
     // Preload the first page of comments too — same read access as the
-    // itinerary itself (already confirmed above), so this can't fail for a
-    // reason the itinerary fetch wouldn't have already caught. SSR-renders
-    // the first comments page instead of a client-only fetch-after-hydrate.
-    await context.queryClient.ensureInfiniteQueryData(
-      commentsQueryOptions({ itineraryId: detail.id }),
-    )
+    // itinerary itself (already confirmed above). SSR-renders the first
+    // comments page instead of a client-only fetch-after-hydrate.
+    //
+    // Best-effort: this is an optimization, not a requirement, so it's
+    // wrapped in its own try/catch instead of the loader's — `listComments`
+    // has its own access check (mirroring, but independent of, the one
+    // above), and any drift between the two or other transient failure here
+    // must not crash the whole page. If it fails, `Comments`' own
+    // `useInfiniteQuery` — given the same `inviteToken` — just fetches
+    // client-side after hydration instead.
+    try {
+      await context.queryClient.ensureInfiniteQueryData(
+        commentsQueryOptions({ itineraryId: detail.id, inviteToken: deps.invite }),
+      )
+    } catch {
+      // Swallowed intentionally — see comment above.
+    }
   },
   notFoundComponent: ItineraryNotFound,
   component: ItineraryView,
@@ -292,6 +303,7 @@ function ItineraryView() {
         itineraryId={data.id}
         currentUserId={session?.id ?? null}
         redirectTarget={redirectTarget}
+        inviteToken={inviteToken}
       />
     </div>
   )

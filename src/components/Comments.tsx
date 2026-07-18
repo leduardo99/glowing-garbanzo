@@ -28,23 +28,26 @@ import { addComment, deleteComment } from '#/server/engagement'
  *
  * Logged-out visitors see the list read-only plus a login CTA in place of
  * the add form — listing itself needs no session (mirrors itinerary view
- * access), only posting does.
+ * access, including the invite-token bypass for a private itinerary's
+ * anonymous invite-link viewer), only posting does.
  */
 export function Comments({
   itineraryId,
   currentUserId,
   redirectTarget,
+  inviteToken,
 }: {
   itineraryId: string
   currentUserId: string | null
   redirectTarget: string
+  inviteToken?: string
 }) {
   const queryClient = useQueryClient()
   const handleMutationError = useMutationErrorHandler(redirectTarget)
-  const queryKey = commentsQueryOptions({ itineraryId }).queryKey
+  const queryKey = commentsQueryOptions({ itineraryId, inviteToken }).queryKey
   const locale = getLocale()
 
-  const commentsQuery = useInfiniteQuery(commentsQueryOptions({ itineraryId }))
+  const commentsQuery = useInfiniteQuery(commentsQueryOptions({ itineraryId, inviteToken }))
   const comments = commentsQuery.data?.pages.flatMap((page) => page.items) ?? []
 
   const [body, setBody] = useState('')
