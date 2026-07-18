@@ -1,7 +1,7 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import { eq } from 'drizzle-orm'
 
-import { itinerary, itineraryDay, itineraryMember, rating, stop } from '#/db/schema'
+import { favorite, itinerary, itineraryDay, itineraryMember, rating, stop } from '#/db/schema'
 import {
   closeTestDb,
   createTestUser,
@@ -14,6 +14,9 @@ import {
   deleteItineraryImpl,
   forkItineraryImpl,
   getItineraryBySlugImpl,
+  getMyItineraryImpl,
+  listMyFavoritesImpl,
+  listMyItinerariesImpl,
   publishItineraryImpl,
   searchItinerariesImpl,
   unpublishItineraryImpl,
@@ -1095,6 +1098,250 @@ describe('itineraries server functions', () => {
         second.slug,
         first.slug,
       ])
+    })
+  })
+
+  describe('listMyItinerariesImpl', () => {
+    it('rejects an anonymous caller', async () => {
+      await expect(
+        listMyItinerariesImpl(testDb, null, { page: 1 }),
+      ).rejects.toThrow('UNAUTHORIZED')
+    })
+
+    it('lists only the caller\'s own itineraries, drafts and published alike', async () => {
+      const author = await createTestUser()
+      const other = await createTestUser()
+      const draft = await createItineraryImpl(
+        testDb,
+        { user: { id: author.id } },
+        { title: 'My draft', destination: 'x' },
+      )
+      const published = await createItineraryImpl(
+        testDb,
+        { user: { id: author.id } },
+        { title: 'My published', destination: 'y' },
+      )
+      await publishItineraryImpl(
+        testDb,
+        { user: { id: author.id } },
+        { id: published.id },
+      )
+      await createItineraryImpl(
+        testDb,
+        { user: { id: other.id } },
+        { title: 'Someone else\'s', destination: 'z' },
+      )
+
+      const results = await listMyItinerariesImpl(
+        testDb,
+        { user: { id: author.id } },
+        { page: 1 },
+      )
+
+      expect(results.total).toBe(2)
+      const slugs = results.items.map((i) => i.slug)
+      expect(slugs).toContain(draft.slug)
+      expect(slugs).toContain(published.slug)
+      const draftItem = results.items.find((i) => i.slug === draft.slug)
+      const publishedItem = results.items.find((i) => i.slug === published.slug)
+      expect(draftItem?.status).toBe('draft')
+      expect(publishedItem?.status).toBe('published')
+    })
+
+    it('paginates and sorts most-recently-created first', async () => {
+      const author = await createTestUser()
+      const first = await createItineraryImpl(
+        testDb,
+        { user: { id: author.id } },
+        { title: 'First', destination: 'x' },
+      )
+      await new Promise((r) => setTimeout(r, 5))
+      const second = await createItineraryImpl(
+        testDb,
+        { user: { id: author.id } },
+        { title: 'Second', destination: 'x' },
+      )
+      void first
+
+      const results = await listMyItinerariesImpl(
+        testDb,
+        { user: { id: author.id } },
+        { page: 1 },
+      )
+      expect(results.items[0]?.slug).toBe(second.slug)
+    })
+  })
+
+  describe('listMyFavoritesImpl', () => {
+    it('rejects an anonymous caller', async () => {
+      await expect(
+        listMyFavoritesImpl(testDb, null, { page: 1 }),
+      ).rejects.toThrow('UNAUTHORIZED')
+    })
+
+    it('lists itineraries the caller favorited, readable ones only', async () => {
+      const author = await createTestUser()
+      const fan = await createTestUser()
+      const publicTrip = await createItineraryImpl(
+        testDb,
+        { user: { id: author.id } },
+        { title: 'Public trip', destination: 'x' },
+      )
+      await publishItineraryImpl(
+        testDb,
+        { user: { id: author.id } },
+        { id: publicTrip.id },
+      )
+      await testDb
+        .insert(favorite)
+        .values({ userId: fan.id, itineraryId: publicTrip.id })
+
+      // A private itinerary the fan is no longer a member of: favorited in
+      // the past, but must not leak through the favorites listing now.
+      const privateTrip = await createItineraryImpl(
+        testDb,
+        { user: { id: author.id } },
+        { title: 'Private trip', destination: 'y' },
+      )
+      await updateItineraryImpl(
+        testDb,
+        { user: { id: author.id } },
+        { id: privateTrip.id, visibility: 'private' },
+      )
+      await publishItineraryImpl(
+        testDb,
+        { user: { id: author.id } },
+        { id: privateTrip.id },
+      )
+      await testDb
+        .insert(favorite)
+        .values({ userId: fan.id, itineraryId: privateTrip.id })
+
+      const results = await listMyFavoritesImpl(
+        testDb,
+        { user: { id: fan.id } },
+        { page: 1 },
+      )
+      expect(results.total).toBe(1)
+      expect(results.items[0]?.slug).toBe(publicTrip.slug)
+    })
+
+    it('includes a private itinerary the caller is still a member of', async () => {
+      const author = await createTestUser()
+      const member = await createTestUser()
+      const privateTrip = await createItineraryImpl(
+        testDb,
+        { user: { id: author.id } },
+        { title: 'Members only', destination: 'x' },
+      )
+      await updateItineraryImpl(
+        testDb,
+        { user: { id: author.id } },
+        { id: privateTrip.id, visibility: 'private' },
+      )
+      await publishItineraryImpl(
+        testDb,
+        { user: { id: author.id } },
+        { id: privateTrip.id },
+      )
+      await testDb
+        .insert(itineraryMember)
+        .values({ itineraryId: privateTrip.id, userId: member.id })
+      await testDb
+        .insert(favorite)
+        .values({ userId: member.id, itineraryId: privateTrip.id })
+
+      const results = await listMyFavoritesImpl(
+        testDb,
+        { user: { id: member.id } },
+        { page: 1 },
+      )
+      expect(results.total).toBe(1)
+      expect(results.items[0]?.slug).toBe(privateTrip.slug)
+    })
+  })
+
+  describe('getMyItineraryImpl', () => {
+    it('rejects an anonymous caller', async () => {
+      const author = await createTestUser()
+      const created = await createItineraryImpl(
+        testDb,
+        { user: { id: author.id } },
+        { title: 'x', destination: 'y' },
+      )
+      await expect(
+        getMyItineraryImpl(testDb, null, { id: created.id }),
+      ).rejects.toThrow('UNAUTHORIZED')
+    })
+
+    it('rejects a non-author with FORBIDDEN', async () => {
+      const author = await createTestUser()
+      const other = await createTestUser()
+      const created = await createItineraryImpl(
+        testDb,
+        { user: { id: author.id } },
+        { title: 'x', destination: 'y' },
+      )
+      await expect(
+        getMyItineraryImpl(
+          testDb,
+          { user: { id: other.id } },
+          { id: created.id },
+        ),
+      ).rejects.toThrow('FORBIDDEN')
+    })
+
+    it('throws NOT_FOUND for an unknown id', async () => {
+      const author = await createTestUser()
+      await expect(
+        getMyItineraryImpl(
+          testDb,
+          { user: { id: author.id } },
+          { id: 'does-not-exist' },
+        ),
+      ).rejects.toThrow('NOT_FOUND')
+    })
+
+    it('returns full editor data including days/stops, inviteToken, and visibility', async () => {
+      const author = await createTestUser()
+      const created = await createItineraryImpl(
+        testDb,
+        { user: { id: author.id } },
+        { title: 'Chapada Diamantina', destination: 'Bahia' },
+      )
+      await updateItineraryImpl(
+        testDb,
+        { user: { id: author.id } },
+        { id: created.id, visibility: 'private', summary: 'Great trip' },
+      )
+      await testDb
+        .update(itinerary)
+        .set({ inviteToken: 'secret-token' })
+        .where(eq(itinerary.id, created.id))
+      const [day] = await testDb.query.itineraryDay.findMany({
+        where: eq(itineraryDay.itineraryId, created.id),
+      })
+      await testDb.insert(stop).values({
+        dayId: day.id,
+        position: 1,
+        name: 'Poço Azul',
+        category: 'attraction',
+      })
+
+      const result = await getMyItineraryImpl(
+        testDb,
+        { user: { id: author.id } },
+        { id: created.id },
+      )
+
+      expect(result.title).toBe('Chapada Diamantina')
+      expect(result.summary).toBe('Great trip')
+      expect(result.status).toBe('draft')
+      expect(result.visibility).toBe('private')
+      expect(result.inviteToken).toBe('secret-token')
+      expect(result.days).toHaveLength(1)
+      expect(result.days[0]?.stops).toHaveLength(1)
+      expect(result.days[0]?.stops[0]?.name).toBe('Poço Azul')
     })
   })
 })

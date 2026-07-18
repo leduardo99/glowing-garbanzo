@@ -36,6 +36,7 @@ import {
   favorite,
   itinerary,
   itineraryDay,
+  itineraryMember,
   rating,
   stop,
   user,
@@ -707,4 +708,250 @@ export const forkItinerary = createServerFn({ method: 'POST' })
   .handler(async ({ data }) => {
     const session = await getSessionOrThrow(getRequest())
     return forkItineraryImpl(appDb, session, data)
+  })
+
+// ---------------------------------------------------------------------------
+// listMyItineraries
+// ---------------------------------------------------------------------------
+
+const listMySchema = z.object({ page: z.number().int().min(1) })
+
+export type ListMyItinerariesInput = z.infer<typeof listMySchema>
+
+export interface MyItineraryCard extends ItineraryCard {
+  status: 'draft' | 'published'
+}
+
+/**
+ * The caller's own itineraries, drafts and published alike (the `/my`
+ * "mine" tab) — unlike `searchItinerariesImpl`, status/visibility never
+ * filter these out since ownership alone grants read access. Newest-created
+ * first.
+ */
+export async function listMyItinerariesImpl(
+  db: Database,
+  session: SessionUser | null,
+  input: ListMyItinerariesInput,
+): Promise<{ items: MyItineraryCard[]; total: number }> {
+  if (!session) {
+    throw new Error(ERR_UNAUTHORIZED)
+  }
+  const userId = session.user.id
+
+  const dayCountExpr = sql<number>`(select count(*)::int from ${itineraryDay} where ${itineraryDay.itineraryId} = ${sql.raw('"itinerary"."id"')})`
+  const whereClause = eq(itinerary.authorId, userId)
+  const offset = (input.page - 1) * PAGE_SIZE
+
+  const [rows, totalRows] = await Promise.all([
+    db
+      .select({
+        id: itinerary.id,
+        slug: itinerary.slug,
+        title: itinerary.title,
+        destination: itinerary.destination,
+        summary: itinerary.summary,
+        tags: itinerary.tags,
+        coverImageUrl: itinerary.coverImageUrl,
+        status: itinerary.status,
+        ratingAvg: itinerary.ratingAvg,
+        ratingCount: itinerary.ratingCount,
+        publishedAt: itinerary.publishedAt,
+        createdAt: itinerary.createdAt,
+        dayCount: dayCountExpr,
+      })
+      .from(itinerary)
+      .where(whereClause)
+      .orderBy(desc(itinerary.createdAt))
+      .limit(PAGE_SIZE)
+      .offset(offset),
+    db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(itinerary)
+      .where(whereClause),
+  ])
+
+  const items: MyItineraryCard[] = rows.map((row) => ({
+    id: row.id,
+    slug: row.slug,
+    title: row.title,
+    destination: row.destination,
+    summary: row.summary,
+    tags: row.tags ?? [],
+    coverImageUrl: row.coverImageUrl,
+    status: row.status,
+    ratingAvg: row.ratingAvg === null ? null : parseFloat(row.ratingAvg),
+    ratingCount: row.ratingCount,
+    dayCount: row.dayCount,
+    publishedAt: row.publishedAt,
+  }))
+
+  return { items, total: totalRows[0]?.count ?? 0 }
+}
+
+export const listMyItineraries = createServerFn({ method: 'GET' })
+  .validator(listMySchema)
+  .handler(async ({ data }) => {
+    const session = await getSessionOrThrow(getRequest())
+    return listMyItinerariesImpl(appDb, session, data)
+  })
+
+// ---------------------------------------------------------------------------
+// listMyFavorites
+// ---------------------------------------------------------------------------
+
+export type ListMyFavoritesInput = z.infer<typeof listMySchema>
+
+/**
+ * Itineraries the caller has favorited, most-recently-favorited first —
+ * excluding any the caller can no longer read (e.g. an itinerary favorited
+ * while a member, then removed, or unpublished by its author since). Mirrors
+ * a published-only subset of `canRead`: published+public, OR the caller's
+ * own published itineraries, OR published+private with an active membership
+ * row. Note this is stricter than `canRead` — a favorited own DRAFT is
+ * excluded by the `status='published'` filter.
+ */
+export async function listMyFavoritesImpl(
+  db: Database,
+  session: SessionUser | null,
+  input: ListMyFavoritesInput,
+): Promise<{ items: ItineraryCard[]; total: number }> {
+  if (!session) {
+    throw new Error(ERR_UNAUTHORIZED)
+  }
+  const userId = session.user.id
+
+  const dayCountExpr = sql<number>`(select count(*)::int from ${itineraryDay} where ${itineraryDay.itineraryId} = ${sql.raw('"itinerary"."id"')})`
+
+  const memberItineraryIds = db
+    .select({ itineraryId: itineraryMember.itineraryId })
+    .from(itineraryMember)
+    .where(eq(itineraryMember.userId, userId))
+
+  const whereClause = and(
+    eq(favorite.userId, userId),
+    eq(itinerary.status, 'published'),
+    or(
+      eq(itinerary.visibility, 'public'),
+      eq(itinerary.authorId, userId),
+      inArray(itinerary.id, memberItineraryIds),
+    ),
+  )!
+
+  const offset = (input.page - 1) * PAGE_SIZE
+
+  const [rows, totalRows] = await Promise.all([
+    db
+      .select({
+        id: itinerary.id,
+        slug: itinerary.slug,
+        title: itinerary.title,
+        destination: itinerary.destination,
+        summary: itinerary.summary,
+        tags: itinerary.tags,
+        coverImageUrl: itinerary.coverImageUrl,
+        ratingAvg: itinerary.ratingAvg,
+        ratingCount: itinerary.ratingCount,
+        publishedAt: itinerary.publishedAt,
+        dayCount: dayCountExpr,
+      })
+      .from(favorite)
+      .innerJoin(itinerary, eq(favorite.itineraryId, itinerary.id))
+      .where(whereClause)
+      .orderBy(desc(favorite.createdAt))
+      .limit(PAGE_SIZE)
+      .offset(offset),
+    db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(favorite)
+      .innerJoin(itinerary, eq(favorite.itineraryId, itinerary.id))
+      .where(whereClause),
+  ])
+
+  const items: ItineraryCard[] = rows.map((row) => ({
+    id: row.id,
+    slug: row.slug,
+    title: row.title,
+    destination: row.destination,
+    summary: row.summary,
+    tags: row.tags ?? [],
+    coverImageUrl: row.coverImageUrl,
+    ratingAvg: row.ratingAvg === null ? null : parseFloat(row.ratingAvg),
+    ratingCount: row.ratingCount,
+    dayCount: row.dayCount,
+    publishedAt: row.publishedAt,
+  }))
+
+  return { items, total: totalRows[0]?.count ?? 0 }
+}
+
+export const listMyFavorites = createServerFn({ method: 'GET' })
+  .validator(listMySchema)
+  .handler(async ({ data }) => {
+    const session = await getSessionOrThrow(getRequest())
+    return listMyFavoritesImpl(appDb, session, data)
+  })
+
+// ---------------------------------------------------------------------------
+// getMyItinerary
+// ---------------------------------------------------------------------------
+
+const getMyItinerarySchema = z.object({ id: z.string().min(1) })
+
+export type GetMyItineraryInput = z.infer<typeof getMyItinerarySchema>
+
+export interface EditorItinerary {
+  id: string
+  slug: string
+  title: string
+  summary: string | null
+  destination: string | null
+  tags: string[]
+  coverImageUrl: string | null
+  status: 'draft' | 'published'
+  visibility: 'public' | 'private'
+  inviteToken: string | null
+  publishedAt: Date | null
+  createdAt: Date
+  days: DayView[]
+}
+
+/**
+ * Full by-id itinerary data for the editor: every field the editor screens
+ * need (including `inviteToken`, which the public `getItineraryBySlugImpl`
+ * never exposes) plus nested days/stops. Author only — unlike
+ * `getItineraryBySlugImpl`, there's no "readable but not editable" case
+ * here, so a non-author (or anonymous caller) collapses to
+ * FORBIDDEN/UNAUTHORIZED via `requireItineraryAuthor`, and the route layer
+ * maps both (alongside NOT_FOUND) to the generic 404 page.
+ */
+export async function getMyItineraryImpl(
+  db: Database,
+  session: SessionUser | null,
+  input: GetMyItineraryInput,
+): Promise<EditorItinerary> {
+  const row = await requireItineraryAuthor(db, session, input.id)
+  const days = await loadDaysWithStops(db, row.id)
+
+  return {
+    id: row.id,
+    slug: row.slug,
+    title: row.title,
+    summary: row.summary,
+    destination: row.destination,
+    tags: row.tags ?? [],
+    coverImageUrl: row.coverImageUrl,
+    status: row.status,
+    visibility: row.visibility,
+    inviteToken: row.inviteToken,
+    publishedAt: row.publishedAt,
+    createdAt: row.createdAt,
+    days,
+  }
+}
+
+export const getMyItinerary = createServerFn({ method: 'GET' })
+  .validator(getMyItinerarySchema)
+  .handler(async ({ data }) => {
+    const session = await getSessionOrThrow(getRequest())
+    return getMyItineraryImpl(appDb, session, data)
   })

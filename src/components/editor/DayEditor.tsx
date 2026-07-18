@@ -1,0 +1,427 @@
+import { useState } from 'react'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
+import {
+  BedDoubleIcon,
+  BusIcon,
+  ChevronDownIcon,
+  ChevronUpIcon,
+  CircleDotIcon,
+  LandmarkIcon,
+  PencilIcon,
+  PlusIcon,
+  Trash2Icon,
+  UtensilsIcon,
+} from 'lucide-react'
+import type { LucideIcon } from 'lucide-react'
+import { toast } from 'sonner'
+
+import { ConfirmDialog } from '#/components/editor/ConfirmDialog'
+import { StopForm } from '#/components/editor/StopForm'
+import type { StopFormValues } from '#/components/editor/StopForm'
+import { Button } from '#/components/ui/button'
+import {
+  Card,
+  CardContent,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from '#/components/ui/card'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '#/components/ui/dialog'
+import { Field, FieldLabel } from '#/components/ui/field'
+import { Input } from '#/components/ui/input'
+import { Textarea } from '#/components/ui/textarea'
+import { formatCentsToCostInput } from '#/lib/cost'
+import { m } from '#/paraglide/messages'
+import {
+  addDay,
+  addStop,
+  removeDay,
+  removeStop,
+  reorderStops,
+  updateDay,
+  updateStop,
+} from '#/server/days-stops'
+import type { DayView, StopView } from '#/server/itineraries'
+
+const CATEGORY_ICON: Record<StopView['category'], LucideIcon> = {
+  attraction: LandmarkIcon,
+  food: UtensilsIcon,
+  lodging: BedDoubleIcon,
+  transport: BusIcon,
+  other: CircleDotIcon,
+}
+
+const CATEGORY_LABEL: Record<StopView['category'], () => string> = {
+  attraction: m.stop_category_attraction,
+  food: m.stop_category_food,
+  lodging: m.stop_category_lodging,
+  transport: m.stop_category_transport,
+  other: m.stop_category_other,
+}
+
+const costFormatter = new Intl.NumberFormat('pt-BR', {
+  style: 'currency',
+  currency: 'BRL',
+})
+
+function stopFormValuesFrom(stop: StopView): StopFormValues {
+  return {
+    name: stop.name,
+    category: stop.category,
+    description: stop.description ?? '',
+    cost: formatCentsToCostInput(stop.costCents),
+    placeLabel: stop.placeLabel ?? '',
+  }
+}
+
+/**
+ * Days + stops editor: add/remove days (with confirm), inline day
+ * title/note editing, per-stop add/edit via `StopForm` in a dialog, and
+ * up/down reordering (no drag-and-drop in the MVP — see the design doc's
+ * Out of scope section). Every mutation invalidates broadly (see
+ * `invalidate` below) so the day/stop list — and anywhere else `dayCount`
+ * surfaces — reflects the latest server state after a round trip.
+ */
+export function DayEditor({
+  itineraryId,
+  days,
+}: {
+  itineraryId: string
+  days: DayView[]
+}) {
+  const queryClient = useQueryClient()
+
+  // Broad invalidation (any cached query keyed under `'itineraries'`), not
+  // just this itinerary's editor entry — adding/removing a day changes
+  // `dayCount`, which the `/my` lists and (once published) discovery search
+  // cards also display. See `PublishCard`'s doc comment for the same
+  // reasoning.
+  function invalidate() {
+    return queryClient.invalidateQueries({
+      predicate: (query) => query.queryKey[0] === 'itineraries',
+    })
+  }
+
+  const addDayMutation = useMutation({
+    mutationFn: () => addDay({ data: { itineraryId } }),
+    onSuccess: () => void invalidate(),
+    onError: () => toast.error(m.editor_day_add_error()),
+  })
+
+  const removeDayMutation = useMutation({
+    mutationFn: (dayId: string) => removeDay({ data: { id: dayId } }),
+    onSuccess: () => void invalidate(),
+    onError: () => toast.error(m.editor_day_remove_error()),
+  })
+
+  const updateDayMutation = useMutation({
+    mutationFn: (input: Parameters<typeof updateDay>[0]['data']) =>
+      updateDay({ data: input }),
+    onSuccess: () => void invalidate(),
+    onError: () => toast.error(m.editor_day_update_error()),
+  })
+
+  const addStopMutation = useMutation({
+    mutationFn: (input: Parameters<typeof addStop>[0]['data']) =>
+      addStop({ data: input }),
+    onSuccess: () => void invalidate(),
+    onError: () => toast.error(m.editor_stop_add_error()),
+  })
+
+  const updateStopMutation = useMutation({
+    mutationFn: (input: Parameters<typeof updateStop>[0]['data']) =>
+      updateStop({ data: input }),
+    onSuccess: () => void invalidate(),
+    onError: () => toast.error(m.editor_stop_update_error()),
+  })
+
+  const removeStopMutation = useMutation({
+    mutationFn: (stopId: string) => removeStop({ data: { id: stopId } }),
+    onSuccess: () => void invalidate(),
+    onError: () => toast.error(m.editor_stop_remove_error()),
+  })
+
+  const reorderStopsMutation = useMutation({
+    mutationFn: (input: { dayId: string; stopIds: string[] }) =>
+      reorderStops({ data: input }),
+    onSuccess: () => void invalidate(),
+    onError: () => toast.error(m.editor_stop_reorder_error()),
+  })
+
+  return (
+    <div className="flex flex-col gap-4">
+      <div className="flex items-center justify-between">
+        <h2 className="text-lg font-semibold">{m.editor_days_title()}</h2>
+        <Button
+          size="sm"
+          variant="outline"
+          disabled={addDayMutation.isPending}
+          onClick={() => addDayMutation.mutate()}
+        >
+          <PlusIcon data-icon="inline-start" />
+          {m.editor_day_add()}
+        </Button>
+      </div>
+
+      {days.map((day) => (
+        <DayCard
+          key={day.id}
+          day={day}
+          canRemove={days.length > 1}
+          onUpdateDay={(values) =>
+            updateDayMutation.mutate({ id: day.id, ...values })
+          }
+          onRemoveDay={() => removeDayMutation.mutateAsync(day.id)}
+          onAddStop={(values) =>
+            addStopMutation.mutateAsync({ dayId: day.id, ...values })
+          }
+          onUpdateStop={(stopId, values) =>
+            updateStopMutation.mutateAsync({ id: stopId, ...values })
+          }
+          onRemoveStop={(stopId) => removeStopMutation.mutateAsync(stopId)}
+          onReorderStop={(stopIds) =>
+            reorderStopsMutation.mutateAsync({ dayId: day.id, stopIds })
+          }
+        />
+      ))}
+    </div>
+  )
+}
+
+interface StopMutationValues {
+  name: string
+  category: StopView['category']
+  description: string | null
+  costCents: number | null
+  placeLabel: string | null
+}
+
+function DayCard({
+  day,
+  canRemove,
+  onUpdateDay,
+  onRemoveDay,
+  onAddStop,
+  onUpdateStop,
+  onRemoveStop,
+  onReorderStop,
+}: {
+  day: DayView
+  canRemove: boolean
+  onUpdateDay: (values: { title?: string | null; note?: string | null }) => void
+  onRemoveDay: () => Promise<void>
+  onAddStop: (values: StopMutationValues) => Promise<unknown>
+  onUpdateStop: (
+    stopId: string,
+    values: StopMutationValues,
+  ) => Promise<unknown>
+  onRemoveStop: (stopId: string) => Promise<unknown>
+  onReorderStop: (stopIds: string[]) => Promise<unknown>
+}) {
+  const [addOpen, setAddOpen] = useState(false)
+  const [editingStopId, setEditingStopId] = useState<string | null>(null)
+
+  const editingStop = day.stops.find((s) => s.id === editingStopId) ?? null
+
+  function move(index: number, direction: -1 | 1) {
+    const target = index + direction
+    if (target < 0 || target >= day.stops.length) return
+    const next = [...day.stops.map((s) => s.id)]
+    ;[next[index], next[target]] = [next[target], next[index]]
+    void onReorderStop(next)
+  }
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-baseline gap-2">
+          <span>{m.editor_day_label({ number: day.dayNumber })}</span>
+        </CardTitle>
+      </CardHeader>
+
+      <CardContent className="flex flex-col gap-4">
+        <div className="grid gap-3 sm:grid-cols-2">
+          <Field>
+            <FieldLabel htmlFor={`day-title-${day.id}`}>
+              {m.editor_day_field_title()}
+            </FieldLabel>
+            <Input
+              id={`day-title-${day.id}`}
+              defaultValue={day.title ?? ''}
+              onBlur={(event) => {
+                const value = event.target.value
+                if (value !== (day.title ?? '')) {
+                  onUpdateDay({ title: value || null })
+                }
+              }}
+            />
+          </Field>
+          <Field>
+            <FieldLabel htmlFor={`day-note-${day.id}`}>
+              {m.editor_day_field_note()}
+            </FieldLabel>
+            <Textarea
+              id={`day-note-${day.id}`}
+              defaultValue={day.note ?? ''}
+              onBlur={(event) => {
+                const value = event.target.value
+                if (value !== (day.note ?? '')) {
+                  onUpdateDay({ note: value || null })
+                }
+              }}
+            />
+          </Field>
+        </div>
+
+        {day.stops.length === 0 ? (
+          <p className="text-sm text-muted-foreground">
+            {m.editor_stop_empty()}
+          </p>
+        ) : (
+          <ol className="flex flex-col gap-2">
+            {day.stops.map((stop, index) => {
+              const Icon = CATEGORY_ICON[stop.category]
+              return (
+                <li
+                  key={stop.id}
+                  className="flex items-start gap-3 rounded-md border p-3"
+                >
+                  <span
+                    className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-full bg-muted text-foreground"
+                    title={CATEGORY_LABEL[stop.category]()}
+                  >
+                    <Icon className="size-4" />
+                  </span>
+                  <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+                    <span className="font-medium">{stop.name}</span>
+                    {stop.description ? (
+                      <span className="text-sm text-muted-foreground">
+                        {stop.description}
+                      </span>
+                    ) : null}
+                    <div className="flex flex-wrap gap-x-3 gap-y-0.5 text-sm text-muted-foreground">
+                      {stop.placeLabel ? <span>{stop.placeLabel}</span> : null}
+                      {stop.costCents !== null ? (
+                        <span>{costFormatter.format(stop.costCents / 100)}</span>
+                      ) : null}
+                    </div>
+                  </div>
+                  <div className="flex shrink-0 items-center gap-1">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon-sm"
+                      disabled={index === 0}
+                      aria-label={m.editor_stop_move_up()}
+                      onClick={() => move(index, -1)}
+                    >
+                      <ChevronUpIcon />
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon-sm"
+                      disabled={index === day.stops.length - 1}
+                      aria-label={m.editor_stop_move_down()}
+                      onClick={() => move(index, 1)}
+                    >
+                      <ChevronDownIcon />
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon-sm"
+                      aria-label={m.editor_stop_edit()}
+                      onClick={() => setEditingStopId(stop.id)}
+                    >
+                      <PencilIcon />
+                    </Button>
+                    <ConfirmDialog
+                      trigger={
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon-sm"
+                          aria-label={m.editor_stop_remove()}
+                        >
+                          <Trash2Icon />
+                        </Button>
+                      }
+                      title={m.editor_stop_remove_confirm_title()}
+                      description={m.editor_stop_remove_confirm_description()}
+                      onConfirm={() => onRemoveStop(stop.id)}
+                    />
+                  </div>
+                </li>
+              )
+            })}
+          </ol>
+        )}
+
+        <Dialog open={addOpen} onOpenChange={setAddOpen}>
+          <DialogTrigger asChild>
+            <Button type="button" variant="outline" size="sm" className="self-start">
+              <PlusIcon data-icon="inline-start" />
+              {m.editor_stop_add()}
+            </Button>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>{m.editor_stop_add()}</DialogTitle>
+            </DialogHeader>
+            <StopForm
+              submitLabel={m.editor_stop_save()}
+              onCancel={() => setAddOpen(false)}
+              onSubmit={async (values) => {
+                await onAddStop(values)
+                setAddOpen(false)
+              }}
+            />
+          </DialogContent>
+        </Dialog>
+
+        <Dialog
+          open={editingStop !== null}
+          onOpenChange={(open) => !open && setEditingStopId(null)}
+        >
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>{m.editor_stop_edit()}</DialogTitle>
+            </DialogHeader>
+            {editingStop ? (
+              <StopForm
+                defaultValues={stopFormValuesFrom(editingStop)}
+                submitLabel={m.editor_stop_save()}
+                onCancel={() => setEditingStopId(null)}
+                onSubmit={async (values) => {
+                  await onUpdateStop(editingStop.id, values)
+                  setEditingStopId(null)
+                }}
+              />
+            ) : null}
+          </DialogContent>
+        </Dialog>
+      </CardContent>
+
+      <CardFooter>
+        <ConfirmDialog
+          trigger={
+            <Button type="button" variant="outline" size="sm" disabled={!canRemove}>
+              <Trash2Icon data-icon="inline-start" />
+              {m.editor_day_remove()}
+            </Button>
+          }
+          title={m.editor_day_remove_confirm_title()}
+          description={m.editor_day_remove_confirm_description()}
+          onConfirm={onRemoveDay}
+        />
+      </CardFooter>
+    </Card>
+  )
+}
