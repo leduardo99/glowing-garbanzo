@@ -3,7 +3,7 @@
  *
  * Follows the same `*Impl(db, session, input)` / thin `createServerFn`
  * wrapper pattern documented at the top of `itineraries.ts`, including the
- * three-sentinel error convention (UNAUTHORIZED / FORBIDDEN / NOT_FOUND).
+ * three-sentinel error convention (see `./errors`).
  * Every mutation here is gated on "caller is the parent itinerary's author",
  * resolved by walking the FK chain up from the day/stop being touched:
  *   stop -> itinerary_day -> itinerary
@@ -19,29 +19,19 @@ import { getRequest } from '@tanstack/react-start/server'
 
 import { db as appDb } from '#/db'
 import type * as schema from '#/db/schema'
-import { itinerary, itineraryDay, stop } from '#/db/schema'
+import { itineraryDay, stop } from '#/db/schema'
 import { getSessionOrThrow } from './context'
 import type { SessionUser } from './itineraries'
+import { ERR_FORBIDDEN, ERR_NOT_FOUND, ERR_UNAUTHORIZED } from './errors'
+import { requireItineraryAuthor } from './shared'
 
 type Database = NodePgDatabase<typeof schema>
-
-const ERR_UNAUTHORIZED = 'UNAUTHORIZED'
-const ERR_FORBIDDEN = 'FORBIDDEN'
-const ERR_NOT_FOUND = 'NOT_FOUND'
 
 const stopCategorySchema = z.enum(['attraction', 'food', 'lodging', 'transport', 'other'])
 
 // ---------------------------------------------------------------------------
 // Shared FK-chain ownership helpers
 // ---------------------------------------------------------------------------
-
-async function loadItineraryOrThrow(db: Database, id: string) {
-  const row = await db.query.itinerary.findFirst({ where: eq(itinerary.id, id) })
-  if (!row) {
-    throw new Error(ERR_NOT_FOUND)
-  }
-  return row
-}
 
 async function loadDayOrThrow(db: Database, id: string) {
   const row = await db.query.itineraryDay.findFirst({ where: eq(itineraryDay.id, id) })
@@ -55,18 +45,6 @@ async function loadStopOrThrow(db: Database, id: string) {
   const row = await db.query.stop.findFirst({ where: eq(stop.id, id) })
   if (!row) {
     throw new Error(ERR_NOT_FOUND)
-  }
-  return row
-}
-
-/** Loads an itinerary row and asserts the session user is its author. */
-async function requireItineraryAuthor(db: Database, session: SessionUser | null, itineraryId: string) {
-  if (!session) {
-    throw new Error(ERR_UNAUTHORIZED)
-  }
-  const row = await loadItineraryOrThrow(db, itineraryId)
-  if (row.authorId !== session.user.id) {
-    throw new Error(ERR_FORBIDDEN)
   }
   return row
 }

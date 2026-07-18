@@ -2,8 +2,8 @@
  * Favorite, rating, and comment server functions.
  *
  * Follows the same `*Impl(db, session, input)` / thin `createServerFn`
- * wrapper pattern and three-sentinel error convention documented at the top
- * of `itineraries.ts` (UNAUTHORIZED / FORBIDDEN / NOT_FOUND).
+ * wrapper pattern and three-sentinel error convention documented in
+ * `./errors`.
  *
  * Access rules (design doc's "Permissions" section):
  *   - favorite / comment: requires a session AND read access to the
@@ -27,18 +27,16 @@ import { getRequest } from '@tanstack/react-start/server'
 
 import { db as appDb } from '#/db'
 import type * as schema from '#/db/schema'
-import { comment, favorite, itinerary, itineraryMember, rating, user } from '#/db/schema'
+import { comment, favorite, itinerary, rating, user } from '#/db/schema'
 import { getOptionalSession, getSessionOrThrow } from './context'
 import type { SessionUser } from './itineraries'
 import type { AccessContext, ItineraryAccessData } from './domain/access'
 import { canRate, canRead } from './domain/access'
 import { applyRating } from './domain/rating'
+import { ERR_FORBIDDEN, ERR_NOT_FOUND, ERR_UNAUTHORIZED } from './errors'
+import { isItineraryMember, loadItineraryOrThrow } from './shared'
 
 type Database = NodePgDatabase<typeof schema>
-
-const ERR_UNAUTHORIZED = 'UNAUTHORIZED'
-const ERR_FORBIDDEN = 'FORBIDDEN'
-const ERR_NOT_FOUND = 'NOT_FOUND'
 
 const COMMENTS_PAGE_SIZE = 20
 
@@ -52,21 +50,6 @@ export interface CommentView {
 // ---------------------------------------------------------------------------
 // Shared access helpers
 // ---------------------------------------------------------------------------
-
-async function loadItineraryOrThrow(db: Database, id: string) {
-  const row = await db.query.itinerary.findFirst({ where: eq(itinerary.id, id) })
-  if (!row) {
-    throw new Error(ERR_NOT_FOUND)
-  }
-  return row
-}
-
-async function isItineraryMember(db: Database, itineraryId: string, userId: string): Promise<boolean> {
-  const membership = await db.query.itineraryMember.findFirst({
-    where: and(eq(itineraryMember.itineraryId, itineraryId), eq(itineraryMember.userId, userId)),
-  })
-  return Boolean(membership)
-}
 
 /**
  * Loads an itinerary and asserts read access, collapsing "doesn't exist"
