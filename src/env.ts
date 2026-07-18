@@ -19,10 +19,21 @@ export const env = createEnv({
   },
 
   /**
-   * What object holds the environment variables at runtime. This is usually
-   * `process.env` or `import.meta.env`.
+   * What object holds the environment variables at runtime.
+   *
+   * Vite only populates `import.meta.env` with `VITE_`-prefixed vars (plus
+   * its own built-ins) — it never forwards arbitrary process env vars into
+   * it, even on the server. Server-only vars therefore have to be read from
+   * `process.env` directly, while client vars keep coming from
+   * `import.meta.env` (the only place Vite actually exposes them, including
+   * in the client bundle). Listed explicitly (rather than spreading either
+   * object) so each var's source is unambiguous.
    */
-  runtimeEnv: import.meta.env,
+  runtimeEnv: {
+    SERVER_URL: process.env.SERVER_URL,
+    UPLOADS_DIR: process.env.UPLOADS_DIR,
+    VITE_APP_TITLE: import.meta.env.VITE_APP_TITLE,
+  },
 
   /**
    * By default, this library will feed the environment variables directly to
