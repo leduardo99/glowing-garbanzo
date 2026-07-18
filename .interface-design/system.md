@@ -23,25 +23,25 @@ Explicitly rejected: Inter-for-everything, purple→blue gradients, cards nested
 
 ## Color tokens (OKLCH, canonical — matches this project's existing shadcn OKLCH doctrine)
 
-| Token | Value | Role |
-|---|---|---|
-| `--ink` | `oklch(0.24 0.02 45)` | primary text |
-| `--ink-soft` | `oklch(0.45 0.02 45)` | secondary/meta text |
-| `--paper` | `oklch(0.985 0.004 60)` | page background |
-| `--surface` | `oklch(0.97 0.006 55)` | cards, top nav, bottom tab bar |
-| `--surface-sunken` | `oklch(0.94 0.008 55)` | inputs, search, tag pills (always darker than surroundings) |
-| `--terracotta` | `oklch(0.58 0.15 38)` | the one accent: primary actions, selection, focus rings, links |
-| `--terracotta-deep` | `oklch(0.49 0.16 35)` | accent hover/active |
-| `--terracotta-soft` | `oklch(0.93 0.04 45)` | tinted accent backgrounds (selected chip fill) |
-| `--rating-gold` | `oklch(0.78 0.15 85)` | star ratings only — semantic exception, never on buttons/nav |
-| `--line` / `--line-strong` | `oklch(0.24 0.02 45 / 0.12)` / `/ 0.2` | dividers, input borders, table/list rows |
-| `--success` | `oklch(0.6 0.12 145)` | semantic |
-| `--warning` | `oklch(0.75 0.14 80)` | semantic |
-| `--destructive` | `oklch(0.55 0.2 15)` | semantic |
+| Token                      | Value                                  | Role                                                           |
+| -------------------------- | -------------------------------------- | -------------------------------------------------------------- |
+| `--ink`                    | `oklch(0.24 0.02 45)`                  | primary text                                                   |
+| `--ink-soft`               | `oklch(0.45 0.02 45)`                  | secondary/meta text                                            |
+| `--paper`                  | `oklch(0.985 0.004 60)`                | page background                                                |
+| `--surface`                | `oklch(0.97 0.006 55)`                 | cards, top nav, bottom tab bar                                 |
+| `--surface-sunken`         | `oklch(0.94 0.008 55)`                 | inputs, search, tag pills (always darker than surroundings)    |
+| `--terracotta`             | `oklch(0.58 0.15 38)`                  | the one accent: primary actions, selection, focus rings, links |
+| `--terracotta-deep`        | `oklch(0.49 0.16 35)`                  | accent hover/active                                            |
+| `--terracotta-soft`        | `oklch(0.93 0.04 45)`                  | tinted accent backgrounds (selected chip fill)                 |
+| `--rating-gold`            | `oklch(0.78 0.15 85)`                  | star ratings only — semantic exception, never on buttons/nav   |
+| `--line` / `--line-strong` | `oklch(0.24 0.02 45 / 0.12)` / `/ 0.2` | dividers, input borders, table/list rows                       |
+| `--success`                | `oklch(0.6 0.12 145)`                  | semantic                                                       |
+| `--warning`                | `oklch(0.75 0.14 80)`                  | semantic                                                       |
+| `--destructive`            | `oklch(0.55 0.2 15)`                   | semantic                                                       |
 
 Dark mode: same hierarchy, inverted lightness, one hue kept per token — base `oklch(0.18 0.012 45)`, surface `oklch(0.22 0.014 45)`, surface-sunken `oklch(0.16 0.012 45)`, text `oklch(0.96 0.006 60)` / `oklch(0.72 0.012 55)`, accent desaturated slightly to `oklch(0.68 0.13 40)`.
 
-**Named rules:** *One Warm Voice* (terracotta is the only saturated brand color; rating-gold is a scoped semantic exception) · *No-Cream-Default* (paper is true off-white at chroma 0.004, not a saturated sand/parchment tone — warmth comes from the accent and Fraunces, not the body background).
+**Named rules:** _One Warm Voice_ (terracotta is the only saturated brand color; rating-gold is a scoped semantic exception) · _No-Cream-Default_ (paper is true off-white at chroma 0.004, not a saturated sand/parchment tone — warmth comes from the accent and Fraunces, not the body background).
 
 ## Typography
 
@@ -102,7 +102,7 @@ New decisions made during that pass, not already covered above:
   `--radius: 10px` custom property is kept only because `ui/sonner.tsx`
   reads it directly as `--border-radius`.
 - **Shadow vocabulary as Tailwind utilities**: `--shadow-resting/-lifted/
-  -elevated` in `@theme inline` generate `shadow-resting` / `shadow-lifted`
+-elevated` in `@theme inline` generate `shadow-resting` / `shadow-lifted`
   / `shadow-elevated` classes from DESIGN.md §4's literal box-shadow
   values (ink-tinted, not black). The raw values live in `--shadow-*-value`
   custom properties in `:root`/`.dark` (the `-value` suffix avoids a
@@ -119,7 +119,7 @@ New decisions made during that pass, not already covered above:
   `oklch(0.62 0.2 15)` (all nudged lighter than their light-mode values for
   dark-surface legibility).
 - **App shell decomposition**: `UserMenu` (`src/components/navigation/
-  UserMenu.tsx`) holds the session-dependent account area (avatar dropdown
+UserMenu.tsx`) holds the session-dependent account area (avatar dropdown
   or login link) and takes a `variant: 'header' | 'tab'` prop; both
   `AppHeader` and `BottomNav` render it independently (each calls
   `authClient.useSession()` itself) rather than threading session state
@@ -162,7 +162,7 @@ state to nuqs, and decomposed the itinerary view. New decisions made during
 this pass, not already covered above:
 
 - **Type-scale utilities wired into Tailwind**: `--text-display/-headline/
-  -title/-body/-label/-caption` (with paired `--text-*--line-height`) added
+-title/-body/-label/-caption` (with paired `--text-*--line-height`) added
   to `@theme inline` in `src/styles.css`, generating `text-display` …
   `text-caption` utilities at DESIGN.md §3's exact rem/line-height values.
   `text-display` sets size/line-height only — pair it with `.font-display`
@@ -185,7 +185,7 @@ this pass, not already covered above:
   fill from Tailwind's stock `amber-500` to the `--rating-gold` token
   (DESIGN.md's scoped semantic exception — ratings only, never buttons/nav).
 - **Editorial Title Rule, applied**: `.font-display` now actually appears
-  on the itinerary's own title (`ItineraryHero`, `ItineraryCard`) *and* on
+  on the itinerary's own title (`ItineraryHero`, `ItineraryCard`) _and_ on
   in-page day headings (`DayTimeline`'s "Day N" markers) — the task brief
   for this pass explicitly scoped Fraunces to "itinerary titles, day
   headings," a hair wider than DESIGN.md §3's literal "itinerary name and
@@ -208,7 +208,7 @@ this pass, not already covered above:
     Router's default search serializer JSON-encodes non-primitive values
     (`tags=%5B%22a%22%5D`), which doesn't round-trip through nuqs's own
     comma-joined array format (`tags=a,b`) — a write from nuqs would come
-    back from the router as a *string*, not an array, breaking a
+    back from the router as a _string_, not an array, breaking a
     `z.array()` schema. Fix: `tags` is a plain comma-joined `z.string()`
     at the route/schema level (a wire-format detail, not a data-model
     change — `searchItineraries` itself still takes `tags: string[]`);
@@ -247,6 +247,69 @@ this pass, not already covered above:
   `useInfiniteQuery` fetch is in flight (`commentsQuery.isLoading`,
   distinct from the already-handled empty state) instead of rendering
   nothing.
+
+## Implementation log — mobile shell polish (BottomNav alignment + PWA)
+
+- **`BottomNav` box model, made explicit**: the bar's content row is a fixed
+  `4rem` (64px) — `h-[calc(4rem+env(safe-area-inset-bottom))]` plus a
+  matching `pb-[env(safe-area-inset-bottom)]` (border-box means the padding
+  is carved out of that `h-*`, not added on top, so the visible content
+  band stays exactly 64px on every device). `items-stretch` on the `<nav>`
+  stretches all four tab items to that same 64px slot; each item then
+  self-centers its icon+label with `items-center justify-center`. This
+  replaced the earlier ad hoc padding-only bar, where the Home/My tabs
+  (`min-h-11`), the "+" FAB (`-translate-y-2` with no baseline reference),
+  and the Profile avatar (unconstrained skeleton/button sizing) each
+  computed their own height and landed on three different optical
+  baselines — a production screenshot report.
+- **Icon box, unified at 24px**: `HomeIcon` / `BookOpenIcon` / signed-out
+  `UserIcon` all render at `size-6` (24px), matching `Avatar size="sm"`
+  (also `size-6` = 24px) so the Profile tab's avatar sits in the same
+  icon-box footprint as every icon-based tab, whether signed in or out.
+  (Previously the icon tabs were `size-5`/20px while the avatar was
+  24px — a second source of baseline drift.)
+- **FAB decision: no label, floating half above the bar.** Considered
+  giving the "+" FAB an 11px label to baseline-match the other three tabs,
+  but a labeled circle crowds the 64px row and reads as a fifth line of
+  text competing with the bar's actual tab labels. Went with the standard
+  native pattern instead: the FAB's slot centers like every other tab
+  (inherits the same 64px stretch), then `-translate-y-8` — exactly half
+  of 64px — lifts the circle's _center_ to sit on the bar's top edge, so
+  the circle floats half outside the chrome and half inside it,
+  independent of the circle's own diameter (currently `size-12`/48px).
+  This is what DESIGN.md's "elevated pill button" phrase was gesturing at;
+  this is the concrete resolution.
+- **PWA icons**: `logo512.png` is the source for regenerated `logo192.png`/
+  `logo512.png` (standard, `purpose: "any"`), new `maskable-192.png`/
+  `maskable-512.png` (`purpose: "maskable"`, generated with a safe-zone
+  padding so the source art isn't clipped inside the OS's maskable circle),
+  and `apple-touch-icon.png` (180px, opaque background — iOS ignores alpha
+  and will render transparency as black otherwise). All four are wired into
+  `public/manifest.json`; `apple-touch-icon.png` is also linked directly in
+  `<head>` since iOS Safari doesn't read the web manifest's icon list for
+  its home-screen icon.
+- **PWA service worker: hand-written, not `vite-plugin-pwa`.** Tried
+  `vite-plugin-pwa` (`generateSW`, `registerType: 'autoUpdate'`) first, per
+  the task brief. Confirmed by direct build testing that its `closeBundle`
+  hook — the step that actually writes `sw.js` — never fires for either of
+  TanStack Start's Vite Environment API build passes (`client`/`ssr`):
+  `pnpm build` and `pnpm build:vercel` both complete successfully but
+  silently produce zero service-worker output. Rather than debug a
+  plugin/Environment-API integration issue blind (no real browser
+  available in this environment to verify a fix), fell back to the
+  documented alternative: a small hand-written `public/sw.js` (plain
+  static file, cache-first for the never-hashed manifest+icon set only,
+  network-passthrough for everything else — SSR pages, hashed JS/CSS, API
+  calls — since serving stale HTML for a dynamic per-request app would be
+  wrong), registered manually from `src/components/PwaRegister.tsx` via a
+  client-only `useEffect` mounted in `RootDocument`. `self.skipWaiting()` +
+  `self.clients.claim()` in the SW's own install/activate handlers stand
+  in for `vite-plugin-pwa`'s `registerType: 'autoUpdate'`. Net effect for
+  the user-reported issue ("tem que sair a URL, funcionar como PWA"):
+  installability (manifest + icon set + a registered, controlling SW) is
+  delivered; a full offline-first cache of app pages/scripts is not — that
+  would need a build-time-integrated plugin to enumerate hashed asset
+  names safely, which is exactly the piece that didn't work here.
 
 ## Consistency checks
 

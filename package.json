@@ -77,6 +77,7 @@
     "jsdom": "^28.1.0",
     "nitro": "npm:nitro-nightly@3.0.1-20260717-080150-bfc2f5ef",
     "prettier": "^3.8.1",
+    "sharp": "^0.35.3",
     "tsx": "^4.21.0",
     "typescript": "^6.0.2",
     "vite": "^8.0.0",

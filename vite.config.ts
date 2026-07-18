@@ -30,6 +30,17 @@ const config = defineConfig({
     }),
     tailwindcss(),
     tanstackStart(),
+    // PWA support: tried `vite-plugin-pwa` (`generateSW`) here first, but
+    // its `closeBundle` hook — which is what actually writes `sw.js` and
+    // is gated on `!viteConfig.build.ssr` — never fires for either of
+    // TanStack Start's Vite Environment API build passes (`client`, `ssr`);
+    // both `pnpm build` and `pnpm build:vercel` complete successfully but
+    // silently produce no service worker at all. Rather than fight the
+    // plugin/environment-API integration, this falls back to a
+    // hand-written `public/sw.js` (plain static asset, copied through
+    // as-is) registered from `src/components/PwaRegister.tsx` — see that
+    // file and `public/sw.js` for the full writeup, and
+    // `.interface-design/system.md`'s PWA decision log.
     ...(target === 'vercel' ? [nitro({ preset: 'vercel' })] : []),
     viteReact(),
   ],
