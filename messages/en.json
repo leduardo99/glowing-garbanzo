@@ -205,5 +205,13 @@
   "comments_empty": "No comments yet.",
   "comments_error": "Couldn't post your comment. Try again.",
   "comments_load_more": "Load more",
-  "comments_login_cta": "Log in to comment"
+  "comments_login_cta": "Log in to comment",
+  "home_filters_button": "Filters",
+  "home_filters_show_results": "Show results",
+  "home_filters_clear": "Clear filters",
+  "home_sort_label": "Sort by",
+  "view_back": "Back",
+  "view_comments_open": "{count} comments",
+  "editor_day_collapse": "Collapse",
+  "editor_day_expand": "Expand"
 }

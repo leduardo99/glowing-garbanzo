@@ -10,7 +10,9 @@ afterEach(() => {
   cleanup()
 })
 
-function makeItem(overrides: Partial<ItineraryCardData> = {}): ItineraryCardData {
+function makeItem(
+  overrides: Partial<ItineraryCardData> = {},
+): ItineraryCardData {
   return {
     id: 'it_1',
     slug: 'chapada-diamantina-abc123',
@@ -33,9 +35,10 @@ describe('ItineraryCard', () => {
 
     expect(screen.getByText('Chapada Diamantina')).toBeInTheDocument()
     expect(screen.getByText('Bahia, Brazil')).toBeInTheDocument()
-    expect(screen.getByText('5 dias')).toBeInTheDocument()
-    expect(screen.getByText('4.5')).toBeInTheDocument()
-    expect(screen.getByText('(12)')).toBeInTheDocument()
+    // Day/rating badges show a compact number visually, with the full
+    // context (count/label) carried on the badge's accessible name.
+    expect(screen.getByLabelText('5 dias')).toBeInTheDocument()
+    expect(screen.getByLabelText('4.5 · 12 avaliações')).toBeInTheDocument()
   })
 
   it('caps visible tags and renders them as badges', () => {
@@ -48,16 +51,23 @@ describe('ItineraryCard', () => {
   })
 
   it('shows an em dash placeholder when there is no rating yet', () => {
-    render(<ItineraryCard item={makeItem({ ratingAvg: null, ratingCount: 0 })} />)
+    render(
+      <ItineraryCard item={makeItem({ ratingAvg: null, ratingCount: 0 })} />,
+    )
 
     expect(screen.getByText('—')).toBeInTheDocument()
-    expect(screen.getByText('(0)')).toBeInTheDocument()
+    expect(screen.getByLabelText('Sem avaliações ainda')).toBeInTheDocument()
   })
 
-  it('renders without a destination or cover image', () => {
-    render(<ItineraryCard item={makeItem({ destination: null, coverImageUrl: null })} />)
+  it('renders without a destination or cover image, falling back to the branded placeholder', () => {
+    render(
+      <ItineraryCard
+        item={makeItem({ destination: null, coverImageUrl: null })}
+      />,
+    )
 
     expect(screen.getByText('Chapada Diamantina')).toBeInTheDocument()
     expect(screen.queryByText('Bahia, Brazil')).not.toBeInTheDocument()
+    expect(document.querySelector('img')).not.toBeInTheDocument()
   })
 })

@@ -1,5 +1,9 @@
 import { useState } from 'react'
-import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import {
+  useInfiniteQuery,
+  useMutation,
+  useQueryClient,
+} from '@tanstack/react-query'
 import { Link } from '@tanstack/react-router'
 import { Trash2Icon } from 'lucide-react'
 import { toast } from 'sonner'
@@ -38,7 +42,7 @@ import { addComment, deleteComment } from '#/server/engagement'
  * access, including the invite-token bypass for a private itinerary's
  * anonymous invite-link viewer), only posting does.
  */
-export function Comments() {
+export function Comments({ showTitle = true }: { showTitle?: boolean } = {}) {
   const { itineraryId, redirectTarget, inviteToken, session } =
     useItineraryView()
   const currentUserId = session?.id ?? null
@@ -47,7 +51,9 @@ export function Comments() {
   const queryKey = commentsQueryOptions({ itineraryId, inviteToken }).queryKey
   const locale = getLocale()
 
-  const commentsQuery = useInfiniteQuery(commentsQueryOptions({ itineraryId, inviteToken }))
+  const commentsQuery = useInfiniteQuery(
+    commentsQueryOptions({ itineraryId, inviteToken }),
+  )
   const comments = commentsQuery.data?.pages.flatMap((page) => page.items) ?? []
 
   const [body, setBody] = useState('')
@@ -72,9 +78,11 @@ export function Comments() {
 
   return (
     <section className="flex flex-col gap-4">
-      <h2 className="text-headline font-semibold text-ink">
-        {m.comments_title()}
-      </h2>
+      {showTitle ? (
+        <h2 className="text-headline font-semibold text-ink">
+          {m.comments_title()}
+        </h2>
+      ) : null}
 
       {currentUserId ? (
         <form
@@ -177,7 +185,11 @@ export function Comments() {
 /** Branded loading state for the initial comments fetch (no SSR-preloaded page yet). */
 function CommentsSkeleton() {
   return (
-    <div role="status" aria-label={m.app_loading()} className="flex flex-col gap-4">
+    <div
+      role="status"
+      aria-label={m.app_loading()}
+      className="flex flex-col gap-4"
+    >
       {[0, 1].map((index) => (
         <div key={index} className="flex items-start gap-3">
           <Skeleton className="size-6 shrink-0 rounded-full" />

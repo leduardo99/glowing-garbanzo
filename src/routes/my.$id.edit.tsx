@@ -1,5 +1,10 @@
 import { useSuspenseQuery } from '@tanstack/react-query'
-import { Link, createFileRoute, notFound, redirect } from '@tanstack/react-router'
+import {
+  Link,
+  createFileRoute,
+  notFound,
+  redirect,
+} from '@tanstack/react-router'
 import { ArrowLeftIcon, SearchXIcon } from 'lucide-react'
 
 import { DayEditor } from '#/components/editor/DayEditor'
@@ -58,9 +63,7 @@ function EditorNotFound() {
           <SearchXIcon />
         </EmptyMedia>
         <EmptyTitle>{m.editor_not_found_title()}</EmptyTitle>
-        <EmptyDescription>
-          {m.editor_not_found_description()}
-        </EmptyDescription>
+        <EmptyDescription>{m.editor_not_found_description()}</EmptyDescription>
         <Button asChild variant="outline">
           <Link to="/my">{m.editor_back_to_my()}</Link>
         </Button>
@@ -85,6 +88,15 @@ function EditorPage() {
 
       <MetadataForm itinerary={data} />
 
+      {/*
+        Days are the itinerary's actual content and the thing an author
+        spends the most time on — they come right after the title/cover
+        form and ahead of publish/member settings, which are secondary,
+        occasional actions (DESIGN.md's "content leads, chrome recedes"
+        principle applied to the editor itself).
+      */}
+      <DayEditor itineraryId={data.id} days={data.days} />
+
       <PublishCard
         itineraryId={data.id}
         status={data.status}
@@ -98,8 +110,6 @@ function EditorPage() {
           inviteToken={data.inviteToken}
         />
       ) : null}
-
-      <DayEditor itineraryId={data.id} days={data.days} />
     </div>
   )
 }

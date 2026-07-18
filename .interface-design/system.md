@@ -311,6 +311,145 @@ this pass, not already covered above:
   would need a build-time-integrated plugin to enumerate hashed asset
   names safely, which is exactly the piece that didn't work here.
 
+## Implementation log — mobile app-grade UX redesign (Home/Detail/Editor)
+
+Redesigned the three primary mobile (`<md`) screens to feel like a real app
+(Uber Eats/Glovo/WhatsApp references) rather than a stacked web form, per
+direct user feedback. Desktop (`md+`) keeps its previous layout everywhere
+except where noted. New decisions, not already covered above:
+
+- **`Drawer` vendored** (`src/components/ui/drawer.tsx`, `pnpm add vaul`) —
+  shadcn's registry component, `@/`→`#/`, restyled to this project's
+  elevation/radius vocabulary (`shadow-elevated`, `rounded-xl` — the
+  "sheets" step of the radius scale — instead of the stock template's
+  `shadow-sm`/`rounded-lg`), `bg-ink/50` overlay instead of `bg-black/50`,
+  and a `pb-[env(safe-area-inset-bottom)]` on the bottom-direction variant
+  so sheet content clears the home-indicator area.
+- **`useIsMobile` hook** (`src/hooks/use-is-mobile.ts`) — `matchMedia`
+  against Tailwind's `md` breakpoint (767px), `false` on the server and
+  first client render, corrected in a `useEffect`. Used only where a
+  control needs two *structurally different* components for the same job
+  (Dialog vs Drawer, inline `Comments` vs a sheet-triggered one) — CSS
+  `md:hidden`/`hidden md:flex` toggles (already the project's convention
+  from `AppHeader`/`BottomNav`) are used everywhere a plain visibility
+  swap is enough, since that's SSR-safe with zero hydration risk. This is
+  also why the home page's filter chip row/sheet trigger is *always*
+  present in SSR markup (verified by grepping the rendered HTML) while the
+  editor's stop-form sheet and the detail page's comments-sheet trigger
+  render their **desktop** branch (Dialog / inline `Comments`) during SSR
+  and flip after hydration — a deliberate, documented tradeoff, not an
+  oversight.
+- **`ResponsiveSheet`** (`src/components/ResponsiveSheet.tsx`) — the
+  Dialog/Drawer switch as one reusable component (title + children,
+  fully controlled `open`/`onOpenChange`, no `Trigger` subcomponent since
+  the two primitives don't share one). Used by `DayEditor`'s stop
+  add/edit form.
+- **`CoverPlaceholder`** (`src/components/CoverPlaceholder.tsx`) — the
+  branded "no cover photo" treatment (terracotta-tinted 14px diagonal
+  hatch, `terracotta-soft` base, a centered `CompassIcon` at 40% opacity)
+  extracted so `ItineraryCard` (discovery grid) and `ItineraryHero`
+  (mobile immersive detail hero, both cover-present and cover-absent
+  paths) render the exact same "no cover" mark rather than two different
+  gray-void fallbacks — PRODUCT.md's anti-references flag a flat gray box
+  as a native-web-afterthought tell.
+- **Home (`/`)**: mobile gets a sticky compact top (`sticky top-0`, under
+  `AppHeader`'s wordmark bar once that scrolls past) — a full-height
+  rounded search field (`rounded-full`, `surface-sunken`) plus a
+  horizontally scrollable chip row (`.no-scrollbar` utility, new in
+  `styles.css`) of: a "Filtros" chip (opens the filters `Drawer`, shows a
+  terracotta dot when any filter is active), the four duration-bucket
+  chips as direct one-tap toggles, and the active tag chips with inline
+  remove. The "Filtros" sheet holds the *full* control set per the task
+  brief — tag input, a duration `Select`, and sort as the existing `Tabs`
+  segmented control reused verbatim (not a new component) — even though
+  the duration bucket chips already offer a quick path outside the sheet;
+  both are intentional, not a duplication bug. Desktop keeps the original
+  stacked hero + inline `FieldGroup` filter form byte-for-byte, gated
+  behind `hidden md:flex` (mobile's markup sits behind `md:hidden`
+  instead) — both blocks share the *same* `addTag`/`removeTag`/`setQuery`
+  closures, so there's exactly one source of truth for filter state
+  regardless of which markup is visible. One id-collision pitfall worth
+  recording: `hidden md:flex` still renders to the DOM (just
+  `display:none`), so anything appearing in *both* the always-visible
+  mobile sheet and the desktop-only form (the tags field) needs a
+  per-call-site-unique `id`/`htmlFor` pair (`renderTagsField(idSuffix)`)
+  — a literal duplicate `id` would otherwise exist in the DOM simultaneously.
+  **`ItineraryCard`** was rebuilt content-first (Uber Eats/Glovo card
+  shape): a full-bleed `aspect-[4/3]` cover with day-count/rating as
+  compact floating badges (`bg-paper/90 backdrop-blur-sm`, numbers only —
+  the full "N dias"/"N avaliações" context moved to each badge's
+  `aria-label` rather than dropped, since the previous inline text is no
+  longer visually present) over the image, title/destination as a tight
+  text block below it (the brief's explicit alternative to a gradient
+  scrim — chosen for predictable contrast against arbitrary user photos).
+  The discovery grid itself moved to 2 columns even on the smallest
+  phones (`grid-cols-2` → `lg:grid-cols-3 xl:grid-cols-4`), matching the
+  reference apps' feed density instead of one full-width card per row.
+- **Detail (`/itineraries/$slug`)**: `ItineraryHero` now renders two
+  structurally different `<header>` blocks (`md:hidden` / `hidden
+  md:flex`), not one reflowed layout — the mobile version bleeds the cover
+  edge-to-edge via a negative margin that exactly cancels the page
+  container's own `p-4`/`sm:p-6` (`-mx-4 -mt-4 sm:-mx-6 sm:-mt-6`, the
+  same trick the sticky engagement bar below reuses), floats a translucent
+  circular back button (`bg-ink/45 backdrop-blur-sm`, calls
+  `router.history.back()` — deliberately *not* a `Link` to a hardcoded
+  route, so it returns wherever the visitor actually came from, matching
+  native back-button semantics) over the cover, and overlaps a
+  `shadow-elevated` title card `-mt-8` onto the cover's bottom edge. The
+  engagement bar (favorite/rate/fork) is wrapped in a `sticky top-0 z-20`
+  container (same edge-to-edge negative-margin trick, `md:static` to fully
+  revert on desktop) so it pins under the header once the hero scrolls
+  past — DESIGN.md's "sticky headers for context" mobile pattern. Comments
+  render inline on desktop exactly as before; on mobile they move into a
+  `Drawer` behind a summary row button showing a live count
+  (`m.view_comments_open({count})`) — the count comes from re-subscribing
+  to the *same* `commentsQueryOptions` query key the route loader already
+  `ensureInfiniteQueryData`'d, so it's zero extra network cost, not a new
+  data dependency. `Comments` gained a `showTitle` prop (default `true`)
+  so the sheet variant doesn't duplicate `DrawerTitle` with `Comments`'
+  own `<h2>` — same text rendered twice was the alternative, rejected per
+  DESIGN.md/distill's "no redundant copy" rule.
+- **Editor (`/my/$id/edit`)**: route order changed to Metadata → Days →
+  Publish → Members (was Metadata → Publish → Members → Days) on *both*
+  breakpoints — the itinerary's actual content (days/stops) now leads,
+  publish/member settings trail as secondary, occasional actions,
+  matching "content leads, chrome recedes." `DayEditor`'s stop add/edit
+  form moved from a bare `Dialog` to `ResponsiveSheet` (Drawer on mobile).
+  Each day's `Card` gained a collapse/expand toggle (chevron rotates
+  180°, `aria-expanded` + a `sr-only` collapse/expand label) — days start
+  expanded (an itinerary being actively edited usually has only a
+  handful, and hiding the "add stop" affordance by default would cost
+  more than it saves), collapsing is what keeps a many-day itinerary
+  scannable on a phone once its stops are filled in.
+- **View transitions** — progressive enhancement, no library. React's
+  `<ViewTransition>` component needs `react@canary`; this project runs
+  stable React 19.2, so the transition is driven entirely by
+  `@tanstack/react-router`'s native `viewTransition` link/navigate option
+  (confirmed in `router-core`: it already gates on `'startViewTransition'
+  in document` before ever calling it — no manual feature-detection
+  needed). `router.tsx` sets `defaultViewTransition: true` for a quiet
+  root crossfade on every navigation; `ItineraryCard`'s link and
+  `ItineraryHero`'s forked-from link additionally pass
+  `viewTransition={{types: ['nav-forward']}}` for the app's one
+  hierarchical (list → detail) navigation. CSS lives in `styles.css`:
+  a 220ms ease-out-expo crossfade on the `root` view-transition group, plus
+  a 16px directional slide gated behind the *native* CSS
+  `:active-view-transition-type()` pseudo-class (itself progressive —
+  unsupported browsers just keep the base crossfade), and the
+  `prefers-reduced-motion` override zeroes every `::view-transition-*`
+  animation duration (the page's existing blanket reduced-motion rule
+  doesn't reach the view-transition pseudo-element tree, so this needed
+  its own block). The detail page's back button intentionally does *not*
+  tag a `nav-back` type — it calls `router.history.back()` directly,
+  which still flows through the router's own history object (so the base
+  crossfade still fires) without the extra type wiring a `Link` would
+  need.
+- **`eslint.config.js`**: added `.agents/` to `ignores`. Pre-existing
+  failure (`pnpm lint` errored on vendored, non-TS skill tooling scripts
+  under `.agents/skills/*/scripts/`) unrelated to any behavior change,
+  fixed here only because this task's gate list requires `pnpm lint` to
+  pass cleanly.
+
 ## Consistency checks
 
 Hold every future UI change to: spacing on the 4px grid, shadow-only elevation (no border+shadow combo), colors only from the table above, Fraunces only on content titles, and the component measurements listed here reused rather than reinvented.
