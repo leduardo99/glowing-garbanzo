@@ -22,6 +22,8 @@
   "auth_password_required": "Informe sua senha.",
   "auth_name_required": "Informe seu nome.",
   "auth_password_min": "A senha precisa ter pelo menos 8 caracteres.",
+  "auth_login_welcome": "Bem-vindo de volta. Continue seu planejamento de onde parou.",
+  "auth_signup_welcome": "Crie sua conta para copiar roteiros de outros viajantes e montar o seu.",
   "nav_my_itineraries": "Meus roteiros",
   "nav_new_itinerary": "Novo roteiro",
   "nav_home": "Início",

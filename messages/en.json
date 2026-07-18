@@ -22,6 +22,8 @@
   "auth_password_required": "Enter your password.",
   "auth_name_required": "Enter your name.",
   "auth_password_min": "Password must be at least 8 characters.",
+  "auth_login_welcome": "Welcome back. Pick up your trip planning right where you left off.",
+  "auth_signup_welcome": "Join Roteiros to fork itineraries from real travelers and start your own.",
   "nav_my_itineraries": "My itineraries",
   "nav_new_itinerary": "New itinerary",
   "nav_home": "Home",
