@@ -4,6 +4,7 @@ import { LogOutIcon, UserIcon } from 'lucide-react'
 
 import { authClient } from '#/lib/auth-client'
 import { sessionQueryKey } from '#/lib/session'
+import { tabLinkClassName } from '#/components/navigation/tabLinkClassName'
 import { Avatar, AvatarFallback, AvatarImage } from '#/components/ui/avatar'
 import { Button } from '#/components/ui/button'
 import {
@@ -40,21 +41,25 @@ export function UserMenu({ variant }: { variant: 'header' | 'tab' }) {
   }
 
   if (isPending) {
+    // Tab variant mirrors `tabLinkClassName`'s box (flex-1, centered) so
+    // the loading state occupies the exact same slot the avatar/login
+    // link renders into once the session resolves — otherwise the
+    // skeleton (having no flex-1 sizing of its own) would sit narrower
+    // and off-baseline versus the other three tabs for a frame.
     return variant === 'header' ? (
       <Skeleton className="size-9 rounded-full" />
     ) : (
-      <Skeleton className="size-6 rounded-full" />
+      <div className={tabLinkClassName} aria-hidden="true">
+        <Skeleton className="size-6 rounded-full" />
+      </div>
     )
   }
 
   if (!session?.user) {
     if (variant === 'tab') {
       return (
-        <Link
-          to="/login"
-          className="flex min-h-11 min-w-11 flex-1 flex-col items-center justify-center gap-0.5 rounded-md text-ink-soft data-[status=active]:text-terracotta"
-        >
-          <UserIcon className="size-5" aria-hidden="true" />
+        <Link to="/login" className={tabLinkClassName}>
+          <UserIcon className="size-6" aria-hidden="true" />
           <span className="text-[11px] font-medium">
             {m.auth_login_title()}
           </span>
@@ -76,7 +81,7 @@ export function UserMenu({ variant }: { variant: 'header' | 'tab' }) {
         {variant === 'tab' ? (
           <button
             type="button"
-            className="flex min-h-11 min-w-11 flex-1 flex-col items-center justify-center gap-0.5 rounded-md text-ink-soft outline-none"
+            className={cn(tabLinkClassName, 'outline-none')}
             aria-label={m.nav_profile()}
           >
             <Avatar size="sm">

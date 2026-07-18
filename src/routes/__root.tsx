@@ -12,6 +12,7 @@ import TanStackQueryDevtools from '../integrations/tanstack-query/devtools'
 import { getLocale } from '#/paraglide/runtime'
 import { AppHeader } from '#/components/AppHeader'
 import { BottomNav } from '#/components/navigation/BottomNav'
+import { PwaRegister } from '#/components/PwaRegister'
 import { Toaster } from '#/components/ui/sonner'
 import { sessionQueryKey } from '#/lib/session'
 import { getSessionUser } from '#/server/auth'
@@ -68,8 +69,7 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
         // indicator so `env(safe-area-inset-*)` (used by BottomNav) has
         // real insets to read instead of 0 — see .interface-design/system.md.
         name: 'viewport',
-        content:
-          'width=device-width, initial-scale=1, viewport-fit=cover',
+        content: 'width=device-width, initial-scale=1, viewport-fit=cover',
       },
       {
         title: 'Roteiros',
@@ -115,8 +115,12 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
         href: '/manifest.json',
       },
       {
+        // A dedicated 180px, opaque-background icon — iOS Safari reads
+        // this tag directly for the home-screen icon rather than the web
+        // manifest's icon list, and renders any PNG alpha as solid black,
+        // so this can't reuse the transparent `logo192.png`.
         rel: 'apple-touch-icon',
-        href: '/logo192.png',
+        href: '/apple-touch-icon.png',
       },
     ],
   }),
@@ -145,13 +149,15 @@ function RootDocument({ children }: { children: React.ReactNode }) {
           {/*
             Reserves room for BottomNav's fixed bar on mobile (it would
             otherwise overlap the last bit of page content) — matches the
-            bar's own height-plus-safe-area math. BottomNav is `md:hidden`,
-            so this padding is dropped in lockstep at the same breakpoint.
+            bar's own `h-[calc(4rem+env(safe-area-inset-bottom))]` exactly
+            (BottomNav.tsx). BottomNav is `md:hidden`, so this padding is
+            dropped in lockstep at the same breakpoint.
           */}
-          <div className="pb-[calc(3.125rem+max(0.375rem,env(safe-area-inset-bottom)))] md:pb-0">
+          <div className="pb-[calc(4rem+env(safe-area-inset-bottom))] md:pb-0">
             {children}
           </div>
           <BottomNav />
+          <PwaRegister />
           <Toaster />
           <TanStackDevtools
             config={{
