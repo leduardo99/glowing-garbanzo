@@ -8,19 +8,9 @@
  * Integration tests call the Impl functions directly against `testDb` with
  * fake sessions (`{ user: { id } }` or `null`) — no HTTP involved.
  *
- * Error-handling convention (all Impl functions, followed by Tasks 5-7 too):
- * every failure is a plain `Error` whose `message` is one of three sentinel
- * strings:
- *   - 'UNAUTHORIZED' — the action requires a session and none was given.
- *   - 'FORBIDDEN'    — a session was given but the caller lacks permission
- *                       (e.g. editing someone else's itinerary).
- *   - 'NOT_FOUND'    — the itinerary doesn't exist *or* the caller has no
- *                       read access to it. These two cases are always
- *                       collapsed into the same error so a private/draft
- *                       itinerary's existence is never leaked, per the
- *                       design spec's Errors section.
- * Callers (route loaders, UI) inspect `error.message` to decide how to
- * react (e.g. redirect to `/login`, render a 404).
+ * Error-handling convention (all Impl functions, here and in days-stops.ts /
+ * engagement.ts too): see `./errors` for the three sentinel strings
+ * (UNAUTHORIZED / FORBIDDEN / NOT_FOUND) and the throw convention.
  */
 import { z } from 'zod'
 import { and, arrayOverlaps, asc, desc, eq, gte, ilike, inArray, lte, or, sql } from 'drizzle-orm'
@@ -30,13 +20,15 @@ import { getRequest } from '@tanstack/react-start/server'
 
 import { db as appDb } from '#/db'
 import type * as schema from '#/db/schema'
-import { favorite, itinerary, itineraryDay, itineraryMember, rating, stop } from '#/db/schema'
+import { favorite, itinerary, itineraryDay, rating, stop } from '#/db/schema'
 import { getOptionalSession, getSessionOrThrow } from './context'
 import type { AccessContext, ItineraryAccessData } from './domain/access'
 import { canEdit, canRead } from './domain/access'
 import { buildForkRows } from './domain/fork'
 import type { StopCopy } from './domain/fork'
 import { makeSlug } from './domain/slug'
+import { ERR_NOT_FOUND, ERR_UNAUTHORIZED } from './errors'
+import { isItineraryMember, loadItineraryOrThrow, requireItineraryAuthor } from './shared'
 
 type Database = NodePgDatabase<typeof schema>
 
@@ -44,10 +36,6 @@ type Database = NodePgDatabase<typeof schema>
 export interface SessionUser {
   user: { id: string }
 }
-
-const ERR_UNAUTHORIZED = 'UNAUTHORIZED'
-const ERR_FORBIDDEN = 'FORBIDDEN'
-const ERR_NOT_FOUND = 'NOT_FOUND'
 
 const PAGE_SIZE = 12
 
@@ -108,34 +96,6 @@ export interface ItineraryDetail {
     myStars: number | null
     isMember: boolean
   }
-}
-
-/** Loads an itinerary row or throws NOT_FOUND. */
-async function loadItineraryOrThrow(db: Database, id: string) {
-  const row = await db.query.itinerary.findFirst({ where: eq(itinerary.id, id) })
-  if (!row) {
-    throw new Error(ERR_NOT_FOUND)
-  }
-  return row
-}
-
-/** Loads an itinerary row and asserts the session user is its author. */
-async function requireAuthorRow(db: Database, session: SessionUser | null, id: string) {
-  if (!session) {
-    throw new Error(ERR_UNAUTHORIZED)
-  }
-  const row = await loadItineraryOrThrow(db, id)
-  if (row.authorId !== session.user.id) {
-    throw new Error(ERR_FORBIDDEN)
-  }
-  return row
-}
-
-async function isItineraryMember(db: Database, itineraryId: string, userId: string): Promise<boolean> {
-  const membership = await db.query.itineraryMember.findFirst({
-    where: and(eq(itineraryMember.itineraryId, itineraryId), eq(itineraryMember.userId, userId)),
-  })
-  return Boolean(membership)
 }
 
 async function loadDaysWithStops(db: Database, itineraryId: string): Promise<DayView[]> {
@@ -441,7 +401,7 @@ export async function updateItineraryImpl(
   session: SessionUser | null,
   input: UpdateItineraryInput,
 ): Promise<void> {
-  await requireAuthorRow(db, session, input.id)
+  await requireItineraryAuthor(db, session, input.id)
 
   const updates: Partial<typeof itinerary.$inferInsert> = {}
   if (input.title !== undefined) updates.title = input.title
@@ -479,7 +439,7 @@ export async function deleteItineraryImpl(
   session: SessionUser | null,
   input: DeleteItineraryInput,
 ): Promise<void> {
-  await requireAuthorRow(db, session, input.id)
+  await requireItineraryAuthor(db, session, input.id)
   await db.delete(itinerary).where(eq(itinerary.id, input.id))
 }
 
@@ -504,7 +464,7 @@ export async function publishItineraryImpl(
   session: SessionUser | null,
   input: PublishItineraryInput,
 ): Promise<void> {
-  await requireAuthorRow(db, session, input.id)
+  await requireItineraryAuthor(db, session, input.id)
   await db
     .update(itinerary)
     .set({ status: 'published', publishedAt: new Date() })
@@ -517,7 +477,7 @@ export async function unpublishItineraryImpl(
   session: SessionUser | null,
   input: PublishItineraryInput,
 ): Promise<void> {
-  await requireAuthorRow(db, session, input.id)
+  await requireItineraryAuthor(db, session, input.id)
   await db.update(itinerary).set({ status: 'draft' }).where(eq(itinerary.id, input.id))
 }
 
