@@ -159,7 +159,9 @@ export function DayEditor({
   return (
     <div className="flex flex-col gap-4">
       <div className="flex items-center justify-between">
-        <h2 className="text-lg font-semibold">{m.editor_days_title()}</h2>
+        <h2 className="text-headline font-semibold text-ink">
+          {m.editor_days_title()}
+        </h2>
         <Button
           size="sm"
           variant="outline"
@@ -244,8 +246,10 @@ function DayCard({
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="flex items-baseline gap-2">
-          <span>{m.editor_day_label({ number: day.dayNumber })}</span>
+        <CardTitle className="flex items-baseline gap-2 text-headline">
+          <span className="tabular-nums">
+            {m.editor_day_label({ number: day.dayNumber })}
+          </span>
         </CardTitle>
       </CardHeader>
 

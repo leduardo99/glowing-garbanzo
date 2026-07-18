@@ -96,8 +96,10 @@ export function MembersCard({
   return (
     <Card>
       <CardHeader>
-        <CardTitle>{m.members_title()}</CardTitle>
-        <CardDescription>{m.members_description()}</CardDescription>
+        <CardTitle className="text-headline">{m.members_title()}</CardTitle>
+        <CardDescription className="text-body">
+          {m.members_description()}
+        </CardDescription>
       </CardHeader>
 
       <CardContent className="flex flex-col gap-4">

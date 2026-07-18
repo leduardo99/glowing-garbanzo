@@ -154,6 +154,100 @@ New decisions made during that pass, not already covered above:
   reuse the existing `logo192.png`/`logo512.png` assets as-is — no new art
   was generated as part of this pass.
 
+## Implementation log — UI overhaul part 2 (page restyles + nuqs + decomposition)
+
+Restyled every page (`/`, `/itineraries/$slug`, `/login`, `/signup`, `/my`,
+`/new`, `/my/$id/edit`) to the tokens above, migrated the home route's URL
+state to nuqs, and decomposed the itinerary view. New decisions made during
+this pass, not already covered above:
+
+- **Type-scale utilities wired into Tailwind**: `--text-display/-headline/
+  -title/-body/-label/-caption` (with paired `--text-*--line-height`) added
+  to `@theme inline` in `src/styles.css`, generating `text-display` …
+  `text-caption` utilities at DESIGN.md §3's exact rem/line-height values.
+  `text-display` sets size/line-height only — pair it with `.font-display`
+  (already defined in part 1, unlayered so it always wins the family/
+  weight/letter-spacing/tabular-nums cascade over any Tailwind utility
+  regardless of class order) for the Fraunces treatment.
+- **Ghost-card kill switch**: `ui/card.tsx` dropped its `border` and moved
+  `shadow-sm` → `shadow-resting` (14px radius, was 20px/`rounded-xl`) —
+  this alone re-themes every card in the app (itinerary cards, editor
+  cards, auth cards) per the Quiet Lift Rule. Same border-drop + shadow-
+  vocabulary swap applied to `ui/dialog.tsx` (→ `shadow-elevated`,
+  `rounded-xl`), and `ui/popover.tsx` / `ui/dropdown-menu.tsx` /
+  `ui/select.tsx` (→ `shadow-lifted`, the "open dropdown/menu" step).
+- **`Badge`'s new `tag` variant**: `bg-muted text-muted-foreground` (i.e.
+  surface-sunken/ink-soft) — DESIGN.md's actual Chips/Tags spec, as
+  opposed to the generic `secondary` variant status badges (draft/
+  published) still use. Itinerary tags (cards, home filter, editor tag
+  input) now use `variant="tag"`; status badges are unchanged.
+- **Rating color**: `RatingStars` / `ItineraryCard` switched their star
+  fill from Tailwind's stock `amber-500` to the `--rating-gold` token
+  (DESIGN.md's scoped semantic exception — ratings only, never buttons/nav).
+- **Editorial Title Rule, applied**: `.font-display` now actually appears
+  on the itinerary's own title (`ItineraryHero`, `ItineraryCard`) *and* on
+  in-page day headings (`DayTimeline`'s "Day N" markers) — the task brief
+  for this pass explicitly scoped Fraunces to "itinerary titles, day
+  headings," a hair wider than DESIGN.md §3's literal "itinerary name and
+  nothing else." Every other heading (page H1s on `/my`, card titles in
+  the editor, section headers) stays Karla at the `text-headline` step.
+- **nuqs adopted for the home route's URL state** (`pnpm add nuqs`,
+  `nuqs/adapters/tanstack-router`). `NuqsAdapter` wraps `children` in
+  `src/routes/__root.tsx`'s `RootDocument` (must live inside the
+  router-provided tree; `router.tsx` itself can't host it). `q`/`tags`/
+  `duration`/`sort`/`page` in `src/routes/index.tsx` moved from hand-rolled
+  `Route.useSearch()`/`Route.useNavigate()` to `useQueryStates` — same
+  debounced-search-box, page-reset-on-filter-change, and push-vs-replace
+  history behavior as before (nuqs's own history default is `replace`, so
+  every call site now passes `history` explicitly — `push` at the hook
+  level, `replace` only for the debounced search-box effect).
+  - **Reconciling nuqs with the route's `validateSearch`**: the loader
+    keeps its Zod schema (`homeSearchSchema`) as the SSR/`ensureQueryData`
+    contract — nuqs and `Route.useSearch()` both read the same underlying
+    router search state, so they can't drift. The one wrinkle: TanStack
+    Router's default search serializer JSON-encodes non-primitive values
+    (`tags=%5B%22a%22%5D`), which doesn't round-trip through nuqs's own
+    comma-joined array format (`tags=a,b`) — a write from nuqs would come
+    back from the router as a *string*, not an array, breaking a
+    `z.array()` schema. Fix: `tags` is a plain comma-joined `z.string()`
+    at the route/schema level (a wire-format detail, not a data-model
+    change — `searchItineraries` itself still takes `tags: string[]`);
+    `parseTagsParam` (loader side) and nuqs's `parseAsArrayOf` (component
+    side) both split on the same separator, so the two stay equivalent.
+    This is the idiomatic reconciliation nuqs's TanStack Router adapter
+    expects for non-primitive search params.
+- **Itinerary view decomposition** (`src/components/itinerary/`):
+  `ItineraryViewProvider`/`useItineraryView` (React context) carries
+  viewer-scoped fields — `itineraryId`, `slug`, `inviteToken`,
+  `redirectTarget`, `session`, `canRate` — that would otherwise have to
+  tunnel through the page's new section components (`ItineraryHero`,
+  `EngagementBar`, `DayTimeline`) down to the actual engagement widgets
+  (`RatingStars`, `FavoriteButton`, `ForkButton`, `Comments`). Those four
+  leaf components keep their pre-existing explicit-prop APIs unchanged
+  (they're unit-tested standalone, outside any provider — see
+  `RatingStars.test.tsx`); only `EngagementBar` (new) and `Comments`
+  (no dedicated test) consume the context directly. `ItineraryView` itself
+  now only threads the itinerary's own content (`data`, `data.days`) as
+  props — never viewer/session state — into its section components.
+- **`DayTimeline`** (`src/components/itinerary/DayTimeline.tsx`) is the
+  first real implementation of DESIGN.md §5's signature "logbook spine":
+  a `border-l border-line` rule with each day as an absolutely-positioned
+  terracotta dot breaking it, stops listed beneath via the pre-existing
+  `StopList` (already a quiet-row list, no nested cards).
+- **Shared `Pagination`** (`src/components/Pagination.tsx`) and
+  **`ItineraryGridSkeleton`** (`src/components/ItineraryCardSkeleton.tsx`)
+  replace the near-duplicate prev/next pagers and add a branded,
+  grid-shaped Suspense fallback — both `/` and `/my` (mine + favorites,
+  each its own `<Suspense>` boundary around its `useSuspenseQuery`) use
+  them, so a tab switch or slow filter change shows itinerary-card-shaped
+  skeletons instead of a full-page spinner or stale content.
+- **Loading polish beyond the grids**: `ItineraryMap`'s Suspense fallback
+  is now the `Skeleton` primitive (was a raw `animate-pulse` div);
+  `Comments` shows two skeleton comment rows while its initial
+  `useInfiniteQuery` fetch is in flight (`commentsQuery.isLoading`,
+  distinct from the already-handled empty state) instead of rendering
+  nothing.
+
 ## Consistency checks
 
 Hold every future UI change to: spacing on the 4px grid, shadow-only elevation (no border+shadow combo), colors only from the table above, Fraunces only on content titles, and the component measurements listed here reused rather than reinvented.

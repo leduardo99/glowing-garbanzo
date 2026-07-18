@@ -13,6 +13,11 @@ const badgeVariants = cva(
         default: 'bg-primary text-primary-foreground [a&]:hover:bg-primary/90',
         secondary:
           'bg-secondary text-secondary-foreground [a&]:hover:bg-secondary/90',
+        // DESIGN.md's Chips/Tags spec: surface-sunken bg, ink-soft text,
+        // full radius, no border — style tags on itinerary cards, the
+        // discovery filter, and the editor's tag input all use this
+        // instead of the generic `secondary` (status-badge) styling.
+        tag: 'bg-muted text-muted-foreground [a&]:hover:bg-muted/70',
         destructive:
           'bg-destructive text-white focus-visible:ring-destructive/20 dark:bg-destructive/60 dark:focus-visible:ring-destructive/40 [a&]:hover:bg-destructive/90',
         outline:

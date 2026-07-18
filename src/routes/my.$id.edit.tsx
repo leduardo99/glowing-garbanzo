@@ -74,12 +74,12 @@ function EditorPage() {
   const { data } = useSuspenseQuery(myItineraryQueryOptions({ id }))
 
   return (
-    <div className="mx-auto flex max-w-4xl flex-col gap-6 p-6">
+    <div className="mx-auto flex max-w-4xl flex-col gap-8 p-4 sm:p-6">
       <Link
         to="/my"
-        className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
+        className="flex items-center gap-1 text-label text-ink-soft hover:text-ink"
       >
-        <ArrowLeftIcon data-icon="inline-start" />
+        <ArrowLeftIcon data-icon="inline-start" className="size-4" />
         {m.editor_back_to_my()}
       </Link>
 

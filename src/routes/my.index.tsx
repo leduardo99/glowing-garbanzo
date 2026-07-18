@@ -1,3 +1,4 @@
+import { Suspense } from 'react'
 import { z } from 'zod'
 import { useSuspenseQuery } from '@tanstack/react-query'
 import {
@@ -5,9 +6,11 @@ import {
   createFileRoute,
   redirect,
 } from '@tanstack/react-router'
-import { ChevronLeftIcon, ChevronRightIcon, MapIcon } from 'lucide-react'
+import { MapIcon } from 'lucide-react'
 
 import { ItineraryCard } from '#/components/ItineraryCard'
+import { ItineraryGridSkeleton } from '#/components/ItineraryCardSkeleton'
+import { Pagination } from '#/components/Pagination'
 import { Badge } from '#/components/ui/badge'
 import { Button } from '#/components/ui/button'
 import {
@@ -54,9 +57,11 @@ function MyItinerariesPage() {
   const navigate = Route.useNavigate()
 
   return (
-    <div className="mx-auto flex max-w-6xl flex-col gap-6 p-6">
+    <div className="mx-auto flex max-w-6xl flex-col gap-6 p-4 sm:p-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">{m.myitineraries_title()}</h1>
+        <h1 className="text-headline font-semibold text-ink">
+          {m.myitineraries_title()}
+        </h1>
         <Button asChild size="sm">
           <Link to="/new">{m.nav_new_itinerary()}</Link>
         </Button>
@@ -78,11 +83,13 @@ function MyItinerariesPage() {
         </TabsList>
       </Tabs>
 
-      {search.tab === 'mine' ? (
-        <MineTab page={search.page} />
-      ) : (
-        <FavoritesTab page={search.page} />
-      )}
+      <Suspense fallback={<ItineraryGridSkeleton />}>
+        {search.tab === 'mine' ? (
+          <MineTab page={search.page} />
+        ) : (
+          <FavoritesTab page={search.page} />
+        )}
+      </Suspense>
     </div>
   )
 }
@@ -100,43 +107,10 @@ function StatusBadge({ status }: { status: MyItineraryCard['status'] }) {
   )
 }
 
-function Pagination({ page, total }: { page: number; total: number }) {
-  const navigate = Route.useNavigate()
-  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE))
-
-  return (
-    <div className="flex items-center justify-between">
-      <Button
-        variant="outline"
-        size="sm"
-        disabled={page <= 1}
-        onClick={() =>
-          void navigate({ search: (prev) => ({ ...prev, page: page - 1 }) })
-        }
-      >
-        <ChevronLeftIcon data-icon="inline-start" />
-        {m.home_page_previous()}
-      </Button>
-      <span className="text-sm text-muted-foreground">
-        {m.home_page_status({ page, totalPages })}
-      </span>
-      <Button
-        variant="outline"
-        size="sm"
-        disabled={page >= totalPages}
-        onClick={() =>
-          void navigate({ search: (prev) => ({ ...prev, page: page + 1 }) })
-        }
-      >
-        {m.home_page_next()}
-        <ChevronRightIcon data-icon="inline-end" />
-      </Button>
-    </div>
-  )
-}
-
 function MineTab({ page }: { page: number }) {
   const { data } = useSuspenseQuery(myItinerariesQueryOptions({ page }))
+  const navigate = Route.useNavigate()
+  const totalPages = Math.max(1, Math.ceil(data.total / PAGE_SIZE))
 
   if (data.items.length === 0) {
     return (
@@ -156,24 +130,32 @@ function MineTab({ page }: { page: number }) {
   }
 
   return (
-    <>
+    <div className="flex flex-col gap-6">
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {data.items.map((item) => (
           <Link key={item.id} to="/my/$id/edit" params={{ id: item.id }}>
-            <div className="relative">
+            <div className="relative h-full">
               <ItineraryCard item={item} />
               <StatusBadge status={item.status} />
             </div>
           </Link>
         ))}
       </div>
-      <Pagination page={page} total={data.total} />
-    </>
+      <Pagination
+        page={page}
+        totalPages={totalPages}
+        onPageChange={(nextPage) =>
+          void navigate({ search: (prev) => ({ ...prev, page: nextPage }) })
+        }
+      />
+    </div>
   )
 }
 
 function FavoritesTab({ page }: { page: number }) {
   const { data } = useSuspenseQuery(myFavoritesQueryOptions({ page }))
+  const navigate = Route.useNavigate()
+  const totalPages = Math.max(1, Math.ceil(data.total / PAGE_SIZE))
 
   if (data.items.length === 0) {
     return (
@@ -190,7 +172,7 @@ function FavoritesTab({ page }: { page: number }) {
   }
 
   return (
-    <>
+    <div className="flex flex-col gap-6">
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {data.items.map((item) => (
           <Link key={item.id} to="/itineraries/$slug" params={{ slug: item.slug }}>
@@ -198,7 +180,13 @@ function FavoritesTab({ page }: { page: number }) {
           </Link>
         ))}
       </div>
-      <Pagination page={page} total={data.total} />
-    </>
+      <Pagination
+        page={page}
+        totalPages={totalPages}
+        onPageChange={(nextPage) =>
+          void navigate({ search: (prev) => ({ ...prev, page: nextPage }) })
+        }
+      />
+    </div>
   )
 }

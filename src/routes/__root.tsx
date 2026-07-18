@@ -5,6 +5,7 @@ import {
 } from '@tanstack/react-router'
 import { TanStackRouterDevtoolsPanel } from '@tanstack/react-router-devtools'
 import { TanStackDevtools } from '@tanstack/react-devtools'
+import { NuqsAdapter } from 'nuqs/adapters/tanstack-router'
 
 import TanStackQueryDevtools from '../integrations/tanstack-query/devtools'
 
@@ -129,30 +130,42 @@ function RootDocument({ children }: { children: React.ReactNode }) {
         <HeadContent />
       </head>
       <body>
-        <AppHeader />
         {/*
-          Reserves room for BottomNav's fixed bar on mobile (it would
-          otherwise overlap the last bit of page content) — matches the
-          bar's own height-plus-safe-area math. BottomNav is `md:hidden`,
-          so this padding is dropped in lockstep at the same breakpoint.
+          NuqsAdapter wires `useQueryState`/`useQueryStates` (see the home
+          route) to TanStack Router's actual `navigate()` — URL-state
+          updates still flow through the router (so route `loaderDeps` /
+          `loader` keep re-running the same way they did with hand-rolled
+          `Route.useNavigate()` calls), nuqs just adds typed parsing,
+          debouncing, and default-clearing on top. Must live inside the
+          router-provided tree, so it wraps `children` here rather than
+          living in `router.tsx`.
         */}
-        <div className="pb-[calc(3.125rem+max(0.375rem,env(safe-area-inset-bottom)))] md:pb-0">
-          {children}
-        </div>
-        <BottomNav />
-        <Toaster />
-        <TanStackDevtools
-          config={{
-            position: 'bottom-right',
-          }}
-          plugins={[
-            {
-              name: 'Tanstack Router',
-              render: <TanStackRouterDevtoolsPanel />,
-            },
-            TanStackQueryDevtools,
-          ]}
-        />
+        <NuqsAdapter>
+          <AppHeader />
+          {/*
+            Reserves room for BottomNav's fixed bar on mobile (it would
+            otherwise overlap the last bit of page content) — matches the
+            bar's own height-plus-safe-area math. BottomNav is `md:hidden`,
+            so this padding is dropped in lockstep at the same breakpoint.
+          */}
+          <div className="pb-[calc(3.125rem+max(0.375rem,env(safe-area-inset-bottom)))] md:pb-0">
+            {children}
+          </div>
+          <BottomNav />
+          <Toaster />
+          <TanStackDevtools
+            config={{
+              position: 'bottom-right',
+            }}
+            plugins={[
+              {
+                name: 'Tanstack Router',
+                render: <TanStackRouterDevtoolsPanel />,
+              },
+              TanStackQueryDevtools,
+            ]}
+          />
+        </NuqsAdapter>
         <Scripts />
       </body>
     </html>

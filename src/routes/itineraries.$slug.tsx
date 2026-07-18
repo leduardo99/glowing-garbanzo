@@ -5,13 +5,11 @@ import { Link, createFileRoute, notFound } from '@tanstack/react-router'
 import { SearchXIcon, TicketXIcon } from 'lucide-react'
 
 import { Comments } from '#/components/Comments'
-import { FavoriteButton } from '#/components/FavoriteButton'
-import { ForkButton } from '#/components/ForkButton'
-import { RatingStars } from '#/components/RatingStars'
-import { StopList } from '#/components/StopList'
+import { DayTimeline } from '#/components/itinerary/DayTimeline'
+import { EngagementBar } from '#/components/itinerary/EngagementBar'
+import { ItineraryHero } from '#/components/itinerary/ItineraryHero'
+import { ItineraryViewProvider } from '#/components/itinerary/ItineraryViewContext'
 import type { ItineraryMapStop } from '#/components/map/ItineraryMap'
-import { Avatar, AvatarFallback, AvatarImage } from '#/components/ui/avatar'
-import { Badge } from '#/components/ui/badge'
 import { Button } from '#/components/ui/button'
 import {
   Card,
@@ -27,6 +25,7 @@ import {
   EmptyTitle,
 } from '#/components/ui/empty'
 import { Separator } from '#/components/ui/separator'
+import { Skeleton } from '#/components/ui/skeleton'
 import { commentsQueryOptions, itineraryQueryOptions } from '#/lib/queries'
 import { m } from '#/paraglide/messages'
 import { joinByInviteToken } from '#/server/members'
@@ -171,140 +170,66 @@ function ItineraryView() {
     Boolean(session) && data.status === 'published' && data.visibility === 'public'
 
   return (
-    <div className="mx-auto flex max-w-4xl flex-col gap-8 p-6">
-      {showInviteLoginCta ? (
-        <Card>
-          <CardHeader>
-            <CardTitle>{m.view_invite_login_title()}</CardTitle>
-            <CardDescription>
-              {m.view_invite_login_description()}
-            </CardDescription>
-          </CardHeader>
-          <CardFooter>
-            <Button asChild>
-              <Link to="/login" search={{ redirect: redirectTarget }}>
-                {m.view_invite_login_cta()}
-              </Link>
-            </Button>
-          </CardFooter>
-        </Card>
-      ) : null}
-
-      <header className="flex flex-col gap-4">
-        {data.coverImageUrl ? (
-          <img
-            src={data.coverImageUrl}
-            alt=""
-            className="h-64 w-full rounded-lg object-cover"
-          />
+    <ItineraryViewProvider
+      value={{
+        itineraryId: data.id,
+        slug,
+        inviteToken,
+        redirectTarget,
+        session,
+        canRate,
+      }}
+    >
+      <div className="mx-auto flex max-w-4xl flex-col gap-8 p-4 sm:p-6">
+        {showInviteLoginCta ? (
+          <Card>
+            <CardHeader>
+              <CardTitle>{m.view_invite_login_title()}</CardTitle>
+              <CardDescription>
+                {m.view_invite_login_description()}
+              </CardDescription>
+            </CardHeader>
+            <CardFooter>
+              <Button asChild>
+                <Link to="/login" search={{ redirect: redirectTarget }}>
+                  {m.view_invite_login_cta()}
+                </Link>
+              </Button>
+            </CardFooter>
+          </Card>
         ) : null}
 
-        <div className="flex flex-col gap-2">
-          <h1 className="text-3xl font-bold">{data.title}</h1>
-          {data.destination ? (
-            <p className="text-lg text-muted-foreground">{data.destination}</p>
-          ) : null}
-          {data.summary ? (
-            <p className="text-muted-foreground">{data.summary}</p>
-          ) : null}
-        </div>
+        <ItineraryHero data={data} />
 
-        <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
-          <span className="flex items-center gap-2">
-            <Avatar size="sm">
-              <AvatarImage src={data.author.image ?? undefined} alt="" />
-              <AvatarFallback>
-                {data.author.name.charAt(0).toUpperCase()}
-              </AvatarFallback>
-            </Avatar>
-            {m.view_by_author({ name: data.author.name })}
-          </span>
+        <EngagementBar
+          ratingAvg={data.ratingAvg}
+          ratingCount={data.ratingCount}
+          myStars={data.viewer.myStars}
+          isFavorite={data.viewer.isFavorite}
+        />
 
-          <span>{m.view_days_count({ count: data.days.length })}</span>
+        <Separator />
 
-          {data.forkedFrom ? (
-            <Link
-              to="/itineraries/$slug"
-              params={{ slug: data.forkedFrom.slug }}
-              className="underline underline-offset-4 hover:text-foreground"
-            >
-              {m.view_forked_from({ title: data.forkedFrom.title })}
-            </Link>
-          ) : null}
-        </div>
-
-        {data.tags.length > 0 ? (
-          <div className="flex flex-wrap gap-1.5">
-            {data.tags.map((tag) => (
-              <Badge key={tag} variant="secondary">
-                {tag}
-              </Badge>
-            ))}
-          </div>
+        {mapStops.length > 0 ? (
+          <Suspense
+            fallback={
+              <Skeleton
+                role="status"
+                aria-label={m.app_loading()}
+                className="h-80 w-full rounded-lg"
+              />
+            }
+          >
+            <ItineraryMap stops={mapStops} />
+          </Suspense>
         ) : null}
 
-        <div className="flex flex-wrap items-center gap-3">
-          <RatingStars
-            itineraryId={data.id}
-            slug={slug}
-            inviteToken={inviteToken}
-            ratingAvg={data.ratingAvg}
-            ratingCount={data.ratingCount}
-            myStars={data.viewer.myStars}
-            canRate={canRate}
-            redirectTarget={redirectTarget}
-          />
-          <FavoriteButton
-            itineraryId={data.id}
-            slug={slug}
-            inviteToken={inviteToken}
-            isFavorite={data.viewer.isFavorite}
-            loggedIn={Boolean(session)}
-            redirectTarget={redirectTarget}
-          />
-          <ForkButton
-            itineraryId={data.id}
-            loggedIn={Boolean(session)}
-            redirectTarget={redirectTarget}
-          />
-        </div>
-      </header>
+        <DayTimeline days={data.days} />
 
-      <Separator />
+        <Separator />
 
-      {mapStops.length > 0 ? (
-        <Suspense fallback={<div className="h-80 w-full animate-pulse rounded-lg bg-muted" />}>
-          <ItineraryMap stops={mapStops} />
-        </Suspense>
-      ) : null}
-
-      <div className="flex flex-col gap-8">
-        {data.days.map((day) => (
-          <section key={day.id} className="flex flex-col gap-3">
-            <h2 className="flex items-baseline gap-2 text-xl font-semibold">
-              <span>{m.view_day_label({ number: day.dayNumber })}</span>
-              {day.title ? (
-                <span className="text-base font-normal text-muted-foreground">
-                  {day.title}
-                </span>
-              ) : null}
-            </h2>
-            {day.note ? (
-              <p className="text-sm text-muted-foreground">{day.note}</p>
-            ) : null}
-            {day.stops.length > 0 ? <StopList stops={day.stops} /> : null}
-          </section>
-        ))}
+        <Comments />
       </div>
-
-      <Separator />
-
-      <Comments
-        itineraryId={data.id}
-        currentUserId={session?.id ?? null}
-        redirectTarget={redirectTarget}
-        inviteToken={inviteToken}
-      />
-    </div>
+    </ItineraryViewProvider>
   )
 }
