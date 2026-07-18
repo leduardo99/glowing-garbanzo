@@ -213,5 +213,6 @@
   "view_back": "Voltar",
   "view_comments_open": "{count} comentários",
   "editor_day_collapse": "Recolher",
-  "editor_day_expand": "Expandir"
+  "editor_day_expand": "Expandir",
+  "nav_new_short": "Novo"
 }
