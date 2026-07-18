@@ -81,10 +81,13 @@ Always checked **server-side**, inside the server functions:
 | --- | --- |
 | View itinerary | public+published: anyone (even logged out). Private+published: author and members. Draft: author only |
 | Create / edit / publish / unpublish / delete | author only |
-| Generate/revoke invite link, remove member | author only (private itineraries only) |
+| Generate/revoke invite link | author only (private itineraries only) |
+| Remove member | author only |
 | Fork | logged in with read access to the itinerary; creates a full copy (days+stops) as the user's draft, with `forkedFromId` |
 | Favorite / comment | logged in with read access |
 | Rate | logged in; published public itineraries only; one rating per user (upsert) |
+
+Note: "Remove member" is not restricted to private itineraries — this lets the author clean up stale membership rows after a private→public flip (adjudicated during Task 7).
 
 ## Routes (TanStack Router, file-based)
 

@@ -1,4 +1,5 @@
 import { auth } from '#/lib/auth'
+import { ERR_UNAUTHORIZED } from './errors'
 
 /** Better Auth session shape returned by `auth.api.getSession`. */
 export type AuthSession = Awaited<ReturnType<typeof auth.api.getSession>>
@@ -19,7 +20,7 @@ export async function getOptionalSession(request: Request): Promise<AuthSession>
 export async function getSessionOrThrow(request: Request): Promise<NonNullable<AuthSession>> {
   const session = await getOptionalSession(request)
   if (!session) {
-    throw new Error('UNAUTHORIZED')
+    throw new Error(ERR_UNAUTHORIZED)
   }
   return session
 }
