@@ -206,7 +206,7 @@ function HomePage() {
                   <button
                     type="button"
                     onClick={() => removeTag(tag)}
-                    aria-label={tag}
+                    aria-label={m.home_filter_tag_remove({ tag })}
                     className="cursor-pointer"
                   >
                     <XIcon className="size-3" />

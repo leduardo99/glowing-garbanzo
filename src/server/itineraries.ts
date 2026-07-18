@@ -336,19 +336,29 @@ export async function getItineraryBySlugImpl(
     throw new Error(ERR_NOT_FOUND)
   }
 
-  const [days, authorRow, forkedFromRow] = await Promise.all([
-    loadDaysWithStops(db, row.id),
-    db.query.user.findFirst({
-      where: eq(user.id, row.authorId),
-      columns: { id: true, name: true, image: true },
-    }),
-    row.forkedFromId
-      ? db.query.itinerary.findFirst({
-          where: eq(itinerary.id, row.forkedFromId),
-          columns: { slug: true, title: true },
-        })
-      : Promise.resolve(null),
-  ])
+  const [days, authorRow, forkedFromRow, isMemberOfSource] =
+    await Promise.all([
+      loadDaysWithStops(db, row.id),
+      db.query.user.findFirst({
+        where: eq(user.id, row.authorId),
+        columns: { id: true, name: true, image: true },
+      }),
+      row.forkedFromId
+        ? db.query.itinerary.findFirst({
+            where: eq(itinerary.id, row.forkedFromId),
+            columns: {
+              slug: true,
+              title: true,
+              authorId: true,
+              status: true,
+              visibility: true,
+            },
+          })
+        : Promise.resolve(null),
+      row.forkedFromId && userId
+        ? isItineraryMember(db, { itineraryId: row.forkedFromId, userId })
+        : Promise.resolve(false),
+    ])
   // authorId is a not-null FK to `user`, so authorRow is always present in
   // practice; the fallback only guards against a pathological missing row
   // rather than encoding a real product state.
@@ -357,7 +367,24 @@ export async function getItineraryBySlugImpl(
     name: row.authorId,
     image: null,
   }
-  const forkedFrom: ForkedFromView | null = forkedFromRow ?? null
+  // Only credit the fork source if the current viewer can actually read it —
+  // otherwise a public fork of a private/draft itinerary would leak the
+  // source's slug/title to anyone.
+  let forkedFrom: ForkedFromView | null = null
+  if (forkedFromRow) {
+    const sourceAccessData: ItineraryAccessData = {
+      authorId: forkedFromRow.authorId,
+      status: forkedFromRow.status,
+      visibility: forkedFromRow.visibility,
+    }
+    const sourceAccessCtx: AccessContext = {
+      userId,
+      isMember: isMemberOfSource,
+    }
+    if (canRead(sourceAccessData, sourceAccessCtx)) {
+      forkedFrom = { slug: forkedFromRow.slug, title: forkedFromRow.title }
+    }
+  }
 
   let isFavorite = false
   let myStars: number | null = null

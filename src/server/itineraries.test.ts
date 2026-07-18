@@ -1,7 +1,7 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import { eq } from 'drizzle-orm'
 
-import { itinerary, itineraryDay, rating, stop } from '#/db/schema'
+import { itinerary, itineraryDay, itineraryMember, rating, stop } from '#/db/schema'
 import {
   closeTestDb,
   createTestUser,
@@ -234,6 +234,164 @@ describe('itineraries server functions', () => {
       expect(detail.forkedFrom).toEqual({
         slug: original.slug,
         title: 'Chapada Diamantina',
+      })
+    })
+
+    it('hides forkedFrom credit when the fork source is private and unreadable by the viewer', async () => {
+      const sourceAuthor = await createTestUser('Sofia Fonte')
+      const forker = await createTestUser('Beto Forker')
+      const stranger = await createTestUser('Estranho')
+      const source = await createItineraryImpl(
+        testDb,
+        { user: { id: sourceAuthor.id } },
+        {
+          title: 'Segredo da Bahia',
+          destination: 'Bahia',
+        },
+      )
+      await updateItineraryImpl(
+        testDb,
+        { user: { id: sourceAuthor.id } },
+        {
+          id: source.id,
+          visibility: 'private',
+        },
+      )
+      await publishItineraryImpl(
+        testDb,
+        { user: { id: sourceAuthor.id } },
+        { id: source.id },
+      )
+      // forker needs read access to the private source in order to fork it
+      await testDb
+        .insert(itineraryMember)
+        .values({ itineraryId: source.id, userId: forker.id })
+
+      const forked = await forkItineraryImpl(
+        testDb,
+        { user: { id: forker.id } },
+        { id: source.id },
+      )
+      await publishItineraryImpl(
+        testDb,
+        { user: { id: forker.id } },
+        { id: forked.id },
+      )
+
+      const asAnonymous = await getItineraryBySlugImpl(testDb, null, {
+        slug: forked.slug,
+      })
+      expect(asAnonymous.forkedFrom).toBeNull()
+
+      const asStranger = await getItineraryBySlugImpl(
+        testDb,
+        { user: { id: stranger.id } },
+        { slug: forked.slug },
+      )
+      expect(asStranger.forkedFrom).toBeNull()
+    })
+
+    it('shows forkedFrom credit to the source itinerary author, even when the source is private', async () => {
+      const sourceAuthor = await createTestUser('Sofia Fonte')
+      const forker = await createTestUser('Beto Forker')
+      const source = await createItineraryImpl(
+        testDb,
+        { user: { id: sourceAuthor.id } },
+        {
+          title: 'Segredo da Bahia',
+          destination: 'Bahia',
+        },
+      )
+      await updateItineraryImpl(
+        testDb,
+        { user: { id: sourceAuthor.id } },
+        {
+          id: source.id,
+          visibility: 'private',
+        },
+      )
+      await publishItineraryImpl(
+        testDb,
+        { user: { id: sourceAuthor.id } },
+        { id: source.id },
+      )
+      await testDb
+        .insert(itineraryMember)
+        .values({ itineraryId: source.id, userId: forker.id })
+
+      const forked = await forkItineraryImpl(
+        testDb,
+        { user: { id: forker.id } },
+        { id: source.id },
+      )
+      await publishItineraryImpl(
+        testDb,
+        { user: { id: forker.id } },
+        { id: forked.id },
+      )
+
+      const asSourceAuthor = await getItineraryBySlugImpl(
+        testDb,
+        { user: { id: sourceAuthor.id } },
+        { slug: forked.slug },
+      )
+      expect(asSourceAuthor.forkedFrom).toEqual({
+        slug: source.slug,
+        title: 'Segredo da Bahia',
+      })
+    })
+
+    it('shows forkedFrom credit to a member of the private source itinerary', async () => {
+      const sourceAuthor = await createTestUser('Sofia Fonte')
+      const forker = await createTestUser('Beto Forker')
+      const sourceMember = await createTestUser('Membro da Fonte')
+      const source = await createItineraryImpl(
+        testDb,
+        { user: { id: sourceAuthor.id } },
+        {
+          title: 'Segredo da Bahia',
+          destination: 'Bahia',
+        },
+      )
+      await updateItineraryImpl(
+        testDb,
+        { user: { id: sourceAuthor.id } },
+        {
+          id: source.id,
+          visibility: 'private',
+        },
+      )
+      await publishItineraryImpl(
+        testDb,
+        { user: { id: sourceAuthor.id } },
+        { id: source.id },
+      )
+      await testDb
+        .insert(itineraryMember)
+        .values({ itineraryId: source.id, userId: forker.id })
+      await testDb
+        .insert(itineraryMember)
+        .values({ itineraryId: source.id, userId: sourceMember.id })
+
+      const forked = await forkItineraryImpl(
+        testDb,
+        { user: { id: forker.id } },
+        { id: source.id },
+      )
+      await publishItineraryImpl(
+        testDb,
+        { user: { id: forker.id } },
+        { id: forked.id },
+      )
+
+      const asSourceMember = await getItineraryBySlugImpl(
+        testDb,
+        { user: { id: sourceMember.id } },
+        { slug: forked.slug },
+      )
+      expect(asSourceMember.forkedFrom).toEqual({
+        slug: source.slug,
+        title: 'Segredo da Bahia',
       })
     })
 
