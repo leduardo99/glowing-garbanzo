@@ -97,7 +97,20 @@ const toggleFavoriteSchema = z.object({ itineraryId: z.string().min(1) })
 
 export type ToggleFavoriteInput = z.infer<typeof toggleFavoriteSchema>
 
-/** Toggles the caller's favorite row for an itinerary on/off. Login + read access required. */
+/**
+ * Toggles the caller's favorite row for an itinerary on/off. Login + read
+ * access required.
+ *
+ * The find-then-write is racy under concurrent calls (two "on" toggles can
+ * both observe "no existing row" and both attempt the insert), so both
+ * branches are made idempotent rather than relying on the initial read:
+ * the insert uses `onConflictDoNothing()` on the (userId, itineraryId)
+ * composite primary key, so a concurrent insert lands as a no-op instead of
+ * a raw unique-violation, and either way the caller gets `{ favorite: true
+ * }`. The delete is naturally idempotent — deleting a row that's already
+ * gone is a zero-row delete, not an error — so it always returns
+ * `{ favorite: false }`.
+ */
 export async function toggleFavoriteImpl(
   db: Database,
   session: SessionUser | null,
@@ -120,7 +133,10 @@ export async function toggleFavoriteImpl(
     return { favorite: false }
   }
 
-  await db.insert(favorite).values({ userId, itineraryId: input.itineraryId })
+  await db
+    .insert(favorite)
+    .values({ userId, itineraryId: input.itineraryId })
+    .onConflictDoNothing()
   return { favorite: true }
 }
 
@@ -259,7 +275,13 @@ export async function listCommentsImpl(
       .from(comment)
       .innerJoin(user, eq(comment.authorId, user.id))
       .where(eq(comment.itineraryId, input.itineraryId))
-      .orderBy(desc(comment.createdAt))
+      // `createdAt` alone isn't a stable sort key — two comments can share a
+      // timestamp (same millisecond, or a clock with coarser resolution),
+      // which would make page boundaries and ordering nondeterministic.
+      // `id DESC` is an arbitrary but fixed tie-breaker that makes the
+      // order fully deterministic without changing the primary
+      // newest-first intent.
+      .orderBy(desc(comment.createdAt), desc(comment.id))
       .limit(COMMENTS_PAGE_SIZE)
       .offset(offset),
     db

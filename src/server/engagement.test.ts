@@ -1,7 +1,7 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import { and, eq } from 'drizzle-orm'
 
-import { comment, favorite, itinerary, rating } from '#/db/schema'
+import { comment, favorite, itinerary, itineraryMember, rating } from '#/db/schema'
 import { closeTestDb, createTestUser, resetTestDb, setupTestDb, testDb } from '#/test/db'
 import { createItineraryImpl, publishItineraryImpl, updateItineraryImpl } from './itineraries'
 import {
@@ -83,6 +83,33 @@ describe('engagement server functions', () => {
       })
       expect(row).toBeUndefined()
     })
+
+    it('insert path is idempotent under a simulated concurrent double-insert (no unique-violation)', async () => {
+      const author = await createTestUser()
+      const fan = await createTestUser()
+      const created = await publishedItinerary(author.id)
+
+      // Establish the "on" state the normal way — this is the insert path
+      // toggleFavoriteImpl's "on" branch takes from a clean slate.
+      const first = await toggleFavoriteImpl(testDb, { user: { id: fan.id } }, {
+        itineraryId: created.id,
+      })
+      expect(first).toEqual({ favorite: true })
+
+      // Simulate the race this fix closes: two concurrent "on" toggles both
+      // read "no existing row" before either commits, so both independently
+      // run the insert. Re-running that exact insert statement (as the
+      // "losing" racer would) must resolve idempotently via
+      // onConflictDoNothing() instead of throwing a raw unique-violation on
+      // the (userId, itineraryId) composite primary key.
+      // If this throws, the test fails with the unique-violation error.
+      await testDb.insert(favorite).values({ userId: fan.id, itineraryId: created.id }).onConflictDoNothing()
+
+      const rows = await testDb.query.favorite.findMany({
+        where: and(eq(favorite.userId, fan.id), eq(favorite.itineraryId, created.id)),
+      })
+      expect(rows).toHaveLength(1)
+    })
   })
 
   describe('rateItineraryImpl', () => {
@@ -123,6 +150,35 @@ describe('engagement server functions', () => {
       // author can read their own draft, but rating requires published+public
       await expect(
         rateItineraryImpl(testDb, { user: { id: author.id } }, { id: created.id, stars: 5 }),
+      ).rejects.toThrow('FORBIDDEN')
+    })
+
+    it('rejects rating a published private itinerary readable via membership (forbidden, not not-found)', async () => {
+      const author = await createTestUser()
+      const member = await createTestUser()
+      const created = await createItineraryImpl(testDb, { user: { id: author.id } }, {
+        title: 'Private trip',
+        destination: 'Somewhere',
+      })
+      await updateItineraryImpl(testDb, { user: { id: author.id } }, {
+        id: created.id,
+        visibility: 'private',
+      })
+      await publishItineraryImpl(testDb, { user: { id: author.id } }, { id: created.id })
+      await testDb.insert(itineraryMember).values({ itineraryId: created.id, userId: member.id })
+
+      // Confirm the member genuinely has read access (e.g. via
+      // listCommentsImpl, which mirrors itinerary view access) — this is
+      // what makes the FORBIDDEN below meaningfully different from NOT_FOUND.
+      await expect(
+        listCommentsImpl(testDb, { user: { id: member.id } }, { itineraryId: created.id, page: 1 }),
+      ).resolves.toEqual({ items: [], total: 0 })
+
+      // canRate requires published+public, so a readable-but-private
+      // itinerary is FORBIDDEN, not NOT_FOUND — the caller already knows
+      // the itinerary exists.
+      await expect(
+        rateItineraryImpl(testDb, { user: { id: member.id } }, { id: created.id, stars: 5 }),
       ).rejects.toThrow('FORBIDDEN')
     })
 
@@ -260,6 +316,33 @@ describe('engagement server functions', () => {
       for (const id of page2Ids) {
         expect(page1Ids.has(id)).toBe(false)
       }
+    })
+
+    it('listCommentsImpl breaks createdAt ties deterministically by id', async () => {
+      const author = await createTestUser()
+      const commenter = await createTestUser()
+      const created = await publishedItinerary(author.id)
+
+      // Insert two comments sharing the exact same createdAt so ordering by
+      // createdAt alone is ambiguous — the tie-breaker (`id DESC`) must be
+      // what makes the result order stable and repeatable.
+      const sameInstant = new Date('2026-01-01T00:00:00.000Z')
+      const [rowA] = await testDb
+        .insert(comment)
+        .values({ itineraryId: created.id, authorId: commenter.id, body: 'A', createdAt: sameInstant })
+        .returning()
+      const [rowB] = await testDb
+        .insert(comment)
+        .values({ itineraryId: created.id, authorId: commenter.id, body: 'B', createdAt: sameInstant })
+        .returning()
+
+      const expectedOrder = [rowA.id, rowB.id].sort().reverse()
+
+      const first = await listCommentsImpl(testDb, null, { itineraryId: created.id, page: 1 })
+      const second = await listCommentsImpl(testDb, null, { itineraryId: created.id, page: 1 })
+
+      expect(first.items.map((c) => c.id)).toEqual(expectedOrder)
+      expect(second.items.map((c) => c.id)).toEqual(expectedOrder)
     })
 
     it('listCommentsImpl rejects an itinerary with no read access (not found)', async () => {
