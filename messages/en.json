@@ -94,6 +94,8 @@
   "editor_cover_hint": "Click to add a cover photo",
   "editor_cover_uploading": "Uploading…",
   "editor_cover_error": "Couldn't upload the cover image.",
+  "editor_cover_error_too_large": "That image is too large. Try a smaller photo.",
+  "editor_cover_error_storage_not_configured": "Cover uploads aren't set up on this server yet.",
   "editor_save": "Save",
   "editor_save_success": "Changes saved.",
   "editor_save_error": "Couldn't save changes. Try again.",

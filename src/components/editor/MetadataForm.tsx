@@ -15,11 +15,17 @@ import {
 } from '#/components/ui/field'
 import { Input } from '#/components/ui/input'
 import { Textarea } from '#/components/ui/textarea'
+import { maybeDownscaleCoverImage } from '#/lib/image-downscale'
 import { cn } from '#/lib/utils'
 import { m } from '#/paraglide/messages'
 import { updateItinerary } from '#/server/itineraries'
 import type { EditorItinerary } from '#/server/itineraries'
-import { uploadCover } from '#/server/uploads'
+import {
+  ERR_BLOB_STORAGE_NOT_CONFIGURED,
+  ERR_FILE_TOO_LARGE,
+  MAX_COVER_BYTES,
+  uploadCover,
+} from '#/server/uploads'
 
 /**
  * Title/summary/destination/tags + cover photo. Tags are a chip input
@@ -66,14 +72,37 @@ export function MetadataForm({ itinerary }: { itinerary: EditorItinerary }) {
   })
 
   const coverMutation = useMutation({
-    mutationFn: (file: File) => {
+    mutationFn: async (file: File) => {
+      // Downscale oversized/huge-dimension photos client-side so they fit
+      // under Vercel's ~4.5 MB serverless request-body limit — see
+      // `maybeDownscaleCoverImage`'s doc comment. Files already small pass
+      // through untouched. If the result is still too large (downscale
+      // failed on an odd format and the original itself is huge), fail
+      // fast with the same sentinel the server would use instead of
+      // sending a request that's guaranteed to be rejected with a platform
+      // 413 before it even reaches our own size check.
+      const uploadable = await maybeDownscaleCoverImage(file)
+      if (uploadable.size > MAX_COVER_BYTES) {
+        throw new Error(ERR_FILE_TOO_LARGE)
+      }
+
       const formData = new FormData()
       formData.set('itineraryId', itinerary.id)
-      formData.set('file', file)
+      formData.set('file', uploadable)
       return uploadCover({ data: formData })
     },
     onSuccess: () => void invalidate(),
-    onError: () => toast.error(m.editor_cover_error()),
+    onError: (error) => {
+      if (error instanceof Error && error.message === ERR_FILE_TOO_LARGE) {
+        toast.error(m.editor_cover_error_too_large())
+        return
+      }
+      if (error instanceof Error && error.message === ERR_BLOB_STORAGE_NOT_CONFIGURED) {
+        toast.error(m.editor_cover_error_storage_not_configured())
+        return
+      }
+      toast.error(m.editor_cover_error())
+    },
   })
 
   const form = useForm({

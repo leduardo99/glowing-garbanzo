@@ -94,6 +94,8 @@
   "editor_cover_hint": "Clique para adicionar uma foto de capa",
   "editor_cover_uploading": "Enviando…",
   "editor_cover_error": "Não foi possível enviar a imagem de capa.",
+  "editor_cover_error_too_large": "Essa imagem é muito grande. Tente uma foto menor.",
+  "editor_cover_error_storage_not_configured": "O envio de capas ainda não está configurado neste servidor.",
   "editor_save": "Salvar",
   "editor_save_success": "Alterações salvas.",
   "editor_save_error": "Não foi possível salvar as alterações. Tente novamente.",
