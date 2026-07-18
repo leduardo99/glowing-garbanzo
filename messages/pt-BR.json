@@ -205,5 +205,13 @@
   "comments_empty": "Nenhum comentário ainda.",
   "comments_error": "Não foi possível publicar seu comentário. Tente novamente.",
   "comments_load_more": "Carregar mais",
-  "comments_login_cta": "Entre para comentar"
+  "comments_login_cta": "Entre para comentar",
+  "home_filters_button": "Filtros",
+  "home_filters_show_results": "Ver resultados",
+  "home_filters_clear": "Limpar filtros",
+  "home_sort_label": "Ordenar por",
+  "view_back": "Voltar",
+  "view_comments_open": "{count} comentários",
+  "editor_day_collapse": "Recolher",
+  "editor_day_expand": "Expandir"
 }

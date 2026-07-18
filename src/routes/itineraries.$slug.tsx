@@ -1,8 +1,13 @@
-import { Suspense, lazy, useMemo } from 'react'
+import { Suspense, lazy, useMemo, useState } from 'react'
 import { z } from 'zod'
-import { useSuspenseQuery } from '@tanstack/react-query'
+import { useInfiniteQuery, useSuspenseQuery } from '@tanstack/react-query'
 import { Link, createFileRoute, notFound } from '@tanstack/react-router'
-import { SearchXIcon, TicketXIcon } from 'lucide-react'
+import {
+  ChevronRightIcon,
+  MessageCircleIcon,
+  SearchXIcon,
+  TicketXIcon,
+} from 'lucide-react'
 
 import { Comments } from '#/components/Comments'
 import { DayTimeline } from '#/components/itinerary/DayTimeline'
@@ -19,6 +24,12 @@ import {
   CardTitle,
 } from '#/components/ui/card'
 import {
+  Drawer,
+  DrawerContent,
+  DrawerHeader,
+  DrawerTitle,
+} from '#/components/ui/drawer'
+import {
   Empty,
   EmptyDescription,
   EmptyMedia,
@@ -26,6 +37,7 @@ import {
 } from '#/components/ui/empty'
 import { Separator } from '#/components/ui/separator'
 import { Skeleton } from '#/components/ui/skeleton'
+import { useIsMobile } from '#/hooks/use-is-mobile'
 import { commentsQueryOptions, itineraryQueryOptions } from '#/lib/queries'
 import { m } from '#/paraglide/messages'
 import { joinByInviteToken } from '#/server/members'
@@ -104,7 +116,10 @@ export const Route = createFileRoute('/itineraries/$slug')({
     // client-side after hydration instead.
     try {
       await context.queryClient.ensureInfiniteQueryData(
-        commentsQueryOptions({ itineraryId: detail.id, inviteToken: deps.invite }),
+        commentsQueryOptions({
+          itineraryId: detail.id,
+          inviteToken: deps.invite,
+        }),
       )
     } catch {
       // Swallowed intentionally — see comment above.
@@ -167,7 +182,22 @@ function ItineraryView() {
   // `rateItinerary` call regardless; this only decides whether
   // `RatingStars` renders live buttons or a read-only summary.
   const canRate =
-    Boolean(session) && data.status === 'published' && data.visibility === 'public'
+    Boolean(session) &&
+    data.status === 'published' &&
+    data.visibility === 'public'
+
+  // Same query the loader already `ensureInfiniteQueryData`'d and
+  // `Comments` itself reads — calling it again here just subscribes to the
+  // already-cached result (same query key, React Query dedupes) so the
+  // mobile "view comments" trigger below can show a live count without a
+  // second network round trip or any server-side change.
+  const commentsQuery = useInfiniteQuery(
+    commentsQueryOptions({ itineraryId: data.id, inviteToken }),
+  )
+  const commentCount = commentsQuery.data?.pages[0]?.total ?? 0
+
+  const isMobile = useIsMobile()
+  const [commentsOpen, setCommentsOpen] = useState(false)
 
   return (
     <ItineraryViewProvider
@@ -201,14 +231,23 @@ function ItineraryView() {
 
         <ItineraryHero data={data} />
 
-        <EngagementBar
-          ratingAvg={data.ratingAvg}
-          ratingCount={data.ratingCount}
-          myStars={data.viewer.myStars}
-          isFavorite={data.viewer.isFavorite}
-        />
+        {/*
+          Sticky compact engagement bar (DESIGN.md's app-shell motion
+          section): pins under the header once the hero scrolls past it on
+          mobile, matching the immersive hero's edge-to-edge bleed via the
+          same negative-margin trick. Desktop keeps the bar in normal flow,
+          unchanged from the previous pass.
+        */}
+        <div className="sticky top-0 z-20 -mx-4 border-b border-line bg-paper/95 px-4 py-2.5 backdrop-blur-sm sm:-mx-6 sm:px-6 md:static md:mx-0 md:border-0 md:bg-transparent md:px-0 md:py-0 md:backdrop-blur-none">
+          <EngagementBar
+            ratingAvg={data.ratingAvg}
+            ratingCount={data.ratingCount}
+            myStars={data.viewer.myStars}
+            isFavorite={data.viewer.isFavorite}
+          />
+        </div>
 
-        <Separator />
+        <Separator className="hidden md:block" />
 
         {mapStops.length > 0 ? (
           <Suspense
@@ -228,7 +267,48 @@ function ItineraryView() {
 
         <Separator />
 
-        <Comments />
+        {/*
+          Comments: a bottom sheet on mobile (native "open thread" pattern
+          — a full inline list would push the day timeline far down a
+          small screen), inline on desktop exactly as before. `isMobile`
+          defaults to `false` during SSR/first paint, so the server (and
+          the very first client render) always render the desktop branch
+          (`Comments` inline) — see `useIsMobile`'s doc comment.
+        */}
+        {isMobile ? (
+          <>
+            <button
+              type="button"
+              onClick={() => setCommentsOpen(true)}
+              className="flex items-center justify-between gap-2 rounded-lg bg-surface px-4 py-3.5 text-left shadow-resting transition-shadow hover:shadow-lifted"
+            >
+              <span className="flex items-center gap-2 text-title font-semibold text-ink">
+                <MessageCircleIcon
+                  aria-hidden="true"
+                  className="size-4 text-ink-soft"
+                />
+                {m.view_comments_open({ count: commentCount })}
+              </span>
+              <ChevronRightIcon
+                aria-hidden="true"
+                className="size-4 text-ink-soft"
+              />
+            </button>
+
+            <Drawer open={commentsOpen} onOpenChange={setCommentsOpen}>
+              <DrawerContent>
+                <DrawerHeader>
+                  <DrawerTitle>{m.comments_title()}</DrawerTitle>
+                </DrawerHeader>
+                <div className="overflow-y-auto px-4 pb-4">
+                  <Comments showTitle={false} />
+                </div>
+              </DrawerContent>
+            </Drawer>
+          </>
+        ) : (
+          <Comments />
+        )}
       </div>
     </ItineraryViewProvider>
   )

@@ -71,9 +71,12 @@
      (`-value` suffix: the `@theme inline` block below generates the
      `shadow-resting` etc. utilities from these, and Tailwind's theme
      namespace would otherwise collide with the raw token name.) */
-  --shadow-resting-value: 0 1px 2px oklch(0.24 0.02 45 / 0.08), 0 1px 1px oklch(0.24 0.02 45 / 0.06);
-  --shadow-lifted-value: 0 4px 12px oklch(0.24 0.02 45 / 0.14), 0 1px 2px oklch(0.24 0.02 45 / 0.08);
-  --shadow-elevated-value: 0 12px 32px oklch(0.24 0.02 45 / 0.2), 0 2px 6px oklch(0.24 0.02 45 / 0.1);
+  --shadow-resting-value:
+    0 1px 2px oklch(0.24 0.02 45 / 0.08), 0 1px 1px oklch(0.24 0.02 45 / 0.06);
+  --shadow-lifted-value:
+    0 4px 12px oklch(0.24 0.02 45 / 0.14), 0 1px 2px oklch(0.24 0.02 45 / 0.08);
+  --shadow-elevated-value:
+    0 12px 32px oklch(0.24 0.02 45 / 0.2), 0 2px 6px oklch(0.24 0.02 45 / 0.1);
 
   /* shadcn/ui slot variables, aliased onto the tokens above so every
      existing bg-background / text-foreground / bg-primary usage across
@@ -306,6 +309,87 @@ pre code {
 .page-wrap {
   width: min(1080px, calc(100% - 2rem));
   margin-inline: auto;
+}
+
+/* Horizontally scrollable chip rows (home filters) — content still
+   reachable by touch swipe/keyboard, just without a visible scrollbar
+   track, matching the native-app chip-row pattern. */
+.no-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/*
+ * View Transitions — progressive enhancement, no library (React's
+ * `<ViewTransition>` component needs `react@canary`; this project runs
+ * stable React 19, so the transition is driven entirely by
+ * `@tanstack/react-router`'s built-in `viewTransition` link/navigate
+ * option, which calls `document.startViewTransition` itself and already
+ * no-ops when the browser doesn't support it — see router.tsx's
+ * `defaultViewTransition` and the `viewTransition` prop on the Links this
+ * feeds). A plain crossfade on the root snapshot for every navigation,
+ * with a subtle directional slide layered on top for the app's one
+ * hierarchical navigation (home/my → detail, tagged `nav-forward`/
+ * `nav-back` — see ItineraryCard's Link, EditorPage's back Link,
+ * ItineraryHero's cover Link). `:active-view-transition-type()` is itself
+ * progressive: unsupported browsers just skip those rules and keep the
+ * base crossfade below. See .interface-design/system.md's "View
+ * transitions" decision log for the full writeup.
+ */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 220ms;
+  animation-timing-function: cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+html:active-view-transition-type(nav-forward)::view-transition-old(root) {
+  animation-name: roteiros-slide-to-left;
+}
+html:active-view-transition-type(nav-forward)::view-transition-new(root) {
+  animation-name: roteiros-slide-from-right;
+}
+html:active-view-transition-type(nav-back)::view-transition-old(root) {
+  animation-name: roteiros-slide-to-right;
+}
+html:active-view-transition-type(nav-back)::view-transition-new(root) {
+  animation-name: roteiros-slide-from-left;
+}
+
+@keyframes roteiros-slide-from-right {
+  from {
+    transform: translateX(16px);
+    opacity: 0;
+  }
+}
+@keyframes roteiros-slide-to-left {
+  to {
+    transform: translateX(-16px);
+    opacity: 0;
+  }
+}
+@keyframes roteiros-slide-from-left {
+  from {
+    transform: translateX(-16px);
+    opacity: 0;
+  }
+}
+@keyframes roteiros-slide-to-right {
+  to {
+    transform: translateX(16px);
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation-duration: 0.01ms !important;
+    animation-delay: 0s !important;
+  }
 }
 
 button,

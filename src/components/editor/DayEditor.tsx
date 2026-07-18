@@ -18,6 +18,7 @@ import { toast } from 'sonner'
 import { ConfirmDialog } from '#/components/editor/ConfirmDialog'
 import { StopForm } from '#/components/editor/StopForm'
 import type { StopFormValues } from '#/components/editor/StopForm'
+import { ResponsiveSheet } from '#/components/ResponsiveSheet'
 import { Button } from '#/components/ui/button'
 import {
   Card,
@@ -26,16 +27,10 @@ import {
   CardHeader,
   CardTitle,
 } from '#/components/ui/card'
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '#/components/ui/dialog'
 import { Field, FieldLabel } from '#/components/ui/field'
 import { Input } from '#/components/ui/input'
 import { Textarea } from '#/components/ui/textarea'
+import { cn } from '#/lib/utils'
 import { formatCentsToCostInput } from '#/lib/cost'
 import { m } from '#/paraglide/messages'
 import {
@@ -223,15 +218,19 @@ function DayCard({
   onUpdateDay: (values: { title?: string | null; note?: string | null }) => void
   onRemoveDay: () => Promise<void>
   onAddStop: (values: StopMutationValues) => Promise<unknown>
-  onUpdateStop: (
-    stopId: string,
-    values: StopMutationValues,
-  ) => Promise<unknown>
+  onUpdateStop: (stopId: string, values: StopMutationValues) => Promise<unknown>
   onRemoveStop: (stopId: string) => Promise<unknown>
   onReorderStop: (stopIds: string[]) => Promise<unknown>
 }) {
   const [addOpen, setAddOpen] = useState(false)
   const [editingStopId, setEditingStopId] = useState<string | null>(null)
+  // Days start expanded — an itinerary being actively edited usually has
+  // only a handful, and collapsing everything by default would hide the
+  // "add stop" affordance the author most likely wants right away. Once a
+  // day's stops are filled in, collapsing it back down is what keeps a
+  // multi-day itinerary scannable on a phone (DESIGN.md's mobile app-shell
+  // density note) instead of one long scroll of every day's full form.
+  const [collapsed, setCollapsed] = useState(false)
 
   const editingStop = day.stops.find((s) => s.id === editingStopId) ?? null
 
@@ -244,192 +243,222 @@ function DayCard({
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-baseline gap-2 text-headline">
-          <span className="tabular-nums">
-            {m.editor_day_label({ number: day.dayNumber })}
+    <Card className="gap-0 py-0">
+      <CardHeader className="px-0">
+        <button
+          type="button"
+          onClick={() => setCollapsed((value) => !value)}
+          aria-expanded={!collapsed}
+          className="flex w-full items-center justify-between gap-2 px-6 py-5 text-left"
+        >
+          <CardTitle className="flex items-baseline gap-2 text-headline">
+            <span className="tabular-nums">
+              {m.editor_day_label({ number: day.dayNumber })}
+            </span>
+          </CardTitle>
+          <ChevronDownIcon
+            aria-hidden="true"
+            className={cn(
+              'size-5 shrink-0 text-ink-soft transition-transform',
+              !collapsed && 'rotate-180',
+            )}
+          />
+          <span className="sr-only">
+            {collapsed ? m.editor_day_expand() : m.editor_day_collapse()}
           </span>
-        </CardTitle>
+        </button>
       </CardHeader>
 
-      <CardContent className="flex flex-col gap-4">
-        <div className="grid gap-3 sm:grid-cols-2">
-          <Field>
-            <FieldLabel htmlFor={`day-title-${day.id}`}>
-              {m.editor_day_field_title()}
-            </FieldLabel>
-            <Input
-              id={`day-title-${day.id}`}
-              defaultValue={day.title ?? ''}
-              onBlur={(event) => {
-                const value = event.target.value
-                if (value !== (day.title ?? '')) {
-                  onUpdateDay({ title: value || null })
-                }
-              }}
-            />
-          </Field>
-          <Field>
-            <FieldLabel htmlFor={`day-note-${day.id}`}>
-              {m.editor_day_field_note()}
-            </FieldLabel>
-            <Textarea
-              id={`day-note-${day.id}`}
-              defaultValue={day.note ?? ''}
-              onBlur={(event) => {
-                const value = event.target.value
-                if (value !== (day.note ?? '')) {
-                  onUpdateDay({ note: value || null })
-                }
-              }}
-            />
-          </Field>
-        </div>
+      {collapsed ? null : (
+        <>
+          <CardContent className="flex flex-col gap-4 pt-2 pb-6">
+            <div className="grid gap-3 sm:grid-cols-2">
+              <Field>
+                <FieldLabel htmlFor={`day-title-${day.id}`}>
+                  {m.editor_day_field_title()}
+                </FieldLabel>
+                <Input
+                  id={`day-title-${day.id}`}
+                  defaultValue={day.title ?? ''}
+                  onBlur={(event) => {
+                    const value = event.target.value
+                    if (value !== (day.title ?? '')) {
+                      onUpdateDay({ title: value || null })
+                    }
+                  }}
+                />
+              </Field>
+              <Field>
+                <FieldLabel htmlFor={`day-note-${day.id}`}>
+                  {m.editor_day_field_note()}
+                </FieldLabel>
+                <Textarea
+                  id={`day-note-${day.id}`}
+                  defaultValue={day.note ?? ''}
+                  onBlur={(event) => {
+                    const value = event.target.value
+                    if (value !== (day.note ?? '')) {
+                      onUpdateDay({ note: value || null })
+                    }
+                  }}
+                />
+              </Field>
+            </div>
 
-        {day.stops.length === 0 ? (
-          <p className="text-sm text-muted-foreground">
-            {m.editor_stop_empty()}
-          </p>
-        ) : (
-          <ol className="flex flex-col gap-2">
-            {day.stops.map((stop, index) => {
-              const Icon = CATEGORY_ICON[stop.category]
-              return (
-                <li
-                  key={stop.id}
-                  className="flex items-start gap-3 rounded-md border p-3"
-                >
-                  <span
-                    className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-full bg-muted text-foreground"
-                    title={CATEGORY_LABEL[stop.category]()}
-                  >
-                    <Icon className="size-4" />
-                  </span>
-                  <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-                    <span className="font-medium">{stop.name}</span>
-                    {stop.description ? (
-                      <span className="text-sm text-muted-foreground">
-                        {stop.description}
+            {day.stops.length === 0 ? (
+              <p className="text-sm text-muted-foreground">
+                {m.editor_stop_empty()}
+              </p>
+            ) : (
+              <ol className="flex flex-col gap-2">
+                {day.stops.map((stop, index) => {
+                  const Icon = CATEGORY_ICON[stop.category]
+                  return (
+                    <li
+                      key={stop.id}
+                      className="flex items-start gap-3 rounded-md border p-3"
+                    >
+                      <span
+                        className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-full bg-muted text-foreground"
+                        title={CATEGORY_LABEL[stop.category]()}
+                      >
+                        <Icon className="size-4" />
                       </span>
-                    ) : null}
-                    <div className="flex flex-wrap gap-x-3 gap-y-0.5 text-sm text-muted-foreground">
-                      {stop.placeLabel ? <span>{stop.placeLabel}</span> : null}
-                      {stop.costCents !== null ? (
-                        <span>{costFormatter.format(stop.costCents / 100)}</span>
-                      ) : null}
-                    </div>
-                  </div>
-                  <div className="flex shrink-0 items-center gap-1">
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon-sm"
-                      disabled={index === 0}
-                      aria-label={m.editor_stop_move_up()}
-                      onClick={() => move(index, -1)}
-                    >
-                      <ChevronUpIcon />
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon-sm"
-                      disabled={index === day.stops.length - 1}
-                      aria-label={m.editor_stop_move_down()}
-                      onClick={() => move(index, 1)}
-                    >
-                      <ChevronDownIcon />
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon-sm"
-                      aria-label={m.editor_stop_edit()}
-                      onClick={() => setEditingStopId(stop.id)}
-                    >
-                      <PencilIcon />
-                    </Button>
-                    <ConfirmDialog
-                      trigger={
+                      <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+                        <span className="font-medium">{stop.name}</span>
+                        {stop.description ? (
+                          <span className="text-sm text-muted-foreground">
+                            {stop.description}
+                          </span>
+                        ) : null}
+                        <div className="flex flex-wrap gap-x-3 gap-y-0.5 text-sm text-muted-foreground">
+                          {stop.placeLabel ? (
+                            <span>{stop.placeLabel}</span>
+                          ) : null}
+                          {stop.costCents !== null ? (
+                            <span>
+                              {costFormatter.format(stop.costCents / 100)}
+                            </span>
+                          ) : null}
+                        </div>
+                      </div>
+                      <div className="flex shrink-0 items-center gap-1">
                         <Button
                           type="button"
                           variant="ghost"
                           size="icon-sm"
-                          aria-label={m.editor_stop_remove()}
+                          disabled={index === 0}
+                          aria-label={m.editor_stop_move_up()}
+                          onClick={() => move(index, -1)}
                         >
-                          <Trash2Icon />
+                          <ChevronUpIcon />
                         </Button>
-                      }
-                      title={m.editor_stop_remove_confirm_title()}
-                      description={m.editor_stop_remove_confirm_description()}
-                      onConfirm={() => onRemoveStop(stop.id)}
-                    />
-                  </div>
-                </li>
-              )
-            })}
-          </ol>
-        )}
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon-sm"
+                          disabled={index === day.stops.length - 1}
+                          aria-label={m.editor_stop_move_down()}
+                          onClick={() => move(index, 1)}
+                        >
+                          <ChevronDownIcon />
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon-sm"
+                          aria-label={m.editor_stop_edit()}
+                          onClick={() => setEditingStopId(stop.id)}
+                        >
+                          <PencilIcon />
+                        </Button>
+                        <ConfirmDialog
+                          trigger={
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon-sm"
+                              aria-label={m.editor_stop_remove()}
+                            >
+                              <Trash2Icon />
+                            </Button>
+                          }
+                          title={m.editor_stop_remove_confirm_title()}
+                          description={m.editor_stop_remove_confirm_description()}
+                          onConfirm={() => onRemoveStop(stop.id)}
+                        />
+                      </div>
+                    </li>
+                  )
+                })}
+              </ol>
+            )}
 
-        <Dialog open={addOpen} onOpenChange={setAddOpen}>
-          <DialogTrigger asChild>
-            <Button type="button" variant="outline" size="sm" className="self-start">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="self-start"
+              onClick={() => setAddOpen(true)}
+            >
               <PlusIcon data-icon="inline-start" />
               {m.editor_stop_add()}
             </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>{m.editor_stop_add()}</DialogTitle>
-            </DialogHeader>
-            <StopForm
-              submitLabel={m.editor_stop_save()}
-              onCancel={() => setAddOpen(false)}
-              onSubmit={async (values) => {
-                await onAddStop(values)
-                setAddOpen(false)
-              }}
-            />
-          </DialogContent>
-        </Dialog>
 
-        <Dialog
-          open={editingStop !== null}
-          onOpenChange={(open) => !open && setEditingStopId(null)}
-        >
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>{m.editor_stop_edit()}</DialogTitle>
-            </DialogHeader>
-            {editingStop ? (
+            <ResponsiveSheet
+              open={addOpen}
+              onOpenChange={setAddOpen}
+              title={m.editor_stop_add()}
+            >
               <StopForm
-                defaultValues={stopFormValuesFrom(editingStop)}
                 submitLabel={m.editor_stop_save()}
-                onCancel={() => setEditingStopId(null)}
+                onCancel={() => setAddOpen(false)}
                 onSubmit={async (values) => {
-                  await onUpdateStop(editingStop.id, values)
-                  setEditingStopId(null)
+                  await onAddStop(values)
+                  setAddOpen(false)
                 }}
               />
-            ) : null}
-          </DialogContent>
-        </Dialog>
-      </CardContent>
+            </ResponsiveSheet>
 
-      <CardFooter>
-        <ConfirmDialog
-          trigger={
-            <Button type="button" variant="outline" size="sm" disabled={!canRemove}>
-              <Trash2Icon data-icon="inline-start" />
-              {m.editor_day_remove()}
-            </Button>
-          }
-          title={m.editor_day_remove_confirm_title()}
-          description={m.editor_day_remove_confirm_description()}
-          onConfirm={onRemoveDay}
-        />
-      </CardFooter>
+            <ResponsiveSheet
+              open={editingStop !== null}
+              onOpenChange={(open) => !open && setEditingStopId(null)}
+              title={m.editor_stop_edit()}
+            >
+              {editingStop ? (
+                <StopForm
+                  defaultValues={stopFormValuesFrom(editingStop)}
+                  submitLabel={m.editor_stop_save()}
+                  onCancel={() => setEditingStopId(null)}
+                  onSubmit={async (values) => {
+                    await onUpdateStop(editingStop.id, values)
+                    setEditingStopId(null)
+                  }}
+                />
+              ) : null}
+            </ResponsiveSheet>
+          </CardContent>
+
+          <CardFooter className="pb-6">
+            <ConfirmDialog
+              trigger={
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  disabled={!canRemove}
+                >
+                  <Trash2Icon data-icon="inline-start" />
+                  {m.editor_day_remove()}
+                </Button>
+              }
+              title={m.editor_day_remove_confirm_title()}
+              description={m.editor_day_remove_confirm_description()}
+              onConfirm={onRemoveDay}
+            />
+          </CardFooter>
+        </>
+      )}
     </Card>
   )
 }
