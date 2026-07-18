@@ -2,8 +2,12 @@ import { Suspense, lazy, useMemo } from 'react'
 import { z } from 'zod'
 import { useSuspenseQuery } from '@tanstack/react-query'
 import { Link, createFileRoute, notFound } from '@tanstack/react-router'
-import { SearchXIcon, StarIcon, TicketXIcon } from 'lucide-react'
+import { SearchXIcon, TicketXIcon } from 'lucide-react'
 
+import { Comments } from '#/components/Comments'
+import { FavoriteButton } from '#/components/FavoriteButton'
+import { ForkButton } from '#/components/ForkButton'
+import { RatingStars } from '#/components/RatingStars'
 import { StopList } from '#/components/StopList'
 import type { ItineraryMapStop } from '#/components/map/ItineraryMap'
 import { Avatar, AvatarFallback, AvatarImage } from '#/components/ui/avatar'
@@ -23,7 +27,7 @@ import {
   EmptyTitle,
 } from '#/components/ui/empty'
 import { Separator } from '#/components/ui/separator'
-import { itineraryQueryOptions } from '#/lib/queries'
+import { commentsQueryOptions, itineraryQueryOptions } from '#/lib/queries'
 import { m } from '#/paraglide/messages'
 import { joinByInviteToken } from '#/server/members'
 import type { DayView } from '#/server/itineraries'
@@ -76,8 +80,9 @@ export const Route = createFileRoute('/itineraries/$slug')({
       }
     }
 
+    let detail
     try {
-      await context.queryClient.ensureQueryData(
+      detail = await context.queryClient.ensureQueryData(
         itineraryQueryOptions({ slug: params.slug, inviteToken: deps.invite }),
       )
     } catch (error) {
@@ -85,6 +90,25 @@ export const Route = createFileRoute('/itineraries/$slug')({
         throw notFound({ data: { invite: Boolean(deps.invite) } })
       }
       throw error
+    }
+
+    // Preload the first page of comments too — same read access as the
+    // itinerary itself (already confirmed above). SSR-renders the first
+    // comments page instead of a client-only fetch-after-hydrate.
+    //
+    // Best-effort: this is an optimization, not a requirement, so it's
+    // wrapped in its own try/catch instead of the loader's — `listComments`
+    // has its own access check (mirroring, but independent of, the one
+    // above), and any drift between the two or other transient failure here
+    // must not crash the whole page. If it fails, `Comments`' own
+    // `useInfiniteQuery` — given the same `inviteToken` — just fetches
+    // client-side after hydration instead.
+    try {
+      await context.queryClient.ensureInfiniteQueryData(
+        commentsQueryOptions({ itineraryId: detail.id, inviteToken: deps.invite }),
+      )
+    } catch {
+      // Swallowed intentionally — see comment above.
     }
   },
   notFoundComponent: ItineraryNotFound,
@@ -139,6 +163,13 @@ function ItineraryView() {
 
   const mapStops = useMemo(() => collectMapStops(data.days), [data.days])
 
+  // UI-side approximation of the server's `canRate` rule (logged in +
+  // published + public) — the server re-checks the real rule on every
+  // `rateItinerary` call regardless; this only decides whether
+  // `RatingStars` renders live buttons or a read-only summary.
+  const canRate =
+    Boolean(session) && data.status === 'published' && data.visibility === 'public'
+
   return (
     <div className="mx-auto flex max-w-4xl flex-col gap-8 p-6">
       {showInviteLoginCta ? (
@@ -191,16 +222,6 @@ function ItineraryView() {
 
           <span>{m.view_days_count({ count: data.days.length })}</span>
 
-          <span className="flex items-center gap-1">
-            <StarIcon
-              data-icon="inline-start"
-              className="fill-current text-amber-500"
-            />
-            {data.ratingAvg !== null
-              ? `${data.ratingAvg.toFixed(1)} · ${m.view_rating_count({ count: data.ratingCount })}`
-              : m.view_no_ratings()}
-          </span>
-
           {data.forkedFrom ? (
             <Link
               to="/itineraries/$slug"
@@ -221,6 +242,32 @@ function ItineraryView() {
             ))}
           </div>
         ) : null}
+
+        <div className="flex flex-wrap items-center gap-3">
+          <RatingStars
+            itineraryId={data.id}
+            slug={slug}
+            inviteToken={inviteToken}
+            ratingAvg={data.ratingAvg}
+            ratingCount={data.ratingCount}
+            myStars={data.viewer.myStars}
+            canRate={canRate}
+            redirectTarget={redirectTarget}
+          />
+          <FavoriteButton
+            itineraryId={data.id}
+            slug={slug}
+            inviteToken={inviteToken}
+            isFavorite={data.viewer.isFavorite}
+            loggedIn={Boolean(session)}
+            redirectTarget={redirectTarget}
+          />
+          <ForkButton
+            itineraryId={data.id}
+            loggedIn={Boolean(session)}
+            redirectTarget={redirectTarget}
+          />
+        </div>
       </header>
 
       <Separator />
@@ -249,6 +296,15 @@ function ItineraryView() {
           </section>
         ))}
       </div>
+
+      <Separator />
+
+      <Comments
+        itineraryId={data.id}
+        currentUserId={session?.id ?? null}
+        redirectTarget={redirectTarget}
+        inviteToken={inviteToken}
+      />
     </div>
   )
 }

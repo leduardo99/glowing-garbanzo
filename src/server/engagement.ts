@@ -15,7 +15,9 @@
  *     — the caller already knows it exists.
  *   - listing comments mirrors itinerary *view* access: no login required,
  *     just read access (so an anonymous visitor sees comments on a public
- *     itinerary, same as the itinerary page itself).
+ *     itinerary, same as the itinerary page itself) — including the
+ *     invite-token bypass for a private+published itinerary. Posting a
+ *     comment still requires login regardless of token.
  *   - deleting a comment: only that comment's own author, never the
  *     itinerary's author (MVP has no moderation).
  */
@@ -56,8 +58,20 @@ export interface CommentView {
  * and "exists but unreadable" into the same NOT_FOUND. Session is optional
  * — matches itinerary *view* access, open to anonymous visitors for
  * published+public itineraries.
+ *
+ * `inviteToken` extends access the exact same way `getItineraryBySlugImpl`
+ * does post-fix: it only grants read on a `private`+`published` itinerary
+ * whose stored `inviteToken` is non-null and matches. A private *draft*
+ * never accepts a token (mirrors `getItineraryBySlugImpl`'s "not yet
+ * published" carve-out), and the null-token safety (`row.inviteToken &&`)
+ * stops an absent caller token from ever matching an absent stored one.
  */
-async function loadReadableItinerary(db: Database, session: SessionUser | null, itineraryId: string) {
+async function loadReadableItinerary(
+  db: Database,
+  session: SessionUser | null,
+  itineraryId: string,
+  inviteToken?: string,
+) {
   const row = await loadItineraryOrThrow(db, itineraryId)
   const userId = session?.user.id ?? null
   const isMember = userId ? await isItineraryMember(db, { itineraryId: row.id, userId }) : false
@@ -66,7 +80,20 @@ async function loadReadableItinerary(db: Database, session: SessionUser | null, 
     status: row.status,
     visibility: row.visibility,
   }
-  if (!canRead(accessData, { userId, isMember })) {
+  const accessCtx: AccessContext = { userId, isMember }
+
+  let hasAccess = canRead(accessData, accessCtx)
+  if (
+    !hasAccess &&
+    inviteToken &&
+    row.visibility === 'private' &&
+    row.status === 'published' &&
+    row.inviteToken &&
+    row.inviteToken === inviteToken
+  ) {
+    hasAccess = true
+  }
+  if (!hasAccess) {
     throw new Error(ERR_NOT_FOUND)
   }
   return row
@@ -230,17 +257,23 @@ export const rateItinerary = createServerFn({ method: 'POST' })
 const listCommentsSchema = z.object({
   itineraryId: z.string().min(1),
   page: z.number().int().min(1).default(1),
+  inviteToken: z.string().optional(),
 })
 
 export type ListCommentsInput = z.infer<typeof listCommentsSchema>
 
-/** Newest-first, paginated comments with author `{ id, name, image }`. Mirrors itinerary view access. */
+/**
+ * Newest-first, paginated comments with author `{ id, name, image }`.
+ * Mirrors itinerary view access, including the invite-token bypass: a
+ * first-time anonymous visitor following a private itinerary's invite link
+ * can see its comments the same as the itinerary page itself.
+ */
 export async function listCommentsImpl(
   db: Database,
   session: SessionUser | null,
   input: ListCommentsInput,
 ): Promise<{ items: CommentView[]; total: number }> {
-  await loadReadableItinerary(db, session, input.itineraryId)
+  await loadReadableItinerary(db, session, input.itineraryId, input.inviteToken)
 
   const offset = (input.page - 1) * COMMENTS_PAGE_SIZE
 

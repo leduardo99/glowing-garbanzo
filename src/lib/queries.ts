@@ -11,8 +11,9 @@
  * view) can invalidate broadly via a `queryKey[0] === 'itineraries'`
  * predicate instead of enumerating every specific key.
  */
-import { queryOptions } from '@tanstack/react-query'
+import { infiniteQueryOptions, queryOptions } from '@tanstack/react-query'
 
+import { listComments } from '#/server/engagement'
 import {
   getItineraryBySlug,
   getMyItinerary,
@@ -82,5 +83,36 @@ export function membersQueryOptions({ id }: ListMembersInput) {
   return queryOptions({
     queryKey: ['itineraries', 'members', id] as const,
     queryFn: () => listMembers({ data: { id } }),
+  })
+}
+
+/**
+ * `Comments` (view route): newest-first, paginated. An infinite query so
+ * "load more" appends pages instead of replacing them — `getNextPageParam`
+ * compares how many items have loaded so far against the server's `total`
+ * and returns the next 1-indexed page number, or `undefined` once every
+ * comment is loaded (which tells the query there's no next page).
+ *
+ * `inviteToken` is part of the key for the same reason as
+ * `itineraryQueryOptions` — it changes what the query is allowed to see
+ * (the anonymous invite-link viewer of a private itinerary), so it can't be
+ * a fire-and-forget side input.
+ */
+export function commentsQueryOptions({
+  itineraryId,
+  inviteToken,
+}: {
+  itineraryId: string
+  inviteToken?: string
+}) {
+  return infiniteQueryOptions({
+    queryKey: ['itineraries', 'comments', itineraryId, inviteToken ?? null] as const,
+    queryFn: ({ pageParam }) =>
+      listComments({ data: { itineraryId, page: pageParam, inviteToken } }),
+    initialPageParam: 1,
+    getNextPageParam: (lastPage, allPages) => {
+      const loaded = allPages.reduce((sum, page) => sum + page.items.length, 0)
+      return loaded < lastPage.total ? allPages.length + 1 : undefined
+    },
   })
 }
