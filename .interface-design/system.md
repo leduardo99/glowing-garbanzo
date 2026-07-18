@@ -73,6 +73,87 @@ Dark mode: same hierarchy, inverted lightness, one hue kept per token — base `
 - Font pairing chosen for real self-hostable availability (proxy blocks Google Fonts CDN): `@fontsource-variable/fraunces` (display) + `@fontsource/karla` (body/UI), both verified present on the npm registry (`fraunces@5.2.9`, `karla@5.2.8` at time of writing). Karla was picked over the project's previous Manrope pairing specifically to avoid the extremely common "Fraunces + Manrope" editorial-SaaS template combo while keeping the same warm-humanist contrast axis.
 - The project's current `src/styles.css` already contains an earlier, unwired attempt at a coastal teal/green theme (`--sea-ink`, `--lagoon`, `--palm`...) loading Fraunces/Manrope from the Google Fonts CDN — which the environment's proxy blocks, so those fonts never actually load. That earlier direction is superseded by this system; it was not "committed" in the sense of a settled, working brand (the user explicitly asked to kill the current raw/generic look), so this document defines the new target rather than documenting the old one. No code was changed as part of this task.
 
+## Implementation log — UI overhaul part 1 (foundation + shell)
+
+Tokens, fonts, and the app shell (`AppHeader` / `BottomNav` / router-level
+fallbacks) were wired up in `src/styles.css`, `src/components/AppHeader.tsx`,
+`src/components/navigation/`, `src/router.tsx`, and `src/routes/__root.tsx`.
+New decisions made during that pass, not already covered above:
+
+- **Font delivery**: `@fontsource-variable/fraunces` (the `opsz.css` axis
+  file only — optical-size axis, weight 500, `font-optical-sizing: auto`)
+  and `@fontsource/karla` (`latin-400/500/600.css` only — the three weights
+  DESIGN.md's ramp actually uses). Imported via plain `@import` in
+  `styles.css`, resolved by Lightning CSS the same way the pre-existing
+  `@import 'tailwindcss'` / `@import 'tw-animate-css'` bare specifiers are —
+  no JS-side font import needed, and no CDN request.
+- **shadcn/ui slot aliasing**: `--background/--foreground/--primary/...`
+  (the vocabulary every existing `bg-*`/`text-*` utility across the app
+  already uses) are now aliases onto the DESIGN tokens rather than
+  hand-picked separately: `--accent` → `surface-sunken` (the ghost/outline
+  hover tint DESIGN.md's Buttons section describes), `--destructive-foreground`
+  → `paper` (the Do's/Don'ts rule: paper text on saturated fills, never
+  ink-soft/gray). This means every shadcn primitive picked up the new
+  theme automatically without a component-by-component restyle (that's
+  part 2's job); only the raw color values changed here.
+- **Radius scale**: `--radius-sm/md/lg/xl` in `@theme inline` are literal
+  6/10/14/20px (DESIGN.md's `rounded.*` scale exactly), not calc-derived
+  from a single base as shadcn's default template does — the base
+  `--radius: 10px` custom property is kept only because `ui/sonner.tsx`
+  reads it directly as `--border-radius`.
+- **Shadow vocabulary as Tailwind utilities**: `--shadow-resting/-lifted/
+  -elevated` in `@theme inline` generate `shadow-resting` / `shadow-lifted`
+  / `shadow-elevated` classes from DESIGN.md §4's literal box-shadow
+  values (ink-tinted, not black). The raw values live in `--shadow-*-value`
+  custom properties in `:root`/`.dark` (the `-value` suffix avoids a
+  circular reference against the theme key of the same name); `.dark`
+  collapses all three to the single light hairline ring per the Quiet
+  Lift Rule.
+- **Dark-mode tokens beyond the ones system.md already specified**
+  (base/surface/surface-sunken/text/text-soft/accent): derived, same
+  hue-per-token discipline — `terracotta-deep` `oklch(0.6 0.14 38)`,
+  `terracotta-soft` `oklch(0.32 0.06 40)`, `rating-gold` `oklch(0.8 0.14 85)`,
+  `line`/`line-strong` at `oklch(0.96 0.006 60 / 0.12)` and `/ 0.2` (light
+  ink at low opacity, mirroring the light-mode pattern), `success`
+  `oklch(0.65 0.13 145)`, `warning` `oklch(0.78 0.14 80)`, `destructive`
+  `oklch(0.62 0.2 15)` (all nudged lighter than their light-mode values for
+  dark-surface legibility).
+- **App shell decomposition**: `UserMenu` (`src/components/navigation/
+  UserMenu.tsx`) holds the session-dependent account area (avatar dropdown
+  or login link) and takes a `variant: 'header' | 'tab'` prop; both
+  `AppHeader` and `BottomNav` render it independently (each calls
+  `authClient.useSession()` itself) rather than threading session state
+  through props. `AppHeader` simplifies on mobile (`<md`): primary nav
+  links and the account area hide (`hidden md:flex` / `hidden md:block`)
+  because `BottomNav` owns those on small screens — only the wordmark and
+  `LocaleSwitcher` stay in the mobile header, per DESIGN.md's "header
+  simplified on mobile" note.
+- **`BottomNav`'s Profile tab has no dedicated route to link to** (no
+  `/profile` page exists in this app). It reuses the same account
+  `DropdownMenu` as the desktop `UserMenu` (opening upward, `side="top"`)
+  when signed in, and is a plain `Link` to `/login` when signed out — this
+  keeps the "4 fixed tabs" shape from DESIGN.md's Navigation section
+  without inventing a new page (out of scope: zero behavior/route changes).
+  `Home`/`My itineraries`/`New` are plain links to the existing `/`, `/my`,
+  `/new` routes; `/my` and `/new` already redirect anonymous visitors to
+  `/login` in their own `beforeLoad` guards, so `BottomNav` doesn't
+  duplicate that check.
+- **Router-level fallbacks** (`src/components/RouteFallbacks.tsx`,
+  wired via `router.tsx`'s `defaultPendingComponent` /
+  `defaultErrorComponent` / `defaultNotFoundComponent`): a centered
+  `LoaderCircleIcon` spinner (`role="status"`, sr-only label) for pending
+  states, and a centered title/description/action pair (Fraunces title,
+  Karla body, `reset()`-driven retry or a `Link to="/"`) for the error and
+  not-found fallbacks. Existing route-level `notFoundComponent`s
+  (itinerary, editor) still take precedence — the root fallback only
+  catches genuinely unmatched URLs.
+- **PWA meta colors**: `theme-color` (light `#f8f4f1`, dark `#201915`) and
+  `manifest.json`'s `theme_color`/`background_color` are sRGB conversions
+  of the `surface`/`paper` OKLCH tokens (`theme-color`'s `oklch()` support
+  isn't universal yet, so hex is the safe encoding here). Manifest icons
+  reuse the existing `logo192.png`/`logo512.png` assets as-is — no new art
+  was generated as part of this pass.
+
 ## Consistency checks
 
 Hold every future UI change to: spacing on the 4px grid, shadow-only elevation (no border+shadow combo), colors only from the table above, Fraunces only on content titles, and the component measurements listed here reused rather than reinvented.

@@ -10,6 +10,7 @@ import TanStackQueryDevtools from '../integrations/tanstack-query/devtools'
 
 import { getLocale } from '#/paraglide/runtime'
 import { AppHeader } from '#/components/AppHeader'
+import { BottomNav } from '#/components/navigation/BottomNav'
 import { Toaster } from '#/components/ui/sonner'
 import { sessionQueryKey } from '#/lib/session'
 import { getSessionUser } from '#/server/auth'
@@ -62,17 +63,59 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
         charSet: 'utf-8',
       },
       {
+        // `viewport-fit=cover` lets the page extend under the notch/home
+        // indicator so `env(safe-area-inset-*)` (used by BottomNav) has
+        // real insets to read instead of 0 — see .interface-design/system.md.
         name: 'viewport',
-        content: 'width=device-width, initial-scale=1',
+        content:
+          'width=device-width, initial-scale=1, viewport-fit=cover',
       },
       {
-        title: 'TanStack Start Starter',
+        title: 'Roteiros',
+      },
+      // Two theme-color tags (light/dark) instead of one so the browser
+      // chrome/status bar matches the app shell's surface color in both
+      // themes — DESIGN.md §2 surface tokens, converted to sRGB hex since
+      // theme-color support for oklch() isn't universal yet.
+      {
+        name: 'theme-color',
+        content: '#f8f4f1',
+        media: '(prefers-color-scheme: light)',
+      },
+      {
+        name: 'theme-color',
+        content: '#201915',
+        media: '(prefers-color-scheme: dark)',
+      },
+      {
+        name: 'apple-mobile-web-app-capable',
+        content: 'yes',
+      },
+      {
+        name: 'apple-mobile-web-app-title',
+        content: 'Roteiros',
+      },
+      {
+        name: 'apple-mobile-web-app-status-bar-style',
+        content: 'default',
+      },
+      {
+        name: 'mobile-web-app-capable',
+        content: 'yes',
       },
     ],
     links: [
       {
         rel: 'stylesheet',
         href: appCss,
+      },
+      {
+        rel: 'manifest',
+        href: '/manifest.json',
+      },
+      {
+        rel: 'apple-touch-icon',
+        href: '/logo192.png',
       },
     ],
   }),
@@ -87,7 +130,16 @@ function RootDocument({ children }: { children: React.ReactNode }) {
       </head>
       <body>
         <AppHeader />
-        {children}
+        {/*
+          Reserves room for BottomNav's fixed bar on mobile (it would
+          otherwise overlap the last bit of page content) — matches the
+          bar's own height-plus-safe-area math. BottomNav is `md:hidden`,
+          so this padding is dropped in lockstep at the same breakpoint.
+        */}
+        <div className="pb-[calc(3.125rem+max(0.375rem,env(safe-area-inset-bottom)))] md:pb-0">
+          {children}
+        </div>
+        <BottomNav />
         <Toaster />
         <TanStackDevtools
           config={{

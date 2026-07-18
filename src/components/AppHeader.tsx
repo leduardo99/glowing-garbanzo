@@ -1,98 +1,54 @@
-import { useQueryClient } from '@tanstack/react-query'
-import { Link, useRouter } from '@tanstack/react-router'
-import { LogOutIcon } from 'lucide-react'
+import { Link } from '@tanstack/react-router'
 
-import { authClient } from '#/lib/auth-client'
-import { sessionQueryKey } from '#/lib/session'
-import { Avatar, AvatarFallback, AvatarImage } from '#/components/ui/avatar'
-import { Button } from '#/components/ui/button'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuGroup,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '#/components/ui/dropdown-menu'
-import { Skeleton } from '#/components/ui/skeleton'
+import { UserMenu } from '#/components/navigation/UserMenu'
 import LocaleSwitcher from '#/components/LocaleSwitcher'
 import { m } from '#/paraglide/messages'
 
+const navLinkClassName =
+  'text-sm font-medium text-ink-soft transition-colors hover:text-ink data-[status=active]:text-terracotta'
+
 /**
- * Site header: app name, locale switcher, and a session-dependent area
- * (login button for anonymous visitors, avatar dropdown for signed-in
- * users). Reads the session from `authClient.useSession()` (client-side,
- * reactive) rather than the root route's `context.session` — that context
- * value is SSR-derived and meant for protected-route `beforeLoad` guards,
- * not for keeping this header in sync immediately after a client-side
- * sign-in/sign-out.
+ * Site header. Desktop (`md:` and up) carries the wordmark, primary nav
+ * links, locale switcher, and the session-dependent account area
+ * (`UserMenu`). On mobile the primary nav and account area move to
+ * `BottomNav` (the native-feeling bottom tab bar), so the header shrinks
+ * to just the wordmark and locale switcher — DESIGN.md's "header
+ * simplified on mobile" rule.
+ *
+ * Surface background with a Line-strong bottom border and no shadow, per
+ * DESIGN.md's Navigation section — chrome, not a lifted card.
  */
 export function AppHeader() {
-  const router = useRouter()
-  const queryClient = useQueryClient()
-  const { data: session, isPending } = authClient.useSession()
-
-  async function handleLogout() {
-    await authClient.signOut()
-    await queryClient.invalidateQueries({ queryKey: sessionQueryKey })
-    await router.invalidate()
-  }
-
   return (
-    <header className="flex items-center justify-between gap-4 border-b px-6 py-3">
-      <Link to="/" className="text-lg font-semibold">
+    <header className="flex items-center justify-between gap-4 border-b border-line-strong bg-surface px-4 py-3 md:px-6">
+      <Link
+        to="/"
+        className="text-[0.9375rem] font-semibold tracking-tight text-ink"
+      >
         {m.app_name()}
       </Link>
 
-      <div className="flex items-center gap-4">
-        <LocaleSwitcher />
+      <nav
+        aria-label={m.nav_primary_label()}
+        className="hidden items-center gap-6 md:flex"
+      >
+        <Link
+          to="/"
+          activeOptions={{ exact: true }}
+          className={navLinkClassName}
+        >
+          {m.nav_home()}
+        </Link>
+        <Link to="/my" className={navLinkClassName}>
+          {m.nav_my_itineraries()}
+        </Link>
+      </nav>
 
-        {isPending ? (
-          <Skeleton className="size-9 rounded-full" />
-        ) : session?.user ? (
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="h-auto gap-2 px-2 py-1.5">
-                <Avatar size="sm">
-                  <AvatarImage src={session.user.image ?? undefined} alt="" />
-                  <AvatarFallback>
-                    {session.user.name.charAt(0).toUpperCase()}
-                  </AvatarFallback>
-                </Avatar>
-                <span className="text-sm font-medium">
-                  {session.user.name}
-                </span>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuLabel className="truncate">
-                {session.user.name}
-              </DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              <DropdownMenuGroup>
-                <DropdownMenuItem asChild>
-                  <Link to="/my">{m.nav_my_itineraries()}</Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link to="/new">{m.nav_new_itinerary()}</Link>
-                </DropdownMenuItem>
-              </DropdownMenuGroup>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem
-                variant="destructive"
-                onSelect={() => void handleLogout()}
-              >
-                <LogOutIcon data-icon="inline-start" />
-                {m.auth_logout()}
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        ) : (
-          <Button asChild size="sm">
-            <Link to="/login">{m.auth_login_title()}</Link>
-          </Button>
-        )}
+      <div className="flex items-center gap-3 md:gap-4">
+        <LocaleSwitcher />
+        <div className="hidden md:block">
+          <UserMenu variant="header" />
+        </div>
       </div>
     </header>
   )
