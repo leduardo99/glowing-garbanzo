@@ -7,6 +7,18 @@
       "skillPath": "skills/deploy-to-vercel/SKILL.md",
       "computedHash": "d2b5bcc7c09fdb649129ffc7dd7b647ec1b155736974b974292675afd588cb39"
     },
+    "impeccable": {
+      "source": "pbakaus/impeccable",
+      "sourceType": "github",
+      "skillPath": ".agents/skills/impeccable/SKILL.md",
+      "computedHash": "a4676a11727addf402057d985ab49dc4df3a5cf82641655dfe40c9bdeeffc73e"
+    },
+    "interface-design": {
+      "source": "Dammyjay93/interface-design",
+      "sourceType": "github",
+      "skillPath": ".claude/skills/interface-design/SKILL.md",
+      "computedHash": "340cc79a1558f09371aa3eb689952a8b777c1d7362c24226e99693606a80828e"
+    },
     "migrate-radix-to-base": {
       "source": "shadcn/ui",
       "sourceType": "github",
