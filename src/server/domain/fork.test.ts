@@ -46,12 +46,11 @@ const source = {
 
 describe('buildForkRows', () => {
   it('copies the itinerary fields for the new owner', () => {
-    const result = buildForkRows(
-      source,
-      'new-owner-id',
-      'source-itinerary-id',
-      'new-slug-abc123',
-    )
+    const result = buildForkRows(source, {
+      newOwnerId: 'new-owner-id',
+      sourceItineraryId: 'source-itinerary-id',
+      newSlug: 'new-slug-abc123',
+    })
     expect(result.itinerary.title).toBe(source.itinerary.title)
     expect(result.itinerary.summary).toBe(source.itinerary.summary)
     expect(result.itinerary.destination).toBe(source.itinerary.destination)
@@ -62,32 +61,29 @@ describe('buildForkRows', () => {
   })
 
   it('resets the forked itinerary to draft status', () => {
-    const result = buildForkRows(
-      source,
-      'new-owner-id',
-      'source-itinerary-id',
-      'new-slug-abc123',
-    )
+    const result = buildForkRows(source, {
+      newOwnerId: 'new-owner-id',
+      sourceItineraryId: 'source-itinerary-id',
+      newSlug: 'new-slug-abc123',
+    })
     expect(result.itinerary.status).toBe('draft')
   })
 
   it('credits the source itinerary via forkedFromId', () => {
-    const result = buildForkRows(
-      source,
-      'new-owner-id',
-      'source-itinerary-id',
-      'new-slug-abc123',
-    )
+    const result = buildForkRows(source, {
+      newOwnerId: 'new-owner-id',
+      sourceItineraryId: 'source-itinerary-id',
+      newSlug: 'new-slug-abc123',
+    })
     expect(result.itinerary.forkedFromId).toBe('source-itinerary-id')
   })
 
   it('copies all days with their stops in order', () => {
-    const result = buildForkRows(
-      source,
-      'new-owner-id',
-      'source-itinerary-id',
-      'new-slug-abc123',
-    )
+    const result = buildForkRows(source, {
+      newOwnerId: 'new-owner-id',
+      sourceItineraryId: 'source-itinerary-id',
+      newSlug: 'new-slug-abc123',
+    })
     expect(result.days).toHaveLength(2)
     expect(result.days[0]).toMatchObject({
       dayNumber: 1,
@@ -113,12 +109,11 @@ describe('buildForkRows', () => {
 
   it('does not mutate the source data', () => {
     const original = JSON.parse(JSON.stringify(source)) as typeof source
-    buildForkRows(
-      source,
-      'new-owner-id',
-      'source-itinerary-id',
-      'new-slug-abc123',
-    )
+    buildForkRows(source, {
+      newOwnerId: 'new-owner-id',
+      sourceItineraryId: 'source-itinerary-id',
+      newSlug: 'new-slug-abc123',
+    })
     expect(source).toEqual(original)
   })
 })

@@ -60,7 +60,7 @@ export interface CommentView {
 async function loadReadableItinerary(db: Database, session: SessionUser | null, itineraryId: string) {
   const row = await loadItineraryOrThrow(db, itineraryId)
   const userId = session?.user.id ?? null
-  const isMember = userId ? await isItineraryMember(db, row.id, userId) : false
+  const isMember = userId ? await isItineraryMember(db, { itineraryId: row.id, userId }) : false
   const accessData: ItineraryAccessData = {
     authorId: row.authorId,
     status: row.status,
@@ -171,7 +171,7 @@ export async function rateItineraryImpl(
     }
     const itineraryRow = lockedRows[0]
 
-    const isMember = await isItineraryMember(tx, itineraryRow.id, userId)
+    const isMember = await isItineraryMember(tx, { itineraryId: itineraryRow.id, userId })
     const accessData: ItineraryAccessData = {
       authorId: itineraryRow.authorId,
       status: itineraryRow.status,
@@ -195,8 +195,7 @@ export async function rateItineraryImpl(
         ratingAvg: itineraryRow.ratingAvg === null ? null : parseFloat(itineraryRow.ratingAvg),
         ratingCount: itineraryRow.ratingCount,
       },
-      previousStars,
-      input.stars,
+      { previousStars, newStars: input.stars },
     )
 
     if (existingRating) {

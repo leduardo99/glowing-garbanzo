@@ -22,7 +22,7 @@ export const Route = createFileRoute('/api/uploads/$')({
           return new Response('Not found', { status: 404 })
         }
 
-        const resolved = resolveUploadPath(env.UPLOADS_DIR, requested)
+        const resolved = resolveUploadPath({ uploadsDir: env.UPLOADS_DIR, requested })
         if (!resolved) {
           return new Response('Not found', { status: 404 })
         }

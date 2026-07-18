@@ -258,7 +258,7 @@ export async function getItineraryBySlugImpl(
   }
 
   const userId = session?.user.id ?? null
-  const isMember = userId ? await isItineraryMember(db, row.id, userId) : false
+  const isMember = userId ? await isItineraryMember(db, { itineraryId: row.id, userId }) : false
 
   const accessData: ItineraryAccessData = {
     authorId: row.authorId,
@@ -520,7 +520,7 @@ export async function forkItineraryImpl(
 
   const row = await loadItineraryOrThrow(db, input.id)
 
-  const isMember = await isItineraryMember(db, row.id, userId)
+  const isMember = await isItineraryMember(db, { itineraryId: row.id, userId })
   const accessData: ItineraryAccessData = {
     authorId: row.authorId,
     status: row.status,
@@ -560,9 +560,7 @@ export async function forkItineraryImpl(
         ),
       })),
     },
-    userId,
-    row.id,
-    newSlug,
+    { newOwnerId: userId, sourceItineraryId: row.id, newSlug },
   )
 
   return db.transaction(async (tx) => {

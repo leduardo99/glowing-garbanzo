@@ -28,3 +28,4 @@ Always follow the involved library's best practices BEFORE writing code:
 - UI: shadcn components in `src/components/ui`; to add new ones in a restricted-proxy environment, copy from the GitHub registry (`shadcn-ui/ui`, `apps/v4/registry/new-york-v4/ui`) replacing `@/` with `#/`
 - Before committing: `pnpm lint`, `npx tsc --noEmit`, and `pnpm build` must pass
 - Workflow: every task gets its own branch and PR
+- Function params: >3 params, or 2+ consecutive same-typed params, become a single named options object; exception: the server `*Impl(db, session, input)` trio stays positional

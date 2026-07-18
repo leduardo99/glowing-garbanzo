@@ -108,7 +108,7 @@ function sniffImageType(bytes: Uint8Array): SniffedType | null {
  * traversal guard used by the `/api/uploads/$` serving route. Pure and
  * synchronous so it's directly unit-testable without touching disk.
  */
-export function resolveUploadPath(uploadsDir: string, requested: string): string | null {
+export function resolveUploadPath({ uploadsDir, requested }: { uploadsDir: string; requested: string }): string | null {
   const base = path.resolve(uploadsDir)
   const resolved = path.resolve(base, requested)
   const prefix = base.endsWith(path.sep) ? base : base + path.sep
@@ -123,6 +123,7 @@ export interface UploadCoverInput {
   bytes: Uint8Array
   originalName: string
   declaredMime: string
+  uploadsDir: string
 }
 
 export interface UploadCoverResult {
@@ -139,7 +140,6 @@ export async function uploadCoverImpl(
   db: Database,
   session: SessionUser | null,
   input: UploadCoverInput,
-  uploadsDir: string,
 ): Promise<UploadCoverResult> {
   await requireItineraryAuthor(db, session, input.itineraryId)
 
@@ -156,8 +156,8 @@ export async function uploadCoverImpl(
   }
 
   const filename = `${nanoid()}.${EXTENSION_BY_TYPE[sniffed]}`
-  await mkdir(uploadsDir, { recursive: true })
-  await writeFile(path.join(uploadsDir, filename), input.bytes)
+  await mkdir(input.uploadsDir, { recursive: true })
+  await writeFile(path.join(input.uploadsDir, filename), input.bytes)
 
   const url = `/api/uploads/${filename}`
   await db.update(itinerary).set({ coverImageUrl: url }).where(eq(itinerary.id, input.itineraryId))
@@ -185,15 +185,11 @@ export const uploadCover = createServerFn({ method: 'POST' })
   .handler(async ({ data }) => {
     const session = await getSessionOrThrow(getRequest())
     const bytes = new Uint8Array(await data.file.arrayBuffer())
-    return uploadCoverImpl(
-      appDb,
-      session,
-      {
-        itineraryId: data.itineraryId,
-        bytes,
-        originalName: data.file.name,
-        declaredMime: data.file.type,
-      },
-      env.UPLOADS_DIR,
-    )
+    return uploadCoverImpl(appDb, session, {
+      itineraryId: data.itineraryId,
+      bytes,
+      originalName: data.file.name,
+      declaredMime: data.file.type,
+      uploadsDir: env.UPLOADS_DIR,
+    })
   })

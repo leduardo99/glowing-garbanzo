@@ -5,8 +5,7 @@
  */
 export function applyRating(
   agg: { ratingAvg: number | null; ratingCount: number },
-  previousStars: number | null,
-  newStars: number,
+  { previousStars, newStars }: { previousStars: number | null; newStars: number },
 ): { ratingAvg: number; ratingCount: number } {
   const currentSum = (agg.ratingAvg ?? 0) * agg.ratingCount
 
