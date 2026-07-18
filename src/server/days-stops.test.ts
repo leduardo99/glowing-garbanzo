@@ -440,6 +440,31 @@ describe('days-stops server functions', () => {
       ).rejects.toThrow('NOT_FOUND')
     })
 
+    it('rejects a stopIds list containing a duplicate id', async () => {
+      const author = await createTestUser()
+      const created = await createItineraryImpl(testDb, { user: { id: author.id } }, {
+        title: 'x',
+        destination: 'y',
+      })
+      const [day1] = await daysOf(created.id)
+      const [s1, s2, s3] = await threeStops(author.id, day1.id)
+      void s3
+
+      await expect(
+        reorderStopsImpl(testDb, { user: { id: author.id } }, {
+          dayId: day1.id,
+          // s1 repeated in place of s3: same length as the day's stop count,
+          // but a duplicate, so the set size check must catch it.
+          stopIds: [s1.id, s2.id, s1.id],
+        }),
+      ).rejects.toThrow('NOT_FOUND')
+
+      // Nothing was written.
+      const stops = await stopsOf(day1.id)
+      expect(stops.map((s) => s.id)).toEqual([s1.id, s2.id, s3.id])
+      expect(stops.map((s) => s.position)).toEqual([0, 1, 2])
+    })
+
     it('rejects a non-author', async () => {
       const author = await createTestUser()
       const other = await createTestUser()
@@ -531,6 +556,54 @@ describe('days-stops server functions', () => {
 
       const day2Stops = await stopsOf(day2.id)
       expect(day2Stops.map((s) => s.id)).toEqual([b1.id, a1.id])
+    })
+
+    it('repositions a stop within its current day, leaving other days untouched', async () => {
+      const author = await createTestUser()
+      const created = await createItineraryImpl(testDb, { user: { id: author.id } }, {
+        title: 'x',
+        destination: 'y',
+      })
+      const [day1] = await daysOf(created.id)
+      const day2 = await addDayImpl(testDb, { user: { id: author.id } }, { itineraryId: created.id })
+
+      const a = await addStopImpl(testDb, { user: { id: author.id } }, {
+        dayId: day1.id,
+        name: 'A',
+        category: 'attraction',
+      })
+      const b = await addStopImpl(testDb, { user: { id: author.id } }, {
+        dayId: day1.id,
+        name: 'B',
+        category: 'food',
+      })
+      const c = await addStopImpl(testDb, { user: { id: author.id } }, {
+        dayId: day1.id,
+        name: 'C',
+        category: 'lodging',
+      })
+      const other = await addStopImpl(testDb, { user: { id: author.id } }, {
+        dayId: day2.id,
+        name: 'Other',
+        category: 'transport',
+      })
+
+      await moveStopToDayImpl(testDb, { user: { id: author.id } }, {
+        stopId: c.id,
+        targetDayId: day1.id,
+        position: 0,
+      })
+
+      const day1Stops = await stopsOf(day1.id)
+      expect(day1Stops.map((s) => s.id)).toEqual([c.id, a.id, b.id])
+      expect(day1Stops.map((s) => s.position)).toEqual([0, 1, 2])
+
+      const day2Stops = await stopsOf(day2.id)
+      expect(day2Stops.map((s) => s.id)).toEqual([other.id])
+      expect(day2Stops.map((s) => s.position)).toEqual([0])
+
+      const movedRow = await testDb.query.stop.findFirst({ where: eq(stop.id, c.id) })
+      expect(movedRow?.dayId).toBe(day1.id)
     })
 
     it('rejects moving to a day in a different itinerary', async () => {
