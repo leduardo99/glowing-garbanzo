@@ -44,6 +44,7 @@
   "view_by_author": "By {name}",
   "view_forked_from": "Forked from {title}",
   "view_day_label": "Day {number}",
+  "view_map_label": "Map of itinerary stops",
   "view_cost_estimate": "Estimated cost: {amount}",
   "view_rating_count": "{count} ratings",
   "view_no_ratings": "No ratings yet",
@@ -113,6 +114,9 @@
   "editor_stop_field_cost": "Estimated cost (BRL)",
   "editor_stop_field_cost_placeholder": "e.g. 25,50",
   "editor_stop_field_place": "Place",
+  "editor_stop_field_location": "Location",
+  "editor_stop_location_open": "Set location on map",
+  "editor_stop_location_close": "Hide map",
   "editor_stop_name_required": "Enter a name.",
   "editor_stop_cost_invalid": "Enter a valid amount, e.g. 25,50.",
   "editor_stop_cancel": "Cancel",
@@ -161,5 +165,9 @@
   "myitineraries_empty_favorites_description": "Itineraries you favorite will show up here.",
   "confirm_cancel": "Cancel",
   "confirm_confirm": "Confirm",
-  "members_invite_copy_failed": "Could not copy the link. Copy it manually from the field above."
+  "members_invite_copy_failed": "Could not copy the link. Copy it manually from the field above.",
+  "map_search_place": "Search for a place…",
+  "map_no_results": "No places found.",
+  "map_drag_hint": "Drag the pin to fine-tune the location.",
+  "map_clear_pin": "Clear pin"
 }

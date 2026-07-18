@@ -77,6 +77,8 @@ function stopFormValuesFrom(stop: StopView): StopFormValues {
     description: stop.description ?? '',
     cost: formatCentsToCostInput(stop.costCents),
     placeLabel: stop.placeLabel ?? '',
+    lat: stop.lat,
+    lng: stop.lng,
   }
 }
 
@@ -200,6 +202,8 @@ interface StopMutationValues {
   description: string | null
   costCents: number | null
   placeLabel: string | null
+  lat: number | null
+  lng: number | null
 }
 
 function DayCard({

@@ -96,6 +96,8 @@ describe('StopForm', () => {
           description: 'Bring a swimsuit',
           cost: '25.50',
           placeLabel: 'Chapada Diamantina',
+          lat: null,
+          lng: null,
         }}
         onSubmit={vi.fn()}
         submitLabel="Save"
