@@ -1,5 +1,7 @@
+import { Suspense, lazy, useState } from 'react'
 import { useForm } from '@tanstack/react-form'
 import type { AnyFieldApi } from '@tanstack/react-form'
+import { MapPinIcon } from 'lucide-react'
 
 import { parseCostToCents } from '#/lib/cost'
 import { Button } from '#/components/ui/button'
@@ -20,8 +22,14 @@ import {
 import { Textarea } from '#/components/ui/textarea'
 import { m } from '#/paraglide/messages'
 import type { StopView } from '#/server/itineraries'
+import type { PlacePickerLocation } from '#/components/map/PlacePicker'
 
 type StopCategory = StopView['category']
+
+// Lazy so `maplibre-gl` (pulled in by `PlacePicker`) never loads for authors
+// who only edit text fields — see `LocationField` below, which only mounts
+// this once the location section is opened.
+const PlacePicker = lazy(() => import('#/components/map/PlacePicker'))
 
 /** Editable field values as the form holds them — `cost` is the raw typed string, converted to cents on submit. */
 export interface StopFormValues {
@@ -30,6 +38,8 @@ export interface StopFormValues {
   description: string
   cost: string
   placeLabel: string
+  lat: number | null
+  lng: number | null
 }
 
 /** Shape handed to `onSubmit` — matches `addStop`/`updateStop`'s input fields (minus `dayId`/`id`, which the caller already knows). */
@@ -39,6 +49,8 @@ export interface StopFormSubmitValues {
   description: string | null
   costCents: number | null
   placeLabel: string | null
+  lat: number | null
+  lng: number | null
 }
 
 const CATEGORY_LABEL: Record<StopCategory, () => string> = {
@@ -63,6 +75,8 @@ export const EMPTY_STOP_FORM_VALUES: StopFormValues = {
   description: '',
   cost: '',
   placeLabel: '',
+  lat: null,
+  lng: null,
 }
 
 function fieldErrors(field: AnyFieldApi): string[] {
@@ -98,6 +112,8 @@ export function StopForm({
         description: value.description.trim() || null,
         costCents: parseCostToCents(value.cost),
         placeLabel: value.placeLabel.trim() || null,
+        lat: value.lat,
+        lng: value.lng,
       })
     },
   })
@@ -232,6 +248,22 @@ export function StopForm({
           )}
         </form.Field>
 
+        <form.Subscribe selector={(state) => [state.values.lat, state.values.lng] as const}>
+          {([lat, lng]) => (
+            <LocationField
+              lat={lat}
+              lng={lng}
+              onChange={(next) => {
+                form.setFieldValue('lat', next.lat)
+                form.setFieldValue('lng', next.lng)
+                if (next.placeLabel !== undefined) {
+                  form.setFieldValue('placeLabel', next.placeLabel)
+                }
+              }}
+            />
+          )}
+        </form.Subscribe>
+
         <div className="flex justify-end gap-2">
           {onCancel ? (
             <Button type="button" variant="outline" onClick={onCancel}>
@@ -250,5 +282,44 @@ export function StopForm({
         </div>
       </FieldGroup>
     </form>
+  )
+}
+
+/**
+ * Toggle + collapsible section that mounts `PlacePicker` (search + mini map
+ * + draggable pin) only once opened — the map stays out of the bundle and
+ * off the page for authors who never touch it. A stop that already has a
+ * pin opens pre-expanded so its location is visible without an extra click.
+ */
+function LocationField({
+  lat,
+  lng,
+  onChange,
+}: {
+  lat: number | null
+  lng: number | null
+  onChange: (next: PlacePickerLocation) => void
+}) {
+  const [open, setOpen] = useState(lat !== null && lng !== null)
+
+  return (
+    <Field>
+      <FieldLabel>{m.editor_stop_field_location()}</FieldLabel>
+      <Button
+        type="button"
+        variant="outline"
+        size="sm"
+        className="self-start"
+        onClick={() => setOpen((value) => !value)}
+      >
+        <MapPinIcon data-icon="inline-start" />
+        {open ? m.editor_stop_location_close() : m.editor_stop_location_open()}
+      </Button>
+      {open ? (
+        <Suspense fallback={<div className="h-48 w-full animate-pulse rounded-lg bg-muted" />}>
+          <PlacePicker lat={lat} lng={lng} onChange={onChange} />
+        </Suspense>
+      ) : null}
+    </Field>
   )
 }

@@ -44,6 +44,7 @@
   "view_by_author": "Por {name}",
   "view_forked_from": "Bifurcado de {title}",
   "view_day_label": "Dia {number}",
+  "view_map_label": "Mapa das paradas do roteiro",
   "view_cost_estimate": "Custo estimado: {amount}",
   "view_rating_count": "{count} avaliações",
   "view_no_ratings": "Sem avaliações ainda",
@@ -113,6 +114,9 @@
   "editor_stop_field_cost": "Custo estimado (BRL)",
   "editor_stop_field_cost_placeholder": "ex.: 25,50",
   "editor_stop_field_place": "Local",
+  "editor_stop_field_location": "Localização",
+  "editor_stop_location_open": "Definir localização no mapa",
+  "editor_stop_location_close": "Ocultar mapa",
   "editor_stop_name_required": "Informe um nome.",
   "editor_stop_cost_invalid": "Informe um valor válido, ex.: 25,50.",
   "editor_stop_cancel": "Cancelar",
@@ -161,5 +165,9 @@
   "myitineraries_empty_favorites_description": "Os roteiros que você favoritar aparecerão aqui.",
   "confirm_cancel": "Cancelar",
   "confirm_confirm": "Confirmar",
-  "members_invite_copy_failed": "Não foi possível copiar o link. Copie manualmente do campo acima."
+  "members_invite_copy_failed": "Não foi possível copiar o link. Copie manualmente do campo acima.",
+  "map_search_place": "Buscar um local…",
+  "map_no_results": "Nenhum local encontrado.",
+  "map_drag_hint": "Arraste o pino para ajustar a localização.",
+  "map_clear_pin": "Remover pino"
 }

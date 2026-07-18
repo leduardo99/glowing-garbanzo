@@ -1,9 +1,11 @@
+import { Suspense, lazy, useMemo } from 'react'
 import { z } from 'zod'
 import { useSuspenseQuery } from '@tanstack/react-query'
 import { Link, createFileRoute, notFound } from '@tanstack/react-router'
 import { SearchXIcon, StarIcon, TicketXIcon } from 'lucide-react'
 
 import { StopList } from '#/components/StopList'
+import type { ItineraryMapStop } from '#/components/map/ItineraryMap'
 import { Avatar, AvatarFallback, AvatarImage } from '#/components/ui/avatar'
 import { Badge } from '#/components/ui/badge'
 import { Button } from '#/components/ui/button'
@@ -24,6 +26,31 @@ import { Separator } from '#/components/ui/separator'
 import { itineraryQueryOptions } from '#/lib/queries'
 import { m } from '#/paraglide/messages'
 import { joinByInviteToken } from '#/server/members'
+import type { DayView } from '#/server/itineraries'
+
+// Lazy so `maplibre-gl` only loads for itineraries that actually have
+// mappable stops — `ItineraryView` below skips rendering (and thus
+// importing) this entirely when `mapStops` is empty.
+const ItineraryMap = lazy(() => import('#/components/map/ItineraryMap'))
+
+/** Every stop across all days that has both `lat` and `lng` set, flattened with its day number for the map's popups. */
+function collectMapStops(days: DayView[]): ItineraryMapStop[] {
+  const stops: ItineraryMapStop[] = []
+  for (const day of days) {
+    for (const stop of day.stops) {
+      if (stop.lat !== null && stop.lng !== null) {
+        stops.push({
+          id: stop.id,
+          name: stop.name,
+          lat: stop.lat,
+          lng: stop.lng,
+          dayNumber: day.dayNumber,
+        })
+      }
+    }
+  }
+  return stops
+}
 
 const viewSearchSchema = z.object({
   invite: z.string().optional(),
@@ -110,6 +137,8 @@ function ItineraryView() {
     ? `/itineraries/${slug}?invite=${encodeURIComponent(inviteToken)}`
     : `/itineraries/${slug}`
 
+  const mapStops = useMemo(() => collectMapStops(data.days), [data.days])
+
   return (
     <div className="mx-auto flex max-w-4xl flex-col gap-8 p-6">
       {showInviteLoginCta ? (
@@ -195,6 +224,12 @@ function ItineraryView() {
       </header>
 
       <Separator />
+
+      {mapStops.length > 0 ? (
+        <Suspense fallback={<div className="h-80 w-full animate-pulse rounded-lg bg-muted" />}>
+          <ItineraryMap stops={mapStops} />
+        </Suspense>
+      ) : null}
 
       <div className="flex flex-col gap-8">
         {data.days.map((day) => (
