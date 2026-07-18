@@ -805,9 +805,10 @@ export type ListMyFavoritesInput = z.infer<typeof listMySchema>
  * Itineraries the caller has favorited, most-recently-favorited first —
  * excluding any the caller can no longer read (e.g. an itinerary favorited
  * while a member, then removed, or unpublished by its author since). Mirrors
- * `canRead`'s public-readable set: published+public, OR the caller's own
- * (drafts included, though favoriting your own draft isn't a normal flow),
- * OR published+private with an active membership row.
+ * a published-only subset of `canRead`: published+public, OR the caller's
+ * own published itineraries, OR published+private with an active membership
+ * row. Note this is stricter than `canRead` — a favorited own DRAFT is
+ * excluded by the `status='published'` filter.
  */
 export async function listMyFavoritesImpl(
   db: Database,

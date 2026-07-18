@@ -160,5 +160,6 @@
   "myitineraries_empty_favorites": "Nenhum favorito ainda",
   "myitineraries_empty_favorites_description": "Os roteiros que você favoritar aparecerão aqui.",
   "confirm_cancel": "Cancelar",
-  "confirm_confirm": "Confirmar"
+  "confirm_confirm": "Confirmar",
+  "members_invite_copy_failed": "Não foi possível copiar o link. Copie manualmente do campo acima."
 }

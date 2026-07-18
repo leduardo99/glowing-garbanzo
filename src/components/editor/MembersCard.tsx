@@ -82,8 +82,15 @@ export function MembersCard({
       typeof window !== 'undefined'
         ? `${window.location.origin}${invitePath}`
         : invitePath
-    await navigator.clipboard.writeText(url)
-    toast.success(m.members_invite_copied())
+    // navigator.clipboard is undefined outside secure contexts
+    // (https/localhost), which makes writeText throw — degrade to an
+    // error toast instead of an unhandled rejection.
+    try {
+      await navigator.clipboard.writeText(url)
+      toast.success(m.members_invite_copied())
+    } catch {
+      toast.error(m.members_invite_copy_failed())
+    }
   }
 
   return (
