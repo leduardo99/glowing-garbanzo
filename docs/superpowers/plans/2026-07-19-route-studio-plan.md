@@ -1,6 +1,6 @@
 # Route Studio — development plan
 
-**Date:** 2026-07-19 · **Status:** approved direction, implementation not started
+**Date:** 2026-07-19 · **Status:** IMPLEMENTED — phase 0 (#39), phase 1 (#40), phase 2 (#41), phase 3 (#42), phase 4 (#43); each merged to main with full gates
 **Flow:** superpowers brainstorm → this plan → one branch + PR per phase
 **Skills per phase:** impeccable (product register) + interface-design + vercel-react-best-practices + vercel-composition-patterns + web-design-guidelines; TanStack Intent guidance (AGENTS.md) before touching router/start code; shadcn skill for new primitives (sheet, tabs, command).
 

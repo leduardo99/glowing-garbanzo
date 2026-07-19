@@ -1,4 +1,4 @@
-import { Suspense, lazy, useMemo } from 'react'
+import { Suspense, lazy, useMemo, useState } from 'react'
 import { useSuspenseQuery } from '@tanstack/react-query'
 import {
   Link,
@@ -6,7 +6,8 @@ import {
   notFound,
   redirect,
 } from '@tanstack/react-router'
-import { ArrowLeftIcon, SearchXIcon } from 'lucide-react'
+import { ArrowLeftIcon, SearchXIcon, SparklesIcon } from 'lucide-react'
+import { z } from 'zod'
 
 import { DayEditor } from '#/components/editor/DayEditor'
 import { MembersCard } from '#/components/editor/MembersCard'
@@ -29,6 +30,9 @@ import type { EditorItinerary } from '#/server/itineraries'
 // Lazy so `maplibre-gl` only loads once the editor actually has a pin to
 // show (same rationale as the detail page's map).
 const ItineraryMap = lazy(() => import('#/components/map/ItineraryMap'))
+// Lazy for the same reason: the assistant (and its chat machinery) only
+// loads for authors who open it.
+const AssistantPanel = lazy(() => import('#/components/editor/AssistantPanel'))
 
 /**
  * Editor route, loaded by id (author-only — see `getMyItineraryImpl`'s
@@ -40,6 +44,9 @@ const ItineraryMap = lazy(() => import('#/components/map/ItineraryMap'))
  * read-access one).
  */
 export const Route = createFileRoute('/my/$id/edit')({
+  // `?assistant=1` (set by /new's AI flow) opens the editor with the
+  // assistant panel already docked.
+  validateSearch: z.object({ assistant: z.boolean().optional() }),
   beforeLoad: ({ context, location }) => {
     if (!context.session) {
       throw redirect({ to: '/login', search: { redirect: location.href } })
@@ -121,7 +128,9 @@ function EditorStatusPill({
 
 function EditorPage() {
   const { id } = Route.useParams()
+  const { assistant } = Route.useSearch()
   const { data } = useSuspenseQuery(myItineraryQueryOptions({ id }))
+  const [assistantOpen, setAssistantOpen] = useState(Boolean(assistant))
   const mapStops = useMemo(() => collectMapStops(data.days), [data.days])
   const tripTotalCents = useMemo(() => sumTripCostCents(data.days), [data.days])
 
@@ -157,7 +166,19 @@ function EditorPage() {
             </p>
           ) : null}
         </div>
-        <EditorStatusPill status={data.status} visibility={data.visibility} />
+        <div className="flex shrink-0 items-center gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => setAssistantOpen(true)}
+            className="gap-1.5"
+          >
+            <SparklesIcon aria-hidden="true" className="size-4 text-mata" />
+            {m.assistant_open()}
+          </Button>
+          <EditorStatusPill status={data.status} visibility={data.visibility} />
+        </div>
       </header>
 
       {/*
@@ -207,6 +228,15 @@ function EditorPage() {
           </div>
         ) : null}
       </div>
+
+      {assistantOpen ? (
+        <Suspense fallback={null}>
+          <AssistantPanel
+            itineraryId={data.id}
+            onClose={() => setAssistantOpen(false)}
+          />
+        </Suspense>
+      ) : null}
     </div>
   )
 }

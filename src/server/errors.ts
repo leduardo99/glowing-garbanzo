@@ -32,3 +32,5 @@ export const ERR_NOT_FOUND = 'NOT_FOUND'
  */
 export const ERR_AI_QUOTA_EXCEEDED = 'AI_QUOTA_EXCEEDED'
 export const ERR_AI_GENERATION_FAILED = 'AI_GENERATION_FAILED'
+/** An assistant patch referenced a day/stop that doesn't exist (or no longer exists) — nothing was applied. */
+export const ERR_AI_PATCH_INVALID = 'AI_PATCH_INVALID'

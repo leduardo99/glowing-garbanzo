@@ -242,7 +242,13 @@ function AiGenerateCard({ remainingToday }: { remainingToday: number }) {
       void queryClient.invalidateQueries({
         predicate: (query) => query.queryKey[0] === 'itineraries',
       })
-      void navigate({ to: '/my/$id/edit', params: { id: result.id } })
+      // Land in the editor with the assistant already open — the natural
+      // next step after an AI draft is refining it conversationally.
+      void navigate({
+        to: '/my/$id/edit',
+        params: { id: result.id },
+        search: { assistant: true },
+      })
     },
     onError: (error) =>
       handleMutationError(error, () => {
