@@ -4,7 +4,7 @@ import { Readable } from 'node:stream'
 import { createFileRoute } from '@tanstack/react-router'
 
 import { env } from '#/env'
-import { contentTypeForExtension, resolveUploadPath } from '#/server/uploads'
+import { contentTypeForExtension, resolveUploadPath } from '#/server/uploads.server'
 
 /**
  * Serves uploaded files (currently just cover images) from `UPLOADS_DIR`.

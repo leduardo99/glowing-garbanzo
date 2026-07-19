@@ -137,7 +137,11 @@ export function Comments({ showTitle = true }: { showTitle?: boolean } = {}) {
                     {comment.author.name}
                   </span>
                   <span className="text-caption tabular-nums text-ink-soft">
-                    {formatRelativeTime(comment.createdAt, locale)}
+                    {formatRelativeTime(
+                      comment.createdAt,
+                      locale,
+                      commentsQuery.dataUpdatedAt,
+                    )}
                   </span>
                 </div>
                 <p className="measure-prose text-body whitespace-pre-wrap text-ink">

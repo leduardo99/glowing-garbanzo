@@ -24,7 +24,10 @@ const SMOKE_USER = {
 }
 
 /** Dev-server noise that is not an app defect. Keep this list short and literal. */
-const IGNORED = [/Download the React DevTools/i, /\[vite\] (connecting|connected)/i]
+const IGNORED = [
+  /Download the React DevTools/i,
+  /\[vite\] (connecting|connected)/i,
+]
 
 interface Finding {
   route: string
@@ -48,14 +51,21 @@ function drainOutput(proc: ChildProcess): void {
 function startServer(): ChildProcess {
   if (PREVIEW) {
     execSync('pnpm build', { stdio: 'inherit' })
-    const proc = spawn('pnpm', ['exec', 'vite', 'preview', '--port', '3000', '--strictPort'], {
-      shell: true,
-      stdio: ['ignore', 'pipe', 'pipe'],
-    })
+    const proc = spawn(
+      'pnpm',
+      ['exec', 'vite', 'preview', '--port', '3000', '--strictPort'],
+      {
+        shell: true,
+        stdio: ['ignore', 'pipe', 'pipe'],
+      },
+    )
     drainOutput(proc)
     return proc
   }
-  const proc = spawn('pnpm', ['dev'], { shell: true, stdio: ['ignore', 'pipe', 'pipe'] })
+  const proc = spawn('pnpm', ['dev'], {
+    shell: true,
+    stdio: ['ignore', 'pipe', 'pipe'],
+  })
   drainOutput(proc)
   return proc
 }
@@ -87,7 +97,9 @@ async function waitForServer(): Promise<void> {
 }
 
 async function signIn(context: BrowserContext): Promise<string> {
-  let res = await context.request.post('/api/auth/sign-up/email', { data: SMOKE_USER })
+  let res = await context.request.post('/api/auth/sign-up/email', {
+    data: SMOKE_USER,
+  })
   if (!res.ok()) {
     res = await context.request.post('/api/auth/sign-in/email', {
       data: { email: SMOKE_USER.email, password: SMOKE_USER.password },
@@ -104,24 +116,42 @@ async function signIn(context: BrowserContext): Promise<string> {
   return session.user.id
 }
 
-async function visit(context: BrowserContext, route: string, label: string): Promise<Finding[]> {
+async function visit(
+  context: BrowserContext,
+  route: string,
+  label: string,
+): Promise<Finding[]> {
   const findings: Finding[] = []
   const tag = `${route} (${label})`
   const page = await context.newPage()
   page.on('console', (msg) => {
     const text = msg.text()
     if (IGNORED.some((pattern) => pattern.test(text))) return
-    if (msg.type() === 'error') findings.push({ route: tag, kind: 'console-error', text })
-    if (msg.type() === 'warning') findings.push({ route: tag, kind: 'console-warning', text })
+    if (msg.type() === 'error')
+      findings.push({ route: tag, kind: 'console-error', text })
+    if (msg.type() === 'warning')
+      findings.push({ route: tag, kind: 'console-warning', text })
   })
   page.on('pageerror', (error) => {
     findings.push({ route: tag, kind: 'pageerror', text: error.message })
   })
   page.on('requestfailed', (request) => {
+    const errorText = request.failure()?.errorText ?? '?'
+    // `net::ERR_ABORTED` is Chromium's signal that the *browser* canceled
+    // the request — via navigation, an app-level AbortController (e.g.
+    // TanStack Query dropping a stale fetch), or `page.close()` below —
+    // not a network/server failure. Routes with live external resources
+    // (maplibre tiles on /explore) routinely still have requests in
+    // flight when the 4s settle window ends and the page closes; that's
+    // expected browser behavior, not an app defect, and reporting it as
+    // one is a flaky false positive. Genuine failures (DNS, timeout,
+    // connection refused, blocked) use other `net::ERR_*` codes and are
+    // still reported below.
+    if (errorText === 'net::ERR_ABORTED') return
     findings.push({
       route: tag,
       kind: 'requestfailed',
-      text: `${request.method()} ${request.url()} — ${request.failure()?.errorText ?? '?'}`,
+      text: `${request.method()} ${request.url()} — ${errorText}`,
     })
   })
   await page.goto(`${BASE_URL}${route}`, { waitUntil: 'load', timeout: 60_000 })
@@ -141,27 +171,79 @@ try {
   const seeded = await ensureSmokeData(userId)
 
   const anonContext = await browser.newContext({ baseURL: BASE_URL })
-  const anonRoutes = ['/', '/login', '/signup', '/forgot-password', '/explore', `/itineraries/${seeded.slug}`]
-  const authRoutes = ['/my', '/new', `/my/${seeded.itineraryId}/edit`, `/itineraries/${seeded.slug}`]
+  const anonRoutes = [
+    '/',
+    '/login',
+    '/signup',
+    '/forgot-password',
+    '/explore',
+    `/itineraries/${seeded.slug}`,
+  ]
+  const authRoutes = [
+    '/my',
+    '/new',
+    `/my/${seeded.itineraryId}/edit`,
+    `/itineraries/${seeded.slug}`,
+  ]
+
+  // Known-risk coverage (see docs/superpowers/notes/2026-07-19-smoke-inventory.md
+  // "Known-risk sites"): the routes above never set a locale cookie, so
+  // getLocale() falls through the ['cookie', 'baseLocale'] strategy to
+  // baseLocale ('pt-BR') — exercising the *fallback* path, not the cookie
+  // read itself. This context sets PARAGLIDE_LOCALE explicitly so the
+  // cookie-parsing code path (extractLocaleFromCookie /
+  // extractLocaleFromRequestWithStrategies) actually runs, covering the
+  // __root.tsx <html lang> risk (SSR's lang={getLocale()} vs beforeLoad's
+  // imperative document.documentElement.setAttribute('lang', ...)).
+  const ptBrCookieContext = await browser.newContext({ baseURL: BASE_URL })
+  await ptBrCookieContext.addCookies([
+    { name: 'PARAGLIDE_LOCALE', value: 'pt-BR', url: BASE_URL },
+  ])
+
+  // Known-risk coverage: matchMedia-gated surfaces (useIsMobile,
+  // _app.explore.tsx's useIsDesktop) default to `false` on the server and
+  // first client render, then correct via a post-hydration effect — safe
+  // by construction at any width, but only the routes that actually branch
+  // on them (`/explore`'s map-vs-list layout, `/itineraries/$slug`'s
+  // ResponsiveSheet) exercise the mobile component tree at all. The
+  // anon/auth contexts above run at Chromium's default 1280x720; this one
+  // adds the 390px phone width those routes are designed for.
+  const mobileViewportContext = await browser.newContext({
+    baseURL: BASE_URL,
+    viewport: { width: 390, height: 844 },
+  })
 
   const findings: Finding[] = []
-  for (const route of anonRoutes) findings.push(...(await visit(anonContext, route, 'anon')))
-  for (const route of authRoutes) findings.push(...(await visit(authContext, route, 'auth')))
+  for (const route of anonRoutes)
+    findings.push(...(await visit(anonContext, route, 'anon')))
+  for (const route of authRoutes)
+    findings.push(...(await visit(authContext, route, 'auth')))
+  findings.push(...(await visit(ptBrCookieContext, '/', 'pt-BR-cookie')))
+  const mobileRoutes = ['/explore', `/itineraries/${seeded.slug}`]
+  for (const route of mobileRoutes)
+    findings.push(...(await visit(mobileViewportContext, route, 'mobile-390')))
 
   await browser.close()
 
-  const errors = findings.filter((finding) => finding.kind !== 'console-warning')
-  const warnings = findings.filter((finding) => finding.kind === 'console-warning')
+  const errors = findings.filter(
+    (finding) => finding.kind !== 'console-warning',
+  )
+  const warnings = findings.filter(
+    (finding) => finding.kind === 'console-warning',
+  )
   const byRoute = new Map<string, Finding[]>()
   for (const finding of findings) {
     byRoute.set(finding.route, [...(byRoute.get(finding.route) ?? []), finding])
   }
   for (const [route, routeFindings] of byRoute) {
     console.log(`\n== ${route} ==`)
-    for (const finding of routeFindings) console.log(`  [${finding.kind}] ${finding.text}`)
+    for (const finding of routeFindings)
+      console.log(`  [${finding.kind}] ${finding.text}`)
   }
+  const totalVisits =
+    anonRoutes.length + authRoutes.length + 1 + mobileRoutes.length
   console.log(
-    `\n${PREVIEW ? 'preview' : 'dev'}: ${errors.length} error(s), ${warnings.length} warning(s) across ${anonRoutes.length + authRoutes.length} route visits`,
+    `\n${PREVIEW ? 'preview' : 'dev'}: ${errors.length} error(s), ${warnings.length} warning(s) across ${totalVisits} route visits`,
   )
   process.exitCode = errors.length > 0 ? 1 : 0
 } finally {
