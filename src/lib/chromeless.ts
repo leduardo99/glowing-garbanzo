@@ -7,7 +7,13 @@ import { useRouterState } from '@tanstack/react-router'
  * renders its own transparent header and footer and is always anonymous
  * (sessions are redirected to /explore in its beforeLoad).
  */
-const CHROMELESS_PATHS = new Set(['/', '/login', '/signup'])
+const CHROMELESS_PATHS = new Set([
+  '/',
+  '/login',
+  '/signup',
+  '/forgot-password',
+  '/reset-password',
+])
 
 export function useIsChromelessRoute(): boolean {
   return useRouterState({

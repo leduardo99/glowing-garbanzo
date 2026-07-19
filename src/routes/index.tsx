@@ -26,8 +26,23 @@ import { BrandGlyph } from '#/components/AppHeader'
 import { ItineraryCard } from '#/components/ItineraryCard'
 import LocaleSwitcher from '#/components/LocaleSwitcher'
 import { RouteSketch } from '#/components/RouteSketch'
+import { SpecimenFrame } from '#/components/landing/SpecimenFrame'
+import {
+  AiSpecimen,
+  CardSpecimen,
+  ForkSpecimen,
+  MapSpecimen,
+  TimelineSpecimen,
+} from '#/components/landing/specimens'
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from '#/components/ui/accordion'
 import { Button } from '#/components/ui/button'
 import { m } from '#/paraglide/messages'
+import { getCommunityStats } from '#/server/community'
 import { getLandingHighlights } from '#/server/landing'
 import type { ItineraryCard as ItineraryCardData } from '#/server/itineraries'
 
@@ -43,7 +58,13 @@ export const Route = createFileRoute('/')({
       throw redirect({ to: '/explore' })
     }
   },
-  loader: () => getLandingHighlights(),
+  loader: async () => {
+    const [highlights, stats] = await Promise.all([
+      getLandingHighlights(),
+      getCommunityStats(),
+    ])
+    return { ...highlights, stats }
+  },
   component: LandingPage,
 })
 
@@ -218,23 +239,121 @@ function LandingPage() {
                 <Link to="/signup">{m.landing_cta_signup()}</Link>
               </Button>
             </div>
+
+            {data.stats.topDestinations.length > 0 ? (
+              <div
+                className="animate-in fade-in slide-in-from-bottom-2 fill-mode-both mt-3 flex flex-wrap items-center gap-2 duration-700"
+                style={{ animationDelay: '320ms' }}
+              >
+                <span className="text-caption text-[oklch(0.985_0.006_88_/_0.6)]">
+                  {m.landing_destinations_label()}
+                </span>
+                {data.stats.topDestinations.map((d) => (
+                  <Link
+                    key={d.destination}
+                    to="/explore"
+                    search={{
+                      q: d.destination,
+                      sort: 'recent',
+                      page: 1,
+                      duration: 'any',
+                    }}
+                    className="rounded-full border border-[oklch(0.985_0.006_88_/_0.25)] px-3 py-1 text-caption text-[oklch(0.985_0.006_88_/_0.85)] hover:bg-[oklch(0.985_0.006_88_/_0.1)] hover:text-[oklch(0.985_0.006_88)]"
+                  >
+                    {d.destination}
+                  </Link>
+                ))}
+              </div>
+            ) : null}
+            {data.stats.itineraryCount > 0 ? (
+              <p
+                className="animate-in fade-in fill-mode-both text-caption text-[oklch(0.985_0.006_88_/_0.6)] duration-700 tabular-nums"
+                style={{ animationDelay: '400ms' }}
+              >
+                {m.landing_social_proof({
+                  itineraries: data.stats.itineraryCount,
+                  destinations: data.stats.destinationCount,
+                })}
+              </p>
+            ) : null}
           </div>
 
-          {/* The signature, at its largest register: the route draws
-              itself in, numbered stops popping as the pen reaches them. */}
-          <RouteSketch
-            seed="landing-hero"
-            stops={5}
-            numbered
-            animated
-            tone="oncolor"
-            className="mx-auto mt-2 w-full max-w-[22rem] md:mt-0 md:max-w-none"
-          />
+          {/* The product as the hero imagery (Travelora move): real
+              components, light-pinned, floating over the drawn route —
+              which still traces itself in behind them. */}
+          <div className="relative mx-auto mt-4 w-full max-w-[24rem] pb-10 md:mt-0 md:max-w-[26rem]">
+            <RouteSketch
+              seed="landing-hero"
+              stops={5}
+              animated
+              tone="oncolor"
+              className="absolute -top-12 -left-6 w-full opacity-70"
+            />
+            <SpecimenFrame className="relative">
+              <CardSpecimen className="w-52 rotate-[-2deg] sm:w-60" />
+              <TimelineSpecimen className="absolute top-20 -right-1 w-52 rotate-[1.5deg] sm:w-56" />
+              <MapSpecimen className="absolute -bottom-8 left-2 hidden h-24 w-40 rotate-[2deg] sm:block" />
+            </SpecimenFrame>
+          </div>
         </div>
 
         {/* The route continues below the fold — a dashed leg exits the
             hero exactly where the arrival section's lead-in resumes it. */}
         <DashedLeg className="absolute bottom-0 left-1/2 h-14 w-0.5 -translate-x-1/2" />
+      </section>
+
+      {/*
+        Feature bands (Trippin's storytelling, our material): what the
+        product does, each band showing a real product fragment — no
+        mascots, no scene illustration. Alternating sides for rhythm.
+      */}
+      <section className="mx-auto flex w-full max-w-6xl flex-col gap-14 px-4 py-16 sm:px-6 md:gap-20 md:py-24">
+        <h2 className="font-display text-[clamp(1.6rem,3vw,2.1rem)] text-ink">
+          {m.landing_features_title()}
+        </h2>
+
+        <div className="grid items-center gap-8 md:grid-cols-2 md:gap-14">
+          <div className="flex max-w-md flex-col gap-3">
+            <h3 className="font-display text-[1.4rem] leading-snug text-ink">
+              {m.landing_feature_ai_title()}
+            </h3>
+            <p className="measure-prose text-body text-ink-soft">
+              {m.landing_feature_ai_description()}
+            </p>
+          </div>
+          <SpecimenFrame className="mx-auto w-full max-w-[22rem]">
+            <AiSpecimen />
+          </SpecimenFrame>
+        </div>
+
+        <div className="grid items-center gap-8 md:grid-cols-2 md:gap-14">
+          <div className="flex max-w-md flex-col gap-3 md:order-2">
+            <h3 className="font-display text-[1.4rem] leading-snug text-ink">
+              {m.landing_feature_fork_title()}
+            </h3>
+            <p className="measure-prose text-body text-ink-soft">
+              {m.landing_feature_fork_description()}
+            </p>
+          </div>
+          <SpecimenFrame className="mx-auto w-full max-w-[17rem] md:order-1">
+            <ForkSpecimen />
+          </SpecimenFrame>
+        </div>
+
+        <div className="grid items-center gap-8 md:grid-cols-2 md:gap-14">
+          <div className="flex max-w-md flex-col gap-3">
+            <h3 className="font-display text-[1.4rem] leading-snug text-ink">
+              {m.landing_feature_map_title()}
+            </h3>
+            <p className="measure-prose text-body text-ink-soft">
+              {m.landing_feature_map_description()}
+            </p>
+          </div>
+          <SpecimenFrame className="mx-auto flex w-full max-w-[24rem] items-start gap-3">
+            <MapSpecimen className="h-36 flex-1" />
+            <TimelineSpecimen className="w-48 shrink-0" />
+          </SpecimenFrame>
+        </div>
       </section>
 
       {/*
@@ -368,6 +487,36 @@ function LandingPage() {
               )
             })}
           </ol>
+        </div>
+      </section>
+
+      {/* FAQ — the practical questions a first-time visitor actually has. */}
+      <section className="border-t border-line">
+        <div className="mx-auto flex w-full max-w-3xl flex-col gap-8 px-4 py-16 sm:px-6 md:py-20">
+          <h2 className="font-display text-[clamp(1.6rem,3vw,2.1rem)] text-ink">
+            {m.landing_faq_title()}
+          </h2>
+          <Accordion type="single" collapsible className="w-full">
+            {[
+              { id: 'free', q: m.landing_faq_free_q, a: m.landing_faq_free_a },
+              { id: 'fork', q: m.landing_faq_fork_q, a: m.landing_faq_fork_a },
+              {
+                id: 'private',
+                q: m.landing_faq_private_q,
+                a: m.landing_faq_private_a,
+              },
+              { id: 'ai', q: m.landing_faq_ai_q, a: m.landing_faq_ai_a },
+            ].map((item) => (
+              <AccordionItem key={item.id} value={item.id}>
+                <AccordionTrigger className="text-title font-semibold text-ink">
+                  {item.q()}
+                </AccordionTrigger>
+                <AccordionContent className="measure-prose text-body text-ink-soft">
+                  {item.a()}
+                </AccordionContent>
+              </AccordionItem>
+            ))}
+          </Accordion>
         </div>
       </section>
 
