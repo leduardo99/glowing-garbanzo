@@ -10,7 +10,8 @@ import type { CommunityStats } from '#/server/community'
 /**
  * Dedicated split-screen shell for the auth pages (`/login`, `/signup`,
  * `/forgot-password`, `/reset-password`). The app chrome hides itself on
- * these routes (chromeless.ts), so the page owns the whole viewport —
+ * these routes (they live outside the `_app` layout), so the page owns
+ * the whole viewport —
  * which is why the LocaleSwitcher lives here (BonSanté reference): with
  * the header gone this is a visitor's only way to switch language.
  *

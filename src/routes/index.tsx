@@ -15,7 +15,7 @@
  *   4. Arrival — the closing CTA under the ringed "you arrive here"
  *      destination mark, calm on paper.
  *
- * The app chrome (AppHeader/BottomNav) hides itself here (chromeless.ts);
+ * The landing lives outside the `_app` shell layout (no AppHeader/BottomNav);
  * the landing renders its own transparent header and a minimal footer.
  */
 import { Suspense, lazy } from 'react'

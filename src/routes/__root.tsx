@@ -11,9 +11,6 @@ import { NuqsAdapter } from 'nuqs/adapters/tanstack-router'
 import TanStackQueryDevtools from '../integrations/tanstack-query/devtools'
 
 import { getLocale } from '#/paraglide/runtime'
-import { useIsChromelessRoute } from '#/lib/chromeless'
-import { AppHeader } from '#/components/AppHeader'
-import { BottomNav } from '#/components/navigation/BottomNav'
 import { PwaRegister } from '#/components/PwaRegister'
 import { Toaster } from '#/components/ui/sonner'
 import { sessionQueryKey } from '#/lib/session'
@@ -129,30 +126,6 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
   shellComponent: RootDocument,
 })
 
-/**
- * Reserves room for BottomNav's fixed bar on mobile (it would otherwise
- * overlap the last bit of page content) — matches the bar's own
- * `h-[calc(4rem+env(safe-area-inset-bottom))]` exactly (BottomNav.tsx).
- * BottomNav is `md:hidden`, so the padding drops in lockstep at the same
- * breakpoint — and drops entirely on chromeless routes (auth, landing),
- * where the bar itself doesn't render and the padding would read as a
- * dead strip below their own footers.
- */
-function ContentFrame({ children }: { children: React.ReactNode }) {
-  const chromeless = useIsChromelessRoute()
-  return (
-    <div
-      className={
-        chromeless
-          ? undefined
-          : 'pb-[calc(4rem+env(safe-area-inset-bottom))] md:pb-0'
-      }
-    >
-      {children}
-    </div>
-  )
-}
-
 function RootDocument({ children }: { children: React.ReactNode }) {
   return (
     // suppressHydrationWarning: the ScriptOnce below adds `.dark` to <html>
@@ -189,9 +162,10 @@ function RootDocument({ children }: { children: React.ReactNode }) {
           living in `router.tsx`.
         */}
         <NuqsAdapter>
-          <AppHeader />
-          <ContentFrame>{children}</ContentFrame>
-          <BottomNav />
+          {/* App chrome (header + bottom tabs) lives in the `_app`
+              pathless layout route, not here — the landing and auth
+              pages own their whole viewport. */}
+          {children}
           <PwaRegister />
           <Toaster />
           <TanStackDevtools

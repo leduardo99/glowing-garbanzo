@@ -207,7 +207,7 @@ const homeSearchSchema = z.object({
   page: z.number().int().min(1).default(1),
 })
 
-export const Route = createFileRoute('/explore')({
+export const Route = createFileRoute('/_app/explore')({
   validateSearch: homeSearchSchema,
   loaderDeps: ({ search }) => search,
   loader: async ({ deps, context }) => {
