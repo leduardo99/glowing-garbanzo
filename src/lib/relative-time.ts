@@ -27,6 +27,23 @@ const DIVISIONS: { amount: number; unit: Intl.RelativeTimeFormatUnit }[] = [
   { amount: Number.POSITIVE_INFINITY, unit: 'years' },
 ]
 
+/**
+ * `Intl.RelativeTimeFormat` construction does locale negotiation, so it's
+ * worth avoiding when the same locale repeats — e.g. `Comments` calling
+ * `formatRelativeTime` once per rendered comment. Module-level `Map` cache,
+ * keyed by locale (this app only ever has two: `pt-BR`, `en`).
+ */
+const formatterCache = new Map<string, Intl.RelativeTimeFormat>()
+
+function getFormatter(locale: string): Intl.RelativeTimeFormat {
+  let formatter = formatterCache.get(locale)
+  if (!formatter) {
+    formatter = new Intl.RelativeTimeFormat(locale, { numeric: 'auto' })
+    formatterCache.set(locale, formatter)
+  }
+  return formatter
+}
+
 export function formatRelativeTime(
   date: Date,
   locale: string,
@@ -34,7 +51,7 @@ export function formatRelativeTime(
   // string — Date.now() differs between the two and mismatches.
   now: number = Date.now(),
 ): string {
-  const formatter = new Intl.RelativeTimeFormat(locale, { numeric: 'auto' })
+  const formatter = getFormatter(locale)
   let duration = (date.getTime() - now) / 1000
 
   for (const division of DIVISIONS) {

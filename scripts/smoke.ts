@@ -51,18 +51,22 @@ function drainOutput(proc: ChildProcess): void {
 function startServer(): ChildProcess {
   if (PREVIEW) {
     execSync('pnpm build', { stdio: 'inherit' })
-    const proc = spawn(
-      'pnpm',
-      ['exec', 'vite', 'preview', '--port', '3000', '--strictPort'],
-      {
-        shell: true,
-        stdio: ['ignore', 'pipe', 'pipe'],
-      },
-    )
+    // A single command string (not a separate `args` array) with
+    // `shell: true`: Node deprecated passing `args` alongside `shell: true`
+    // (DEP0190, as of Node 22+) because array-form args aren't escaped for
+    // the shell they're handed to. `shell: true` itself still has to stay —
+    // on Windows, `pnpm` resolves to a `.cmd` shim that only cmd.exe/a shell
+    // can execute directly; spawning it without a shell fails outright.
+    // Every value below is a literal, not interpolated input, so folding
+    // them into one string carries no injection risk.
+    const proc = spawn('pnpm exec vite preview --port 3000 --strictPort', {
+      shell: true,
+      stdio: ['ignore', 'pipe', 'pipe'],
+    })
     drainOutput(proc)
     return proc
   }
-  const proc = spawn('pnpm', ['dev'], {
+  const proc = spawn('pnpm dev', {
     shell: true,
     stdio: ['ignore', 'pipe', 'pipe'],
   })
