@@ -16,7 +16,9 @@ Always follow the involved library's best practices BEFORE writing code:
    - TanStack libraries (Router, Start, Devtools) → TanStack Intent mappings in `AGENTS.md` (run the indicated `load` command)
    - shadcn/ui → `shadcn` skill (`.claude/skills/shadcn`)
    - React/UI patterns → `vercel-react-best-practices`, `vercel-composition-patterns`, `web-design-guidelines` skills
-2. **No skill? Use Context7.** For libraries without an installed skill — **Better Auth, Drizzle ORM, Paraglide/inlang, TanStack Query, TanStack Form, Tailwind, Zod, Vitest** — look up current docs through the `context7` MCP (configured in `.mcp.json`) before implementing. Do not rely on training knowledge alone for these libraries' APIs.
+   - Better Auth → `better-auth-best-practices`, `create-auth`, `email-and-password-best-practices`, `better-auth-security-best-practices` skills (official, from `better-auth/skills`)
+   - Email (Resend) → `resend`, `react-email`, `email-best-practices` skills (official, from `resend/resend-skills`)
+2. **No skill? Use Context7.** For libraries without an installed skill — **Drizzle ORM, Paraglide/inlang, TanStack Query, TanStack Form, Tailwind, Zod, Vitest** — look up current docs through the `context7` MCP (configured in `.mcp.json`) before implementing. Do not rely on training knowledge alone for these libraries' APIs.
 3. If Context7 is unreachable (restricted proxy), consult the library's official GitHub repository (raw.githubusercontent.com is usually allowed).
 
 ## Project conventions
