@@ -1,4 +1,4 @@
-import { Link } from '@tanstack/react-router'
+import { Link, useRouterState } from '@tanstack/react-router'
 import { BookOpenIcon, HomeIcon, PlusCircleIcon } from 'lucide-react'
 
 import { UserMenu } from '#/components/navigation/UserMenu'
@@ -33,12 +33,17 @@ import { m } from '#/paraglide/messages'
  * this component doesn't duplicate that auth check, it just links there.
  */
 export function BottomNav() {
+  const pathname = useRouterState({ select: (s) => s.location.pathname })
+  // The dedicated auth pages own the whole viewport (see AuthShell).
+  if (pathname === '/login' || pathname === '/signup') {
+    return null
+  }
   return (
     <nav
       aria-label={m.nav_primary_label()}
       className="fixed inset-x-0 bottom-0 z-40 flex h-[calc(4rem+env(safe-area-inset-bottom))] items-stretch border-t border-line-strong bg-surface pb-[env(safe-area-inset-bottom)] md:hidden"
     >
-      <Link to="/" activeOptions={{ exact: true }} className={tabLinkClassName}>
+      <Link to="/explore" className={tabLinkClassName}>
         <span className={tabIconClassName}>
           <HomeIcon className="size-6" aria-hidden="true" />
         </span>

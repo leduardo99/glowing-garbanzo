@@ -156,7 +156,7 @@ function ItineraryNotFound({ data }: { data?: unknown }) {
             : m.view_not_found_description()}
         </EmptyDescription>
         <Button asChild variant="outline">
-          <Link to="/">{m.view_back_home()}</Link>
+          <Link to="/explore">{m.view_back_home()}</Link>
         </Button>
       </Empty>
     </div>

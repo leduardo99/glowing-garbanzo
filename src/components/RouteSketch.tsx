@@ -78,6 +78,7 @@ export function RouteSketch({
   seed,
   stops = 4,
   numbered = false,
+  tone = 'default',
   className,
 }: {
   /** Stable string (slug/title) — same seed, same route. */
@@ -86,11 +87,14 @@ export function RouteSketch({
   stops?: number
   /** Show tiny numerals inside the dots — legible only at larger render sizes. */
   numbered?: boolean
+  /** `oncolor` flips the dots to cream for sketches drawn over a mata fill (e.g. the auth brand panel). */
+  tone?: 'default' | 'oncolor'
   className?: string
 }) {
   const id = useId()
   const points = generateStops(seed, Math.min(6, Math.max(2, stops)))
   const path = buildPath(points)
+  const dotFill = tone === 'oncolor' ? 'var(--primary-foreground)' : 'var(--mata)'
 
   return (
     <svg
@@ -114,11 +118,11 @@ export function RouteSketch({
             {isLast ? (
               // The destination reads as "you arrive here": a ringed dot.
               <>
-                <circle cx={p.x} cy={p.y} r={5} fill="none" stroke="var(--mata)" strokeWidth="1.4" />
-                <circle cx={p.x} cy={p.y} r={2} fill="var(--mata)" />
+                <circle cx={p.x} cy={p.y} r={5} fill="none" stroke={dotFill} strokeWidth="1.4" />
+                <circle cx={p.x} cy={p.y} r={2} fill={dotFill} />
               </>
             ) : (
-              <circle cx={p.x} cy={p.y} r={4.4} fill="var(--mata)" />
+              <circle cx={p.x} cy={p.y} r={4.4} fill={dotFill} />
             )}
             {numbered && !isLast ? (
               <text
@@ -129,7 +133,7 @@ export function RouteSketch({
                 fontSize="5"
                 fontFamily="var(--font-sans)"
                 fontWeight="600"
-                fill="var(--primary-foreground)"
+                fill={tone === 'oncolor' ? 'var(--mata)' : 'var(--primary-foreground)'}
               >
                 {i + 1}
               </text>

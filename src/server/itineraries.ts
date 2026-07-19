@@ -343,6 +343,31 @@ export async function getItineraryBySlugImpl(
     throw new Error(ERR_NOT_FOUND)
   }
 
+  // Best-effort popularity signal for the landing page's "most viewed"
+  // shelf: public detail views by anyone but the author bump `viewCount`.
+  // Deliberately no per-user dedupe (MVP), and a failure here must never
+  // fail the read itself.
+  if (
+    row.status === 'published' &&
+    row.visibility === 'public' &&
+    userId !== row.authorId
+  ) {
+    try {
+      await db
+        .update(itinerary)
+        .set({
+          viewCount: sql`${itinerary.viewCount} + 1`,
+          // Pin updatedAt to itself: a view is not a content update, and
+          // the column's `$onUpdate` would otherwise stamp "now" on every
+          // page hit.
+          updatedAt: sql`${itinerary.updatedAt}`,
+        })
+        .where(eq(itinerary.id, row.id))
+    } catch {
+      // Swallowed intentionally — see comment above.
+    }
+  }
+
   const [days, authorRow, forkedFromRow, isMemberOfSource] =
     await Promise.all([
       loadDaysWithStops(db, row.id),

@@ -130,7 +130,14 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
 
 function RootDocument({ children }: { children: React.ReactNode }) {
   return (
-    <html lang={getLocale()}>
+    // suppressHydrationWarning: the ScriptOnce below adds `.dark` to <html>
+    // BEFORE React hydrates, so for dark-scheme users the client attribute
+    // set never matches the SSR'd one. Without the suppression React 19
+    // reports a recoverable-but-noisy hydration error on every page and,
+    // depending on streaming timing, can leave the tree unhydrated —
+    // dead dropdowns, dead client-side navigation. Scoped to this element
+    // only; content mismatches elsewhere still surface normally.
+    <html lang={getLocale()} suppressHydrationWarning>
       <head>
         <HeadContent />
         {/*
