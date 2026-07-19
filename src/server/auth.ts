@@ -8,6 +8,8 @@
 import { createServerFn } from '@tanstack/react-start'
 import { getRequest } from '@tanstack/react-start/server'
 
+import { isGoogleLoginConfigured } from '#/lib/auth'
+import { isEmailConfigured } from '#/server/email'
 import { getOptionalSession } from './context'
 
 export interface SessionUserView {
@@ -16,6 +18,24 @@ export interface SessionUserView {
   email: string
   image: string | null
 }
+
+export interface AuthCapabilities {
+  googleLogin: boolean
+  passwordReset: boolean
+}
+
+/**
+ * Which optional auth capabilities this deployment has secrets for (see
+ * src/lib/auth.ts). The auth pages load this to decide whether to render
+ * the Google button and the forgot-password entry point — the UI hides
+ * cleanly instead of offering a flow that would 500.
+ */
+export const getAuthCapabilities = createServerFn({ method: 'GET' }).handler(
+  (): AuthCapabilities => ({
+    googleLogin: isGoogleLoginConfigured,
+    passwordReset: isEmailConfigured(),
+  }),
+)
 
 export const getSessionUser = createServerFn({ method: 'GET' }).handler(
   async (): Promise<SessionUserView | null> => {

@@ -45,6 +45,9 @@ In the Vercel project → **Settings → Environment Variables**, add these for 
 | `BETTER_AUTH_URL` | `https://<your-app>.vercel.app` (or your custom domain) | Better Auth reads this automatically; no code change needed. Update it if you later attach a custom domain. |
 | `BLOB_READ_WRITE_TOKEN` | From a Vercel Blob store (see below) | Switches cover-image uploads from disk to Vercel Blob automatically. |
 | `GEMINI_API_KEY` | From [Google AI Studio](https://aistudio.google.com/apikey) (free tier) | **Optional.** Enables the "generate with AI" mode on `/new` (Gemini Flash via the Vercel AI SDK). When unset, the AI mode is hidden and everything else works normally. |
+| `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | OAuth 2.0 credentials from the [Google Cloud Console](https://console.cloud.google.com/apis/credentials) | **Optional.** Enables "Continue with Google" on the auth pages. Authorized redirect URI: `https://<your-app>/api/auth/callback/google`. When unset, the button is hidden. |
+| `RESEND_API_KEY` | From [Resend](https://resend.com/api-keys) | **Optional.** Enables the password-reset email flow. When unset, the "forgot password" link is hidden. |
+| `RESEND_FROM` | e.g. `Roteiros <no-reply@yourdomain.com>` (a [verified domain](https://resend.com/domains)) | Optional; defaults to Resend's sandbox sender `onboarding@resend.dev`, which is fine for testing but not production. |
 
 To create the Blob store and token: project → **Storage** tab → **Create Database**
 → **Blob** → connect it to this project. Vercel then offers to add

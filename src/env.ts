@@ -19,6 +19,21 @@ export const env = createEnv({
      * unset, the "generate with AI" mode on `/new` is hidden entirely.
      */
     GEMINI_API_KEY: z.string().min(1).optional(),
+    /**
+     * Google OAuth 2.0 credentials for "Continue with Google" (Better
+     * Auth social provider — see `#/lib/auth`). Optional: when either is
+     * unset, the Google button is hidden on the auth pages.
+     */
+    GOOGLE_CLIENT_ID: z.string().min(1).optional(),
+    GOOGLE_CLIENT_SECRET: z.string().min(1).optional(),
+    /**
+     * Resend API key for transactional email (password reset — see
+     * `#/server/email`). Optional: when unset, the forgot-password flow
+     * is hidden entirely.
+     */
+    RESEND_API_KEY: z.string().min(1).optional(),
+    /** Sender for transactional email; defaults to Resend's sandbox sender. */
+    RESEND_FROM: z.string().min(1).optional(),
   },
 
   /**
@@ -47,6 +62,10 @@ export const env = createEnv({
     UPLOADS_DIR: process.env.UPLOADS_DIR,
     BLOB_READ_WRITE_TOKEN: process.env.BLOB_READ_WRITE_TOKEN,
     GEMINI_API_KEY: process.env.GEMINI_API_KEY,
+    GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID,
+    GOOGLE_CLIENT_SECRET: process.env.GOOGLE_CLIENT_SECRET,
+    RESEND_API_KEY: process.env.RESEND_API_KEY,
+    RESEND_FROM: process.env.RESEND_FROM,
     VITE_APP_TITLE: import.meta.env.VITE_APP_TITLE,
   },
 
