@@ -17,6 +17,7 @@ import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as SignupRouteImport } from './routes/signup'
 import { Route as AppExploreRouteImport } from './routes/_app.explore'
 import { Route as AppNewRouteImport } from './routes/_app.new'
+import { Route as ApiAssistantRouteImport } from './routes/api/assistant'
 import { Route as AppItinerariesSlugRouteImport } from './routes/_app.itineraries.$slug'
 import { Route as AppMyIndexRouteImport } from './routes/_app.my.index'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
@@ -62,6 +63,11 @@ const AppNewRoute = AppNewRouteImport.update({
   path: '/new',
   getParentRoute: () => AppRoute,
 } as any)
+const ApiAssistantRoute = ApiAssistantRouteImport.update({
+  id: '/api/assistant',
+  path: '/api/assistant',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AppItinerariesSlugRoute = AppItinerariesSlugRouteImport.update({
   id: '/itineraries/$slug',
   path: '/itineraries/$slug',
@@ -96,6 +102,7 @@ export interface FileRoutesByFullPath {
   '/signup': typeof SignupRoute
   '/explore': typeof AppExploreRoute
   '/new': typeof AppNewRoute
+  '/api/assistant': typeof ApiAssistantRoute
   '/itineraries/$slug': typeof AppItinerariesSlugRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/uploads/$': typeof ApiUploadsSplatRoute
@@ -110,6 +117,7 @@ export interface FileRoutesByTo {
   '/signup': typeof SignupRoute
   '/explore': typeof AppExploreRoute
   '/new': typeof AppNewRoute
+  '/api/assistant': typeof ApiAssistantRoute
   '/itineraries/$slug': typeof AppItinerariesSlugRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/uploads/$': typeof ApiUploadsSplatRoute
@@ -126,6 +134,7 @@ export interface FileRoutesById {
   '/signup': typeof SignupRoute
   '/_app/explore': typeof AppExploreRoute
   '/_app/new': typeof AppNewRoute
+  '/api/assistant': typeof ApiAssistantRoute
   '/_app/itineraries/$slug': typeof AppItinerariesSlugRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/uploads/$': typeof ApiUploadsSplatRoute
@@ -142,6 +151,7 @@ export interface FileRouteTypes {
     | '/signup'
     | '/explore'
     | '/new'
+    | '/api/assistant'
     | '/itineraries/$slug'
     | '/api/auth/$'
     | '/api/uploads/$'
@@ -156,6 +166,7 @@ export interface FileRouteTypes {
     | '/signup'
     | '/explore'
     | '/new'
+    | '/api/assistant'
     | '/itineraries/$slug'
     | '/api/auth/$'
     | '/api/uploads/$'
@@ -171,6 +182,7 @@ export interface FileRouteTypes {
     | '/signup'
     | '/_app/explore'
     | '/_app/new'
+    | '/api/assistant'
     | '/_app/itineraries/$slug'
     | '/api/auth/$'
     | '/api/uploads/$'
@@ -185,6 +197,7 @@ export interface RootRouteChildren {
   LoginRoute: typeof LoginRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   SignupRoute: typeof SignupRoute
+  ApiAssistantRoute: typeof ApiAssistantRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
   ApiUploadsSplatRoute: typeof ApiUploadsSplatRoute
 }
@@ -246,6 +259,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/new'
       preLoaderRoute: typeof AppNewRouteImport
       parentRoute: typeof AppRoute
+    }
+    '/api/assistant': {
+      id: '/api/assistant'
+      path: '/api/assistant'
+      fullPath: '/api/assistant'
+      preLoaderRoute: typeof ApiAssistantRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/_app/itineraries/$slug': {
       id: '/_app/itineraries/$slug'
@@ -310,6 +330,7 @@ const rootRouteChildren: RootRouteChildren = {
   LoginRoute: LoginRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   SignupRoute: SignupRoute,
+  ApiAssistantRoute: ApiAssistantRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
   ApiUploadsSplatRoute: ApiUploadsSplatRoute,
 }

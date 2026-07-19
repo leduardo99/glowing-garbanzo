@@ -12,6 +12,13 @@
  *   consumes one generation of the shared daily AI quota (`ai_generation`
  *   row — same 5/day pool as /new's draft generation).
  *
+ * The interactive UI streams instead of waiting: `/api/assistant`
+ * (src/routes/api/assistant.ts) reuses this module's state serialization,
+ * prompt, and request schema with `streamText` + `Output.object` so the
+ * reply renders token by token. `adviseItineraryChangeImpl` remains the
+ * non-streaming reference implementation the integration tests exercise —
+ * both paths share every ingredient except the transport.
+ *
  * Conversation state lives on the client (no chat persistence in v1 —
  * plan decision); the provider key gating and retry semantics mirror
  * ai.ts.
@@ -48,8 +55,8 @@ import { requireItineraryAuthor } from '#/server/shared'
 
 type Database = NodePgDatabase<typeof schema>
 
-const ASSISTANT_MODEL = 'gemini-2.5-flash'
-const ASSISTANT_TIMEOUT_MS = 45_000
+export const ASSISTANT_MODEL = 'gemini-2.5-flash'
+export const ASSISTANT_TIMEOUT_MS = 45_000
 
 /** Duplicated from ai.ts (module-private there): quota rows since UTC midnight. */
 async function countTodayGenerations(
@@ -74,7 +81,7 @@ const chatMessageSchema = z.object({
   content: z.string().min(1).max(2000),
 })
 
-const adviseSchema = z.object({
+export const adviseSchema = z.object({
   itineraryId: z.string().min(1),
   /** Client-held transcript, newest last; capped to keep prompts bounded. */
   messages: z.array(chatMessageSchema).min(1).max(16),
@@ -84,7 +91,10 @@ export type AdviseItineraryChangeInput = z.infer<typeof adviseSchema> & {
   locale: string
 }
 
-async function loadAssistantState(db: Database, itineraryId: string) {
+export async function loadAssistantState(
+  db: Database,
+  itineraryId: string,
+) {
   const [row] = await db
     .select({
       title: itinerary.title,

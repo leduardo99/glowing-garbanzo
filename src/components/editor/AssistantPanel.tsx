@@ -14,6 +14,7 @@
  * would fight the keyboard).
  */
 import { useRef, useState } from 'react'
+import { useObject } from '@ai-sdk/react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Loader2Icon, SendIcon, SparklesIcon, XIcon } from 'lucide-react'
 import { toast } from 'sonner'
@@ -21,12 +22,11 @@ import { toast } from 'sonner'
 import { Button } from '#/components/ui/button'
 import { Input } from '#/components/ui/input'
 import { cn } from '#/lib/utils'
+import { getLocale } from '#/paraglide/runtime'
 import { m } from '#/paraglide/messages'
-import {
-  adviseItineraryChange,
-  applyItineraryPatch,
-} from '#/server/ai-assistant'
+import { applyItineraryPatch } from '#/server/ai-assistant'
 import { getAiAvailability } from '#/server/ai'
+import { assistantResponseSchema } from '#/server/domain/ai-patch'
 import type { AssistantResponse, PatchOp } from '#/server/domain/ai-patch'
 
 interface ChatEntry {
@@ -90,24 +90,21 @@ export default function AssistantPanel({
     })
   }
 
-  const advise = useMutation({
-    mutationFn: (nextEntries: ChatEntry[]) =>
-      adviseItineraryChange({
-        data: {
-          itineraryId,
-          messages: nextEntries
-            .slice(-TRANSCRIPT_WINDOW)
-            .map(({ role, content }) => ({ role, content })),
-        },
-      }),
-    onSuccess: (response) => {
+  // Streaming advise (AI SDK `useObject` ↔ /api/assistant): the reply
+  // renders token by token as the partial object grows; `onFinish` hands
+  // over the schema-validated final object, which becomes a transcript
+  // entry (with its proposed patch, when there is one).
+  const advise = useObject({
+    api: '/api/assistant',
+    schema: assistantResponseSchema,
+    onFinish: ({ object }) => {
+      if (!object) {
+        toast.error(m.assistant_error())
+        return
+      }
       setEntries((prev) => [
         ...prev,
-        {
-          role: 'assistant',
-          content: response.reply,
-          patch: response.patch,
-        },
+        { role: 'assistant', content: object.reply, patch: object.patch },
       ])
       scrollToEnd()
     },
@@ -139,14 +136,20 @@ export default function AssistantPanel({
 
   function send() {
     const content = draft.trim()
-    if (!content || advise.isPending) {
+    if (!content || advise.isLoading) {
       return
     }
     setDraft('')
     const next: ChatEntry[] = [...entries, { role: 'user', content }]
     setEntries(next)
     scrollToEnd()
-    advise.mutate(next)
+    advise.submit({
+      itineraryId,
+      locale: getLocale(),
+      messages: next
+        .slice(-TRANSCRIPT_WINDOW)
+        .map(({ role, content: c }) => ({ role, content: c })),
+    })
   }
 
   function resolvePatch(index: number, apply_: boolean) {
@@ -274,10 +277,16 @@ export default function AssistantPanel({
             </div>
           ))}
 
-          {advise.isPending ? (
-            <div className="flex items-center gap-2 self-start rounded-lg bg-surface-sunken px-3 py-2 text-body text-ink-soft">
-              <Loader2Icon aria-hidden="true" className="size-4 animate-spin" />
-              …
+          {advise.isLoading ? (
+            <div className="flex max-w-[85%] items-start gap-2 self-start rounded-lg bg-surface-sunken px-3 py-2 text-body whitespace-pre-wrap text-ink">
+              {advise.object?.reply ? (
+                advise.object.reply
+              ) : (
+                <Loader2Icon
+                  aria-hidden="true"
+                  className="size-4 animate-spin text-ink-soft"
+                />
+              )}
             </div>
           ) : null}
         </div>
@@ -295,13 +304,13 @@ export default function AssistantPanel({
           onChange={(event) => setDraft(event.target.value)}
           placeholder={m.assistant_input_placeholder()}
           aria-label={m.assistant_input_placeholder()}
-          disabled={!enabled || advise.isPending}
+          disabled={!enabled || advise.isLoading}
           className="flex-1"
         />
         <Button
           type="submit"
           size="icon"
-          disabled={!enabled || advise.isPending || !draft.trim()}
+          disabled={!enabled || advise.isLoading || !draft.trim()}
           aria-label={m.assistant_send()}
         >
           <SendIcon aria-hidden="true" className="size-4" />
