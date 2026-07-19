@@ -312,5 +312,12 @@
   "landing_faq_private_q": "Can I keep an itinerary private?",
   "landing_faq_private_a": "Yes. Private itineraries are only reachable through an invite link, for you and your travel companions.",
   "landing_faq_ai_q": "How does AI generation work?",
-  "landing_faq_ai_a": "You describe the destination, length, and style; the AI drafts a day-by-day plan you review and edit before publishing."
+  "landing_faq_ai_a": "You describe the destination, length, and style; the AI drafts a day-by-day plan you review and edit before publishing.",
+  "explore_map_open": "Map",
+  "explore_map_close": "Close map",
+  "explore_map_no_routes": "No geocoded routes for these filters.",
+  "explore_panel_collapse": "Collapse panel",
+  "explore_panel_expand": "Show panel",
+  "explore_results_count": "{count} itineraries",
+  "home_filters_show_results_count": "Show {count} itineraries"
 }

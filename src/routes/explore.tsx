@@ -1,8 +1,15 @@
-import { Suspense, useEffect, useState } from 'react'
+import { Suspense, lazy, useEffect, useState } from 'react'
 import { z } from 'zod'
-import { useSuspenseQuery } from '@tanstack/react-query'
-import { Link, createFileRoute } from '@tanstack/react-router'
-import { SearchIcon, SlidersHorizontalIcon, XIcon } from 'lucide-react'
+import { keepPreviousData, useQuery, useSuspenseQuery } from '@tanstack/react-query'
+import { Link, createFileRoute, useNavigate } from '@tanstack/react-router'
+import {
+  MapIcon,
+  PanelLeftCloseIcon,
+  PanelLeftOpenIcon,
+  SearchIcon,
+  SlidersHorizontalIcon,
+  XIcon,
+} from 'lucide-react'
 import {
   parseAsArrayOf,
   parseAsInteger,
@@ -41,10 +48,21 @@ import {
 } from '#/components/ui/select'
 import { Tabs, TabsList, TabsTrigger } from '#/components/ui/tabs'
 import { cn } from '#/lib/utils'
-import { searchQueryOptions } from '#/lib/queries'
+import { searchQueryOptions, searchRoutesQueryOptions } from '#/lib/queries'
 import { m } from '#/paraglide/messages'
 import { PAGE_SIZE } from '#/server/itineraries'
-import type { SearchItinerariesInput } from '#/server/itineraries'
+import type {
+  SearchItinerariesInput,
+  SearchRoutePolylinesInput,
+} from '#/server/itineraries'
+
+// Lazy so `maplibre-gl` only loads when a map surface is actually shown
+// (the desktop workspace, or the mobile fullscreen map).
+const RoutesCanvas = lazy(() =>
+  import('#/components/map/RoutesCanvas').then((mod) => ({
+    default: mod.RoutesCanvas,
+  })),
+)
 
 type DurationBucket = 'any' | 'short' | 'medium' | 'long'
 type SortOption = 'recent' | 'top'
@@ -107,6 +125,38 @@ function toSearchInput(search: {
     sort: search.sort,
     page: search.page,
   }
+}
+
+/** The canvas follows the panel's filters, never its pagination/sort. */
+function toRoutesInput(search: {
+  q?: string
+  tags: string[]
+  duration: DurationBucket
+}): SearchRoutePolylinesInput {
+  const { minDays, maxDays } = DURATION_BOUNDS[search.duration]
+  return {
+    q: search.q || undefined,
+    tags: search.tags.length > 0 ? search.tags : undefined,
+    minDays,
+    maxDays,
+  }
+}
+
+/**
+ * `matchMedia`-driven flag, false during SSR — map surfaces mount only
+ * after the client knows the viewport, so the server always renders the
+ * (map-free) markup and hydration can't mismatch.
+ */
+function useIsDesktop(): boolean {
+  const [isDesktop, setIsDesktop] = useState(false)
+  useEffect(() => {
+    const mq = window.matchMedia('(min-width: 1024px)')
+    const update = () => setIsDesktop(mq.matches)
+    update()
+    mq.addEventListener('change', update)
+    return () => mq.removeEventListener('change', update)
+  }, [])
+  return isDesktop
 }
 
 /** Splits the route's comma-joined `tags` search param into a tag list. */
@@ -199,6 +249,38 @@ function HomePage() {
 
   const [tagDraft, setTagDraft] = useState('')
   const [filtersOpen, setFiltersOpen] = useState(false)
+
+  // Map workspace state. The canvas mounts on desktop (lg+) or when the
+  // mobile fullscreen map is open; hover state is shared both ways
+  // between result cards and drawn routes.
+  const navigate = useNavigate()
+  const isDesktop = useIsDesktop()
+  const [mobileMapOpen, setMobileMapOpen] = useState(false)
+  const [panelCollapsed, setPanelCollapsed] = useState(false)
+  const [hoveredSlug, setHoveredSlug] = useState<string | null>(null)
+  const showMap = isDesktop || mobileMapOpen
+  const routesQuery = useQuery({
+    ...searchRoutesQueryOptions(toRoutesInput(query)),
+    enabled: showMap,
+    // Keep the previous routes on screen while a filter change refetches —
+    // the canvas glides to the new set instead of blanking.
+    placeholderData: keepPreviousData,
+  })
+  // The result total for the filter sheet's CTA ("Show N itineraries") —
+  // reads the same cache SearchResults populates.
+  const totalQuery = useQuery({
+    ...searchQueryOptions(toSearchInput(query)),
+    enabled: filtersOpen,
+  })
+
+  function openRoute(slug: string) {
+    setMobileMapOpen(false)
+    void navigate({
+      to: '/itineraries/$slug',
+      params: { slug },
+      viewTransition: { types: ['nav-forward'] },
+    })
+  }
 
   function addTag() {
     const trimmed = tagDraft.trim()
@@ -293,6 +375,13 @@ function HomePage() {
 
   return (
     <div className="flex flex-col">
+      {/*
+        Below lg: the classic list-first layout (mobile sticky search +
+        chips, md's stacked hero + inline form, card grid), plus a floating
+        chip that opens the fullscreen map. At lg+ the whole block yields
+        to the map workspace below.
+      */}
+      <div className="lg:hidden">
       {/*
         Mobile compact sticky top (<md): one prominent rounded search field
         plus the horizontally scrollable chip row below it. Sticks under
@@ -441,6 +530,162 @@ function HomePage() {
         </Suspense>
       </div>
 
+      {/* Floating map toggle — sits above BottomNav's fixed bar on mobile. */}
+      <button
+        type="button"
+        onClick={() => setMobileMapOpen(true)}
+        className="fixed bottom-[calc(5rem+env(safe-area-inset-bottom))] left-1/2 z-30 flex h-11 -translate-x-1/2 items-center gap-2 rounded-full bg-mata px-5 text-label font-semibold text-primary-foreground shadow-elevated active:scale-[0.97] md:bottom-6"
+      >
+        <MapIcon aria-hidden="true" className="size-4" />
+        {m.explore_map_open()}
+      </button>
+      </div>
+
+      {/* Mobile fullscreen map — same canvas, same filters, same routes. */}
+      {mobileMapOpen ? (
+        <div className="fixed inset-0 z-50 bg-paper lg:hidden">
+          <div className="absolute inset-0 flex items-center justify-center bg-mata-soft">
+            <RouteSketch seed="explore-map" stops={4} className="h-1/3 w-1/2 opacity-70" />
+          </div>
+          <Suspense fallback={null}>
+            <div className="absolute inset-0">
+              <RoutesCanvas
+                routes={routesQuery.data ?? []}
+                onOpenRoute={openRoute}
+              />
+            </div>
+          </Suspense>
+          {routesQuery.data && routesQuery.data.length === 0 ? (
+            <p className="absolute bottom-6 left-1/2 z-10 w-max max-w-[85vw] -translate-x-1/2 rounded-full bg-paper/90 px-4 py-2 text-caption text-ink shadow-resting backdrop-blur-sm">
+              {m.explore_map_no_routes()}
+            </p>
+          ) : null}
+          <button
+            type="button"
+            onClick={() => setMobileMapOpen(false)}
+            className="absolute top-4 left-1/2 z-10 flex h-11 -translate-x-1/2 items-center gap-2 rounded-full bg-ink px-5 text-label font-semibold text-paper shadow-elevated active:scale-[0.97]"
+          >
+            <XIcon aria-hidden="true" className="size-4" />
+            {m.explore_map_close()}
+          </button>
+        </div>
+      ) : null}
+
+      {/*
+        Desktop (lg+) workspace: the map is the surface, the controls and
+        results float over it in a collapsible panel (OrbitTrip's
+        structure, our material). The RouteSketch panel behind the canvas
+        is the automatic no-WebGL/loading fallback.
+      */}
+      <section className="relative hidden h-[calc(100dvh-61px)] w-full overflow-hidden lg:block">
+        <div className="absolute inset-0 flex items-center justify-center bg-mata-soft">
+          <RouteSketch seed="explore-map" stops={5} className="h-1/2 w-1/2 opacity-60" />
+        </div>
+        {isDesktop ? (
+          <Suspense fallback={null}>
+            <div className="absolute inset-0">
+              <RoutesCanvas
+                routes={routesQuery.data ?? []}
+                onOpenRoute={openRoute}
+                onHoverRoute={setHoveredSlug}
+                highlightSlug={hoveredSlug}
+              />
+            </div>
+          </Suspense>
+        ) : null}
+        {routesQuery.data && routesQuery.data.length === 0 ? (
+          <p className="absolute bottom-6 left-1/2 z-10 w-max -translate-x-1/2 rounded-full bg-paper/90 px-4 py-2 text-caption text-ink shadow-resting backdrop-blur-sm">
+            {m.explore_map_no_routes()}
+          </p>
+        ) : null}
+
+        {panelCollapsed ? (
+          <Button
+            variant="outline"
+            size="icon-lg"
+            onClick={() => setPanelCollapsed(false)}
+            aria-label={m.explore_panel_expand()}
+            className="absolute top-4 left-4 z-10 bg-paper shadow-elevated"
+          >
+            <PanelLeftOpenIcon aria-hidden="true" className="size-5" />
+          </Button>
+        ) : (
+          <div className="absolute top-4 bottom-4 left-4 z-10 flex w-[420px] flex-col overflow-hidden rounded-lg bg-paper shadow-elevated">
+            <div className="flex flex-col gap-3 border-b border-line p-4 pb-3">
+              <div className="flex items-center gap-2">
+                <div className="flex-1">{searchField}</div>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setPanelCollapsed(true)}
+                  aria-label={m.explore_panel_collapse()}
+                >
+                  <PanelLeftCloseIcon aria-hidden="true" className="size-5" />
+                </Button>
+              </div>
+              <div
+                role="group"
+                aria-label={m.home_filters_button()}
+                className="no-scrollbar -mx-4 flex gap-2 overflow-x-auto px-4"
+              >
+                <button
+                  type="button"
+                  onClick={() => setFiltersOpen(true)}
+                  className={cn(
+                    filterChipClassName(hasActiveFilters),
+                    'gap-1.5 border border-line-strong',
+                  )}
+                >
+                  <SlidersHorizontalIcon aria-hidden="true" className="size-3.5" />
+                  {m.home_filters_button()}
+                </button>
+                {DURATION_VALUES.map((bucket) => (
+                  <button
+                    key={bucket}
+                    type="button"
+                    onClick={() =>
+                      void setQuery({
+                        duration: query.duration === bucket ? 'any' : bucket,
+                        page: 1,
+                      })
+                    }
+                    className={filterChipClassName(query.duration === bucket)}
+                  >
+                    {DURATION_LABEL[bucket]()}
+                  </button>
+                ))}
+                {query.tags.map((tag) => (
+                  <span key={tag} className={filterChipClassName(true)}>
+                    {tag}
+                    <button
+                      type="button"
+                      onClick={() => removeTag(tag)}
+                      aria-label={m.home_filter_tag_remove({ tag })}
+                      className="cursor-pointer"
+                    >
+                      <XIcon className="size-3.5" />
+                    </button>
+                  </span>
+                ))}
+              </div>
+              {sortControl}
+            </div>
+
+            <div className="flex-1 overflow-y-auto p-4">
+              <Suspense fallback={<ItineraryGridSkeleton />}>
+                <SearchResults
+                  query={query}
+                  onPageChange={(page) => void setQuery({ page })}
+                  variant="panel"
+                  hoveredSlug={hoveredSlug}
+                  onHoverItem={setHoveredSlug}
+                />
+              </Suspense>
+            </div>
+          </div>
+        )}
+      </section>
+
       {/*
         Mobile "Filtros" bottom sheet — the full control set (tags input,
         duration select, sort segmented control) that the chip row above
@@ -487,7 +732,11 @@ function HomePage() {
 
           <DrawerFooter>
             <Button onClick={() => setFiltersOpen(false)}>
-              {m.home_filters_show_results()}
+              {totalQuery.data !== undefined
+                ? m.home_filters_show_results_count({
+                    count: totalQuery.data.total,
+                  })
+                : m.home_filters_show_results()}
             </Button>
             {hasActiveFilters ? (
               <Button variant="ghost" onClick={clearFilters}>
@@ -504,6 +753,9 @@ function HomePage() {
 function SearchResults({
   query,
   onPageChange,
+  variant = 'default',
+  hoveredSlug = null,
+  onHoverItem,
 }: {
   query: {
     q: string
@@ -513,6 +765,10 @@ function SearchResults({
     page: number
   }
   onPageChange: (page: number) => void
+  /** `panel` = the desktop workspace's floating list (2-up, hover-synced with the canvas). */
+  variant?: 'default' | 'panel'
+  hoveredSlug?: string | null
+  onHoverItem?: (slug: string | null) => void
 }) {
   const { data } = useSuspenseQuery(searchQueryOptions(toSearchInput(query)))
   const totalPages = Math.max(1, Math.ceil(data.total / PAGE_SIZE))
@@ -531,13 +787,32 @@ function SearchResults({
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-3 xl:grid-cols-4">
+      {variant === 'panel' ? (
+        <p className="text-caption text-ink-soft tabular-nums">
+          {m.explore_results_count({ count: data.total })}
+        </p>
+      ) : null}
+      <div
+        className={
+          variant === 'panel'
+            ? 'grid grid-cols-2 gap-3'
+            : 'grid grid-cols-2 gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-3 xl:grid-cols-4'
+        }
+      >
         {data.items.map((item) => (
           <Link
             key={item.id}
             to="/itineraries/$slug"
             params={{ slug: item.slug }}
             viewTransition={{ types: ['nav-forward'] }}
+            onMouseEnter={onHoverItem ? () => onHoverItem(item.slug) : undefined}
+            onMouseLeave={onHoverItem ? () => onHoverItem(null) : undefined}
+            className={cn(
+              'rounded-lg',
+              variant === 'panel' &&
+                hoveredSlug === item.slug &&
+                'ring-2 ring-mata ring-offset-2 ring-offset-paper',
+            )}
           >
             <ItineraryCard item={item} />
           </Link>
