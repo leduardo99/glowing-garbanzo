@@ -9,6 +9,13 @@
  * the magnitude under its next threshold." `numeric: 'auto'` lets the
  * formatter say "now"/"yesterday" instead of "0 seconds ago"/"1 day ago"
  * where the locale has a word for it.
+ *
+ * Takes an explicit `now` reference instant rather than defaulting purely
+ * to `Date.now()` internally, so a caller can pass a stable value (e.g. a
+ * query's `dataUpdatedAt`) and get the identical formatted string on the
+ * server render and the client hydration pass — two independent
+ * `Date.now()` calls a request apart would otherwise diverge and produce a
+ * hydration mismatch.
  */
 const DIVISIONS: { amount: number; unit: Intl.RelativeTimeFormatUnit }[] = [
   { amount: 60, unit: 'seconds' },
