@@ -1,4 +1,4 @@
-import { Link, useRouterState } from '@tanstack/react-router'
+import { Link } from '@tanstack/react-router'
 import { BookOpenIcon, HomeIcon, PlusCircleIcon } from 'lucide-react'
 
 import { UserMenu } from '#/components/navigation/UserMenu'
@@ -6,6 +6,7 @@ import {
   tabIconClassName,
   tabLinkClassName,
 } from '#/components/navigation/tabLinkClassName'
+import { useIsChromelessRoute } from '#/lib/chromeless'
 import { m } from '#/paraglide/messages'
 
 /**
@@ -33,9 +34,9 @@ import { m } from '#/paraglide/messages'
  * this component doesn't duplicate that auth check, it just links there.
  */
 export function BottomNav() {
-  const pathname = useRouterState({ select: (s) => s.location.pathname })
-  // The dedicated auth pages own the whole viewport (see AuthShell).
-  if (pathname === '/login' || pathname === '/signup') {
+  // Auth pages own their viewport; the landing is a marketing page with
+  // its own CTAs, not app chrome (see chromeless.ts).
+  if (useIsChromelessRoute()) {
     return null
   }
   return (

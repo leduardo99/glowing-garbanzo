@@ -224,4 +224,4 @@ A thin `line` spine down the left edge; each day is a Fraunces day-title breakin
 - **Don't** nest cards, add icon-tile section headers, or combine border+shadow on one card.
 - **Don't** use a purple-blue gradient anywhere; don't tint text gray on colored fills (cream text on mata, always).
 - **Don't** exceed 24px radius on containers; pills are for chips and the floating CTA only.
-- **Don't** run choreographed page-load animations. The one drawn animation is the RouteSketch path drawing itself in (240ms, once, reduced-motion safe).
+- **Don't** run choreographed page-load animations. The one drawn animation is the RouteSketch path drawing itself in (once, reduced-motion safe) — at its largest register on the landing hero (`animated` prop, 1.4s draw + staggered stop pops + one staggered text rise), and nowhere else.

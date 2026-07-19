@@ -40,6 +40,9 @@
   "landing_cta_login": "Login",
   "landing_map_label": "Map of community routes",
   "landing_map_hint": "Real community routes — drag the map, click a route to open it.",
+  "landing_routes_title": "Real routes, drawn by those who went",
+  "landing_routes_intro": "Every line on the map is an itinerary published by a traveler — drag, zoom in, and open the one that fits your next trip.",
+  "landing_map_chip": "Click a route to open it",
   "landing_top_rated": "Top rated",
   "landing_most_viewed": "Most viewed",
   "landing_see_all": "See all",
@@ -257,5 +260,6 @@
   "view_comments_open": "{count} comments",
   "editor_day_collapse": "Collapse",
   "editor_day_expand": "Expand",
-  "nav_new_short": "New"
+  "nav_new_short": "New",
+  "footer_tagline": "From traveler to traveler."
 }

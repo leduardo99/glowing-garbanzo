@@ -73,8 +73,8 @@ Primary-foreground: cream `oklch(0.985 0.006 88)` in light; near-black `oklch(0.
 
 - 150-250ms, `cubic-bezier(0.23, 1, 0.32, 1)` entrances, `cubic-bezier(0.77, 0, 0.175, 1)` movement.
 - Route push/pop: 220ms slide+fade; tab switches crossfade only.
-- RouteSketch is deliberately static (a dashed path can't draw in via `stroke-dashoffset` without double-path masking — not worth it for a placeholder); it appears with whatever surface contains it.
-- No choreographed page-load sequences; `prefers-reduced-motion` honored globally.
+- RouteSketch is static as a placeholder; the landing hero is the one sanctioned exception (`animated` prop): the amber path draws itself in via double-path masking (a solid mask stroke animating `stroke-dashoffset` over `pathLength: 1` reveals the dashes) with stops popping in staggered — 1.4s ease-out, once, `fill-mode: both`, collapsed to instant by the global reduced-motion rule.
+- No choreographed page-load sequences elsewhere; the landing hero's single staggered text rise (0/120/220ms) + route draw is the brand-permitted one. `prefers-reduced-motion` honored globally.
 
 ## Visual direction notes
 
