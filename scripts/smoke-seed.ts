@@ -25,43 +25,46 @@ export async function ensureSmokeData(
   const record =
     existing ??
     (
-      await db
-        .insert(itinerary)
-        .values({
-          authorId,
-          title: SMOKE_TITLE,
-          slug: `smoke-e2e-trip-${authorId.slice(0, 8)}`,
-          destination: 'Lisboa',
-          status: 'published',
-          publishedAt: new Date(),
-        })
-        .returning({ id: itinerary.id, slug: itinerary.slug })
-    )[0]
+      await db.transaction(async (tx) => {
+        const [itineraryRecord] = await tx
+          .insert(itinerary)
+          .values({
+            authorId,
+            title: SMOKE_TITLE,
+            slug: `smoke-e2e-trip-${authorId.slice(0, 8)}`,
+            destination: 'Lisboa',
+            status: 'published',
+            publishedAt: new Date(),
+          })
+          .returning({ id: itinerary.id, slug: itinerary.slug })
 
-  if (!existing) {
-    const [day] = await db
-      .insert(itineraryDay)
-      .values({ itineraryId: record.id, dayNumber: 1, title: 'Day 1' })
-      .returning({ id: itineraryDay.id })
-    await db.insert(stop).values([
-      {
-        dayId: day.id,
-        position: 1,
-        name: 'Torre de Belém',
-        category: 'attraction',
-        lat: 38.6916,
-        lng: -9.216,
-      },
-      {
-        dayId: day.id,
-        position: 2,
-        name: 'Time Out Market',
-        category: 'food',
-        lat: 38.7071,
-        lng: -9.1458,
-      },
-    ])
-  }
+        const [day] = await tx
+          .insert(itineraryDay)
+          .values({ itineraryId: itineraryRecord.id, dayNumber: 1, title: 'Day 1' })
+          .returning({ id: itineraryDay.id })
+
+        await tx.insert(stop).values([
+          {
+            dayId: day.id,
+            position: 1,
+            name: 'Torre de Belém',
+            category: 'attraction',
+            lat: 38.6916,
+            lng: -9.216,
+          },
+          {
+            dayId: day.id,
+            position: 2,
+            name: 'Time Out Market',
+            category: 'food',
+            lat: 38.7071,
+            lng: -9.1458,
+          },
+        ])
+
+        return itineraryRecord
+      })
+    )
 
   const existingComment = await db.query.comment.findFirst({
     where: and(eq(comment.itineraryId, record.id), eq(comment.body, SMOKE_COMMENT)),
