@@ -20,9 +20,15 @@ const DIVISIONS: { amount: number; unit: Intl.RelativeTimeFormatUnit }[] = [
   { amount: Number.POSITIVE_INFINITY, unit: 'years' },
 ]
 
-export function formatRelativeTime(date: Date, locale: string): string {
+export function formatRelativeTime(
+  date: Date,
+  locale: string,
+  // Explicit reference instant so SSR and hydration format the same
+  // string — Date.now() differs between the two and mismatches.
+  now: number = Date.now(),
+): string {
   const formatter = new Intl.RelativeTimeFormat(locale, { numeric: 'auto' })
-  let duration = (date.getTime() - Date.now()) / 1000
+  let duration = (date.getTime() - now) / 1000
 
   for (const division of DIVISIONS) {
     if (Math.abs(duration) < division.amount) {
