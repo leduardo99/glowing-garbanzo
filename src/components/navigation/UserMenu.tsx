@@ -66,10 +66,17 @@ export function UserMenu({ variant }: { variant: 'header' | 'tab' }) {
         </Link>
       )
     }
+    // Anonymous desktop header: signup is the primary action, login the
+    // quiet one — the landing page's conversion pair, repeated in chrome.
     return (
-      <Button asChild size="sm">
-        <Link to="/login">{m.auth_login_title()}</Link>
-      </Button>
+      <div className="flex items-center gap-2">
+        <Button asChild variant="ghost" size="sm">
+          <Link to="/login">{m.auth_login_title()}</Link>
+        </Button>
+        <Button asChild size="sm">
+          <Link to="/signup">{m.landing_cta_signup()}</Link>
+        </Button>
+      </div>
     )
   }
 

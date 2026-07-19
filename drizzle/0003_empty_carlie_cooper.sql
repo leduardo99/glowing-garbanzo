@@ -1,0 +1,1 @@
+ALTER TABLE "itinerary" ADD COLUMN "view_count" integer DEFAULT 0 NOT NULL;

@@ -48,6 +48,12 @@ export const itinerary = pgTable(
     }),
     ratingAvg: numeric('rating_avg'),
     ratingCount: integer('rating_count').default(0).notNull(),
+    /**
+     * Best-effort popularity signal: bumped once per public detail view by
+     * a non-author (see `getItineraryBySlugImpl`). No per-user dedupe —
+     * this feeds the landing page's "most viewed" shelf, not analytics.
+     */
+    viewCount: integer('view_count').default(0).notNull(),
     publishedAt: timestamp('published_at'),
     createdAt: timestamp('created_at').defaultNow().notNull(),
     updatedAt: timestamp('updated_at')

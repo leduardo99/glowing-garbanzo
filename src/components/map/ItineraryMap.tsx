@@ -124,7 +124,10 @@ export default function ItineraryMap({
     // The drawn route: a dashed amber line connecting stops in visit
     // order. Layers can only be added once the style has loaded.
     if (stops.length > 1) {
-      map.on('load', () => {
+      // `style.load`, not `load`: `load` additionally waits for initial
+    // tile fetches, which can stall forever offline or behind a blocking
+    // proxy — the drawn route must not depend on the basemap's luck.
+    map.on('style.load', () => {
         map.addSource('route', {
           type: 'geojson',
           data: {

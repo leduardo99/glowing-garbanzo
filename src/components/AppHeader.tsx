@@ -1,4 +1,4 @@
-import { Link } from '@tanstack/react-router'
+import { Link, useRouterState } from '@tanstack/react-router'
 
 import { UserMenu } from '#/components/navigation/UserMenu'
 import LocaleSwitcher from '#/components/LocaleSwitcher'
@@ -48,6 +48,11 @@ function BrandGlyph() {
  * glyph, the one place brand identity lives in the chrome.
  */
 export function AppHeader() {
+  const pathname = useRouterState({ select: (s) => s.location.pathname })
+  // The dedicated auth pages own the whole viewport (see AuthShell).
+  if (pathname === '/login' || pathname === '/signup') {
+    return null
+  }
   return (
     <header className="flex items-center justify-between gap-4 border-b border-line-strong bg-surface px-4 py-3 md:px-6">
       <Link
@@ -62,12 +67,8 @@ export function AppHeader() {
         aria-label={m.nav_primary_label()}
         className="hidden items-center gap-6 md:flex"
       >
-        <Link
-          to="/"
-          activeOptions={{ exact: true }}
-          className={navLinkClassName}
-        >
-          {m.nav_home()}
+        <Link to="/explore" className={navLinkClassName}>
+          {m.nav_explore()}
         </Link>
         <Link to="/my" className={navLinkClassName}>
           {m.nav_my_itineraries()}
