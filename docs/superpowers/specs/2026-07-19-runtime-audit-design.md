@@ -68,10 +68,12 @@ inventory exists before any fix work starts and PR 1 can already demonstrate
 which errors the pinning alone resolved.
 
 - Add `playwright` as a devDependency plus a `pnpm smoke` script.
-- The script seeds what it needs through the app's own APIs: a test user via
-  the Better Auth signup API, and one published itinerary owned by that user
-  (created through the existing server functions) so the detail page has real
-  data to render.
+- The script seeds what it needs: a test user via the Better Auth signup API
+  (over HTTP against the running dev server), and one published itinerary
+  owned by that user via direct Drizzle inserts using the app's schema. It
+  cannot reuse the `*Impl` server functions: they transitively import
+  `src/env.ts`, which reads `import.meta.env` — undefined outside
+  Vite/Vitest, so any such import crashes under `tsx`.
 - It starts the dev server, launches headless Chromium, and visits: landing
   (`/`), `/login`, `/signup`, `/explore`, the seeded itinerary's detail page,
   and — authenticated as the test user — `/my`, `/new`, and the editor.
