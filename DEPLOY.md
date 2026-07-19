@@ -44,6 +44,7 @@ In the Vercel project → **Settings → Environment Variables**, add these for 
 | `BETTER_AUTH_SECRET` | Output of `pnpm dlx @better-auth/cli secret` | Generate once, keep it stable across deploys. |
 | `BETTER_AUTH_URL` | `https://<your-app>.vercel.app` (or your custom domain) | Better Auth reads this automatically; no code change needed. Update it if you later attach a custom domain. |
 | `BLOB_READ_WRITE_TOKEN` | From a Vercel Blob store (see below) | Switches cover-image uploads from disk to Vercel Blob automatically. |
+| `GEMINI_API_KEY` | From [Google AI Studio](https://aistudio.google.com/apikey) (free tier) | **Optional.** Enables the "generate with AI" mode on `/new` (Gemini Flash via the Vercel AI SDK). When unset, the AI mode is hidden and everything else works normally. |
 
 To create the Blob store and token: project → **Storage** tab → **Create Database**
 → **Blob** → connect it to this project. Vercel then offers to add

@@ -51,6 +51,7 @@ export async function closeTestDb(): Promise<void> {
 /** Truncates every domain and auth table, resetting identities. */
 export async function resetTestDb(): Promise<void> {
   const tables = [
+    schema.aiGeneration,
     schema.favorite,
     schema.rating,
     schema.comment,

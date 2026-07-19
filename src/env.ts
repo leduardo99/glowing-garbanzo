@@ -13,6 +13,12 @@ export const env = createEnv({
      * Unset in local/self-hosted deployments, where disk storage is used.
      */
     BLOB_READ_WRITE_TOKEN: z.string().min(1).optional(),
+    /**
+     * Google AI Studio API key for the AI itinerary generator (Gemini Flash
+     * free tier via the Vercel AI SDK — see `#/server/ai`). Optional: when
+     * unset, the "generate with AI" mode on `/new` is hidden entirely.
+     */
+    GEMINI_API_KEY: z.string().min(1).optional(),
   },
 
   /**
@@ -40,6 +46,7 @@ export const env = createEnv({
     SERVER_URL: process.env.SERVER_URL,
     UPLOADS_DIR: process.env.UPLOADS_DIR,
     BLOB_READ_WRITE_TOKEN: process.env.BLOB_READ_WRITE_TOKEN,
+    GEMINI_API_KEY: process.env.GEMINI_API_KEY,
     VITE_APP_TITLE: import.meta.env.VITE_APP_TITLE,
   },
 

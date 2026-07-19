@@ -19,3 +19,16 @@
 export const ERR_UNAUTHORIZED = 'UNAUTHORIZED'
 export const ERR_FORBIDDEN = 'FORBIDDEN'
 export const ERR_NOT_FOUND = 'NOT_FOUND'
+
+/**
+ * AI generation sentinels (see `#/server/ai`):
+ *   - 'AI_QUOTA_EXCEEDED'    — the caller already spent today's successful
+ *                              generations (quota resets on the UTC day
+ *                              boundary). Thrown before the provider is
+ *                              ever called.
+ *   - 'AI_GENERATION_FAILED' — the provider errored, timed out, or returned
+ *                              output that failed schema validation. No
+ *                              quota is consumed and nothing is persisted.
+ */
+export const ERR_AI_QUOTA_EXCEEDED = 'AI_QUOTA_EXCEEDED'
+export const ERR_AI_GENERATION_FAILED = 'AI_GENERATION_FAILED'
