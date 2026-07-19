@@ -194,6 +194,48 @@ describe('days-stops server functions', () => {
   })
 
   describe('addStopImpl', () => {
+    it('persists and updates the optional start time', async () => {
+      const author = await createTestUser()
+      const created = await createItineraryImpl(testDb, { user: { id: author.id } }, {
+        title: 'x',
+        destination: 'y',
+      })
+      const [day1] = await daysOf(created.id)
+
+      const created1 = await addStopImpl(testDb, { user: { id: author.id } }, {
+        dayId: day1.id,
+        name: 'Timed stop',
+        category: 'attraction',
+        startTime: '09:30',
+      })
+      let [row] = await stopsOf(day1.id)
+      // pg `time` round-trips with seconds appended.
+      expect(row.startTime).toBe('09:30:00')
+
+      await updateStopImpl(testDb, { user: { id: author.id } }, {
+        id: created1.id,
+        startTime: '17:45',
+      })
+      ;[row] = await stopsOf(day1.id)
+      expect(row.startTime).toBe('17:45:00')
+
+      await updateStopImpl(testDb, { user: { id: author.id } }, {
+        id: created1.id,
+        startTime: null,
+      })
+      ;[row] = await stopsOf(day1.id)
+      expect(row.startTime).toBeNull()
+
+      await expect(
+        addStopImpl(testDb, { user: { id: author.id } }, {
+          dayId: day1.id,
+          name: 'Bad time',
+          category: 'other',
+          startTime: '25:99',
+        }),
+      ).rejects.toThrow()
+    })
+
     it('appends stops at increasing end positions', async () => {
       const author = await createTestUser()
       const created = await createItineraryImpl(testDb, { user: { id: author.id } }, {

@@ -65,6 +65,7 @@ function collectMapStops(days: DayView[]): ItineraryMapStop[] {
           lat: stop.lat,
           lng: stop.lng,
           dayNumber: day.dayNumber,
+          startTime: stop.startTime ? stop.startTime.slice(0, 5) : null,
           sequence,
         })
       }

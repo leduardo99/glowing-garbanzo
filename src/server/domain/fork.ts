@@ -4,6 +4,7 @@ export interface StopCopy {
   name: string
   category: 'attraction' | 'food' | 'lodging' | 'transport' | 'other'
   description: string | null
+  startTime: string | null
   costCents: number | null
   lat: number | null
   lng: number | null

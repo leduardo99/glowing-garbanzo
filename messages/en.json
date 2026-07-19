@@ -319,5 +319,7 @@
   "explore_panel_collapse": "Collapse panel",
   "explore_panel_expand": "Show panel",
   "explore_results_count": "{count} itineraries",
-  "home_filters_show_results_count": "Show {count} itineraries"
+  "home_filters_show_results_count": "Show {count} itineraries",
+  "editor_stop_field_time": "Time (optional)",
+  "view_stop_time_label": "Time"
 }

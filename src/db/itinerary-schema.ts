@@ -7,6 +7,7 @@ import {
   numeric,
   pgEnum,
   pgTable,
+  time,
   primaryKey,
   text,
   timestamp,
@@ -95,6 +96,8 @@ export const stop = pgTable(
     name: text('name').notNull(),
     category: stopCategory('category').notNull(),
     description: text('description'),
+    /** Optional display time for the day's timeline (e.g. '09:30'); order of truth stays `position`. */
+    startTime: time('start_time'),
     costCents: integer('cost_cents'),
     lat: doublePrecision('lat'),
     lng: doublePrecision('lng'),

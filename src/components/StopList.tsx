@@ -63,9 +63,19 @@ export function StopList({
               {startSequence + index}
             </span>
             <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-              <span className="text-title font-medium text-ink">
-                {stop.name}
-              </span>
+              <div className="flex items-baseline justify-between gap-3">
+                <span className="min-w-0 text-title font-medium text-ink">
+                  {stop.name}
+                </span>
+                {stop.startTime ? (
+                  <span
+                    aria-label={m.view_stop_time_label()}
+                    className="shrink-0 text-label text-ink-soft tabular-nums"
+                  >
+                    {stop.startTime.slice(0, 5)}
+                  </span>
+                ) : null}
+              </div>
               {stop.description ? (
                 <span className="measure-prose text-body text-ink-soft">
                   {stop.description}

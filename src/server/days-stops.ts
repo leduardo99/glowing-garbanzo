@@ -212,6 +212,8 @@ const addStopSchema = z.object({
   name: z.string().min(1),
   category: stopCategorySchema,
   description: z.string().nullable().optional(),
+  /** 'HH:MM' display time on the day's timeline; ordering stays `position`. */
+  startTime: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/).nullable().optional(),
   costCents: z.number().int().nullable().optional(),
   lat: z.number().min(-90).max(90).nullable().optional(),
   lng: z.number().min(-180).max(180).nullable().optional(),
@@ -254,6 +256,7 @@ export async function addStopImpl(
         name: input.name,
         category: input.category,
         description: input.description,
+        startTime: input.startTime,
         costCents: input.costCents,
         lat: input.lat,
         lng: input.lng,
@@ -281,6 +284,7 @@ const updateStopSchema = z.object({
   name: z.string().min(1).optional(),
   category: stopCategorySchema.optional(),
   description: z.string().nullable().optional(),
+  startTime: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/).nullable().optional(),
   costCents: z.number().int().nullable().optional(),
   lat: z.number().min(-90).max(90).nullable().optional(),
   lng: z.number().min(-180).max(180).nullable().optional(),
@@ -305,6 +309,7 @@ export async function updateStopImpl(
   if (input.name !== undefined) updates.name = input.name
   if (input.category !== undefined) updates.category = input.category
   if (input.description !== undefined) updates.description = input.description
+  if (input.startTime !== undefined) updates.startTime = input.startTime
   if (input.costCents !== undefined) updates.costCents = input.costCents
   if (input.lat !== undefined) updates.lat = input.lat
   if (input.lng !== undefined) updates.lng = input.lng

@@ -85,6 +85,8 @@ export interface StopView {
   name: string
   category: 'attraction' | 'food' | 'lodging' | 'transport' | 'other'
   description: string | null
+  /** 'HH:MM:SS' from pg `time`; render as HH:MM. */
+  startTime: string | null
   costCents: number | null
   lat: number | null
   lng: number | null
@@ -803,6 +805,7 @@ export async function forkItineraryImpl(
           name: s.name,
           category: s.category,
           description: s.description,
+          startTime: s.startTime,
           costCents: s.costCents,
           lat: s.lat,
           lng: s.lng,
