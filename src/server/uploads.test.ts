@@ -7,12 +7,8 @@ import { eq } from 'drizzle-orm'
 import { itinerary } from '#/db/schema'
 import { closeTestDb, createTestUser, resetTestDb, setupTestDb, testDb } from '#/test/db'
 import { createItineraryImpl } from './itineraries'
-import {
-  ERR_BLOB_STORAGE_NOT_CONFIGURED,
-  resolveUploadPath,
-  selectStorage,
-  uploadCoverImpl,
-} from './uploads'
+import { ERR_BLOB_STORAGE_NOT_CONFIGURED } from './uploads'
+import { resolveUploadPath, selectStorage, uploadCoverImpl } from './uploads.server'
 
 // `vercelBlobStorage` (invoked by `selectStorage` when a token is present)
 // dynamically imports `@vercel/blob`; mocking the module here intercepts
