@@ -1,28 +1,36 @@
-import { CompassIcon } from 'lucide-react'
-
+import { RouteSketch } from '#/components/RouteSketch'
 import { cn } from '#/lib/utils'
 
 /**
- * Branded placeholder for itineraries without a cover photo — a
- * terracotta-tinted diagonal pattern with a centered compass mark, never a
- * flat gray box (PRODUCT.md's anti-references explicitly call that out as
- * a "native-web afterthought" tell). Shared by the discovery card
- * (`ItineraryCard`) and the mobile immersive detail hero (`ItineraryHero`)
- * so the "no cover" treatment reads as one consistent brand mark
- * throughout the app rather than two different gray-void fallbacks.
+ * Branded placeholder for itineraries without a cover photo — the
+ * drawn-route signature (see DESIGN.md §5 "The Drawn Route") over a soft
+ * mata tint, never a flat gray box (PRODUCT.md's anti-references call
+ * that out as a "native-web afterthought" tell). Shared by the discovery
+ * card (`ItineraryCard`) and the detail hero (`ItineraryHero`) so the
+ * "no cover" treatment reads as one consistent brand mark.
+ *
+ * `seed` keeps the sketch stable per itinerary (pass the slug or title):
+ * each tripless cover gets its *own* route, but the same one every visit.
  */
-export function CoverPlaceholder({ className }: { className?: string }) {
+export function CoverPlaceholder({
+  seed = 'roteiros',
+  className,
+}: {
+  seed?: string
+  className?: string
+}) {
   return (
     <div
       aria-hidden="true"
       className={cn(
-        'flex items-center justify-center bg-terracotta-soft bg-[repeating-linear-gradient(135deg,oklch(0.58_0.15_38_/_0.1)_0px,oklch(0.58_0.15_38_/_0.1)_2px,transparent_2px,transparent_14px)]',
+        'flex items-center justify-center overflow-hidden bg-mata-soft',
         className,
       )}
     >
-      <CompassIcon
-        className="size-9 text-terracotta/40 sm:size-12"
-        strokeWidth={1.5}
+      <RouteSketch
+        seed={seed}
+        stops={4}
+        className="h-full max-h-40 w-full max-w-72 opacity-90"
       />
     </div>
   )

@@ -112,7 +112,7 @@ export function RatingStars({
               <StarIcon
                 className={
                   activeStars >= value
-                    ? 'size-5 fill-current text-rating-gold'
+                    ? 'size-5 fill-current text-amber'
                     : 'size-5 text-ink-soft'
                 }
               />
@@ -123,7 +123,7 @@ export function RatingStars({
               aria-hidden="true"
               className={
                 activeStars >= value
-                  ? 'size-5 fill-current text-rating-gold'
+                  ? 'size-5 fill-current text-amber'
                   : 'size-5 text-ink-soft'
               }
             />

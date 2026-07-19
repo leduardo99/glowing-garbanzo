@@ -258,7 +258,7 @@ function DayCard({
           */}
           <span
             aria-hidden="true"
-            className="flex size-9 shrink-0 items-center justify-center rounded-full bg-terracotta-soft text-title font-semibold tabular-nums text-terracotta-deep"
+            className="flex size-9 shrink-0 items-center justify-center rounded-full bg-mata-soft text-title font-semibold tabular-nums text-mata-soft-foreground"
           >
             {day.dayNumber}
           </span>

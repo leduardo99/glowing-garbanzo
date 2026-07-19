@@ -29,121 +29,137 @@
 
 /*
  * Design tokens — see DESIGN.md §2-4 and .interface-design/system.md for
- * the source of truth. "The Shared Logbook": warm-neutral paper surfaces,
- * one terracotta accent, shadow-based elevation (no border+shadow combo).
+ * the source of truth. "Trilha Tropical": deep forest green (mata) as the
+ * one brand voice, burnt amber scoped to ratings and the drawn route,
+ * coral scoped to favorites, warm cream paper. Every pair below is
+ * WCAG-AA-verified in both themes (see DESIGN.md §2's contrast table).
+ *
+ * Dark mode is class-driven (`.dark` on <html>), applied before paint by
+ * the ScriptOnce in __root.tsx from `prefers-color-scheme`.
  */
 :root {
-  /* Neutral surfaces (warm-tinted, chroma 0.004-0.008 — see the
-     No-Cream-Default Rule: paper is a true off-white, not a saturated
-     sand/parchment tone). */
-  --ink: oklch(0.24 0.02 45);
-  --ink-soft: oklch(0.45 0.02 45);
-  --paper: oklch(0.985 0.004 60);
-  --surface: oklch(0.97 0.006 55);
-  --surface-sunken: oklch(0.94 0.008 55);
+  /* Warm cream neutrals — light like Airbnb, warm like a field journal.
+     Cards sit LIGHTER than the page (near-white floating on cream);
+     inputs sit darker (inset). */
+  --ink: oklch(0.27 0.035 155);
+  --ink-soft: oklch(0.47 0.025 150);
+  --paper: oklch(0.972 0.009 84);
+  --surface: oklch(0.988 0.005 88);
+  --surface-sunken: oklch(0.945 0.012 84);
 
-  /* The one accent (The One Warm Voice Rule). */
-  --terracotta: oklch(0.58 0.15 38);
-  --terracotta-deep: oklch(0.49 0.16 35);
-  --terracotta-soft: oklch(0.93 0.04 45);
+  /* The one brand voice: deep forest green (mata atlântica). Primary
+     actions, active nav, focus rings, links, selected chips. */
+  --mata: oklch(0.4 0.09 152);
+  --mata-deep: oklch(0.34 0.09 152);
+  --mata-soft: oklch(0.93 0.03 150);
+  --mata-soft-foreground: oklch(0.34 0.09 152);
 
-  /* Semantic exception, scoped to star ratings only — never on
-     buttons/nav (see the One Warm Voice Rule). */
-  --rating-gold: oklch(0.78 0.15 85);
+  /* Scoped semantic hues (never on buttons or nav):
+     amber — rating stars AND the drawn route line (map + sketches);
+     coral — the favorite heart, filled state only. */
+  --amber: oklch(0.6 0.13 70);
+  --coral: oklch(0.55 0.16 30);
 
-  /* Dividers, input borders, table/list rows — low-opacity so they
+  /* Dividers, input borders, list rows — low-opacity green-ink so they
      disappear until you look for them. */
-  --line: oklch(0.24 0.02 45 / 0.12);
-  --line-strong: oklch(0.24 0.02 45 / 0.2);
+  --line: oklch(0.27 0.035 155 / 0.12);
+  --line-strong: oklch(0.27 0.035 155 / 0.2);
 
-  --success: oklch(0.6 0.12 145);
-  --warning: oklch(0.75 0.14 80);
-  --destructive: oklch(0.55 0.2 15);
+  --success: oklch(0.52 0.11 150);
+  --warning: oklch(0.7 0.13 80);
+  --destructive: oklch(0.5 0.19 25);
 
-  /* Base radius (DESIGN.md rounded.md) — `sonner.tsx` reads this directly
-     as `--border-radius`; the `radius-sm/md/lg/xl` scale below is for
-     Tailwind's `rounded-*` utilities. */
-  --radius: 10px;
+  /* Base radius — `sonner.tsx` reads this directly as `--border-radius`;
+     the `radius-sm/md/lg/xl` scale below feeds Tailwind's `rounded-*`. */
+  --radius: 12px;
 
-  /* Elevation vocabulary (DESIGN.md §4) — shadow lifts surfaces, borders
-     are reserved for dividers/inputs/rows (the Quiet Lift Rule: never
-     both on the same card). Ink-tinted ambient shadows, not black.
-     (`-value` suffix: the `@theme inline` block below generates the
-     `shadow-resting` etc. utilities from these, and Tailwind's theme
-     namespace would otherwise collide with the raw token name.) */
+  /* Elevation vocabulary — green-ink-tinted ambient shadows lift cards
+     off the cream page (the Airbnb float); borders are reserved for
+     dividers/inputs/rows. Never both on the same card.
+     (`-value` suffix: the `@theme inline` block generates the
+     `shadow-resting` etc. utilities from these.) */
   --shadow-resting-value:
-    0 1px 2px oklch(0.24 0.02 45 / 0.08), 0 1px 1px oklch(0.24 0.02 45 / 0.06);
+    0 0 0 1px oklch(0.27 0.035 155 / 0.05),
+    0 1px 2px oklch(0.27 0.035 155 / 0.06),
+    0 2px 6px oklch(0.27 0.035 155 / 0.05);
   --shadow-lifted-value:
-    0 4px 12px oklch(0.24 0.02 45 / 0.14), 0 1px 2px oklch(0.24 0.02 45 / 0.08);
+    0 0 0 1px oklch(0.27 0.035 155 / 0.05),
+    0 4px 12px oklch(0.27 0.035 155 / 0.11),
+    0 1px 3px oklch(0.27 0.035 155 / 0.07);
   --shadow-elevated-value:
-    0 12px 32px oklch(0.24 0.02 45 / 0.2), 0 2px 6px oklch(0.24 0.02 45 / 0.1);
+    0 12px 32px oklch(0.27 0.035 155 / 0.16),
+    0 2px 8px oklch(0.27 0.035 155 / 0.08);
 
   /* shadcn/ui slot variables, aliased onto the tokens above so every
      existing bg-background / text-foreground / bg-primary usage across
-     the app picks up the new theme automatically. */
+     the app picks up the theme automatically. */
   --background: var(--paper);
   --foreground: var(--ink);
-  --card: var(--paper);
+  --card: var(--surface);
   --card-foreground: var(--ink);
-  --popover: var(--paper);
+  --popover: var(--surface);
   --popover-foreground: var(--ink);
-  --primary: var(--terracotta);
-  --primary-foreground: var(--paper);
-  --secondary: var(--surface);
+  --primary: var(--mata);
+  --primary-foreground: oklch(0.985 0.006 88);
+  --secondary: var(--surface-sunken);
   --secondary-foreground: var(--ink);
   --muted: var(--surface-sunken);
   --muted-foreground: var(--ink-soft);
   --accent: var(--surface-sunken);
   --accent-foreground: var(--ink);
-  --destructive-foreground: var(--paper);
+  --destructive-foreground: oklch(0.985 0.006 88);
   --border: var(--line);
   --input: var(--line);
-  --ring: var(--terracotta);
-  --chart-1: var(--terracotta);
-  --chart-2: var(--rating-gold);
+  --ring: var(--mata);
+  --chart-1: var(--mata);
+  --chart-2: var(--amber);
   --chart-3: var(--success);
   --chart-4: var(--warning);
   --chart-5: var(--ink-soft);
   --sidebar: var(--surface);
   --sidebar-foreground: var(--ink);
-  --sidebar-primary: var(--terracotta);
-  --sidebar-primary-foreground: var(--paper);
+  --sidebar-primary: var(--mata);
+  --sidebar-primary-foreground: oklch(0.985 0.006 88);
   --sidebar-accent: var(--surface-sunken);
   --sidebar-accent-foreground: var(--ink);
   --sidebar-border: var(--line);
-  --sidebar-ring: var(--terracotta);
+  --sidebar-ring: var(--mata);
 }
 
 .dark {
-  /* Same hierarchy, inverted lightness, one hue kept per token (see
-     .interface-design/system.md). Depth strategy collapses to a single
-     light hairline ring instead of ambient shadow (below). */
-  --ink: oklch(0.96 0.006 60);
-  --ink-soft: oklch(0.72 0.012 55);
-  --paper: oklch(0.18 0.012 45);
-  --surface: oklch(0.22 0.014 45);
-  --surface-sunken: oklch(0.16 0.012 45);
+  /* "Mata à noite" — the same forest, after dark. One hue family kept per
+     token, lightness inverted. Buttons flip to bright leaf-green with
+     near-black text (higher contrast than dark-on-dark green). Depth
+     collapses to a hairline light ring (below). */
+  --ink: oklch(0.955 0.008 90);
+  --ink-soft: oklch(0.72 0.015 130);
+  --paper: oklch(0.185 0.02 160);
+  --surface: oklch(0.225 0.022 158);
+  --surface-sunken: oklch(0.16 0.018 160);
 
-  --terracotta: oklch(0.68 0.13 40);
-  --terracotta-deep: oklch(0.6 0.14 38);
-  --terracotta-soft: oklch(0.32 0.06 40);
+  --mata: oklch(0.7 0.11 150);
+  --mata-deep: oklch(0.76 0.11 150);
+  --mata-soft: oklch(0.3 0.045 152);
+  --mata-soft-foreground: oklch(0.8 0.09 150);
 
-  --rating-gold: oklch(0.8 0.14 85);
+  --amber: oklch(0.75 0.12 75);
+  --coral: oklch(0.7 0.14 30);
 
-  --line: oklch(0.96 0.006 60 / 0.12);
-  --line-strong: oklch(0.96 0.006 60 / 0.2);
+  --line: oklch(0.955 0.008 90 / 0.12);
+  --line-strong: oklch(0.955 0.008 90 / 0.2);
 
-  --success: oklch(0.65 0.13 145);
+  --success: oklch(0.7 0.12 150);
   --warning: oklch(0.78 0.14 80);
-  --destructive: oklch(0.62 0.2 15);
+  --destructive: oklch(0.68 0.17 25);
 
-  /* Dark-mode ring: depth shadows don't read on dark surfaces, so all
-     three elevation levels collapse to the same light hairline ring. */
+  /* Depth shadows don't read on dark surfaces — all three elevation
+     levels collapse to the same light hairline ring. */
   --shadow-resting-value: 0 0 0 1px oklch(1 0 0 / 0.08);
-  --shadow-lifted-value: 0 0 0 1px oklch(1 0 0 / 0.08);
-  --shadow-elevated-value: 0 0 0 1px oklch(1 0 0 / 0.08);
+  --shadow-lifted-value: 0 0 0 1px oklch(1 0 0 / 0.12);
+  --shadow-elevated-value: 0 0 0 1px oklch(1 0 0 / 0.12);
 
-  --destructive-foreground: var(--paper);
+  --primary-foreground: oklch(0.16 0.02 160);
+  --destructive-foreground: oklch(0.16 0.02 160);
 }
 
 @theme inline {
@@ -157,10 +173,12 @@
   --color-paper: var(--paper);
   --color-surface: var(--surface);
   --color-surface-sunken: var(--surface-sunken);
-  --color-terracotta: var(--terracotta);
-  --color-terracotta-deep: var(--terracotta-deep);
-  --color-terracotta-soft: var(--terracotta-soft);
-  --color-rating-gold: var(--rating-gold);
+  --color-mata: var(--mata);
+  --color-mata-deep: var(--mata-deep);
+  --color-mata-soft: var(--mata-soft);
+  --color-mata-soft-foreground: var(--mata-soft-foreground);
+  --color-amber: var(--amber);
+  --color-coral: var(--coral);
   --color-line: var(--line);
   --color-line-strong: var(--line-strong);
   --color-success: var(--success);
@@ -200,12 +218,13 @@
   --color-sidebar-ring: var(--sidebar-ring);
 
   /* DESIGN.md §"Rounded" scale, literal (not derived) so `rounded-sm`
-     through `rounded-xl` land exactly on 6/10/14/20px; `rounded-full`
-     is Tailwind's built-in 9999px and needs no override. */
-  --radius-sm: 6px;
-  --radius-md: 10px;
-  --radius-lg: 14px;
-  --radius-xl: 20px;
+     through `rounded-xl` land exactly on 8/12/16/24px — one step more
+     generous than before (the Airbnb friendliness), still capped for
+     structure; `rounded-full` is Tailwind's built-in 9999px. */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
 
   /* Elevation vocabulary as `shadow-resting` / `shadow-lifted` /
      `shadow-elevated` utilities. */
@@ -223,8 +242,8 @@
      Every other step stays in Karla (`font-sans`, already the body
      default) at its listed weight, applied via Tailwind's `font-*`
      utilities at the call site. */
-  --text-display: 2rem;
-  --text-display--line-height: 1.1;
+  --text-display: 2.25rem;
+  --text-display--line-height: 1.08;
   --text-headline: 1.375rem;
   --text-headline--line-height: 1.25;
   --text-title: 1.0625rem;
@@ -267,19 +286,33 @@ body {
   font-variant-numeric: tabular-nums;
 }
 
+/* Headings read balanced; long-form copy avoids orphans. */
+h1,
+h2,
+h3 {
+  text-wrap: balance;
+}
+
 /* The 70ch Rule: long-form prose (stop notes, comments, bios) wraps at
    ≤70ch regardless of viewport width. */
 .measure-prose {
   max-width: 70ch;
+  text-wrap: pretty;
 }
 
-a {
-  color: var(--terracotta);
-  text-underline-offset: 2px;
-}
+/* Layered so Tailwind utilities (which live in later layers) can override
+   the link default — unlayered element selectors would beat every
+   `text-*` utility regardless of specificity, painting even `text-ink`
+   nav links (and cream button text) in mata. */
+@layer base {
+  a {
+    color: var(--mata);
+    text-underline-offset: 2px;
+  }
 
-a:hover {
-  color: var(--terracotta-deep);
+  a:hover {
+    color: var(--mata-deep);
+  }
 }
 
 code {
@@ -398,7 +431,8 @@ a {
     background-color 180ms ease,
     color 180ms ease,
     border-color 180ms ease,
-    transform 180ms ease;
+    transform 180ms ease,
+    box-shadow 180ms ease;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -416,4 +450,37 @@ a {
   * {
     @apply border-border outline-ring/50;
   }
+}
+
+/* MapLibre chrome, re-skinned to the app (the default control set ships
+   its own white boxes and blue links that read as a foreign widget).
+   Popups and controls inherit the card language: surface, ink, the same
+   radius scale, the same elevation. */
+.maplibregl-popup-content {
+  font-family: var(--font-sans);
+  background: var(--surface);
+  color: var(--ink);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-elevated-value);
+  padding: 10px 14px;
+}
+.maplibregl-popup-anchor-bottom .maplibregl-popup-tip {
+  border-top-color: var(--surface);
+}
+.maplibregl-popup-anchor-top .maplibregl-popup-tip {
+  border-bottom-color: var(--surface);
+}
+.maplibregl-popup-anchor-left .maplibregl-popup-tip {
+  border-right-color: var(--surface);
+}
+.maplibregl-popup-anchor-right .maplibregl-popup-tip {
+  border-left-color: var(--surface);
+}
+.maplibregl-ctrl-group {
+  background: var(--surface);
+  box-shadow: var(--shadow-resting-value);
+  border-radius: var(--radius-sm);
+}
+.maplibregl-ctrl-group button + button {
+  border-top: 1px solid var(--line);
 }

@@ -1,6 +1,7 @@
 import { Link } from '@tanstack/react-router'
 import { LoaderCircleIcon } from 'lucide-react'
 
+import { RouteSketch } from '#/components/RouteSketch'
 import { Button } from '#/components/ui/button'
 import { m } from '#/paraglide/messages'
 
@@ -18,7 +19,7 @@ export function RoutePendingFallback() {
       className="flex min-h-[50vh] items-center justify-center py-16"
     >
       <LoaderCircleIcon
-        className="size-8 animate-spin text-terracotta"
+        className="size-8 animate-spin text-mata"
         aria-hidden="true"
       />
       <span className="sr-only">{m.app_loading()}</span>
@@ -28,14 +29,14 @@ export function RoutePendingFallback() {
 
 /**
  * `router.tsx`'s `defaultErrorComponent` — the app's error boundary.
- * Before this task there was no error boundary at all: an uncaught
- * render/loader error surfaced as a blank page or the framework's raw
- * stack trace. Offers a retry (`reset`, re-runs the failed
- * route/loaders) and an escape hatch back to `/`.
+ * Offers a retry (`reset`, re-runs the failed route/loaders) and an
+ * escape hatch back to `/`. The drawn-route sketch stands in as branded
+ * empty-state art (DESIGN.md: never a gray void).
  */
 export function RouteErrorFallback({ reset }: { reset: () => void }) {
   return (
     <div className="flex min-h-[50vh] flex-col items-center justify-center gap-4 px-6 py-16 text-center">
+      <RouteSketch seed="error" stops={3} className="h-16 w-40 opacity-70" />
       <h1 className="font-display text-2xl text-ink">{m.app_error_title()}</h1>
       <p className="max-w-[45ch] text-sm text-ink-soft">
         {m.app_error_description()}
@@ -61,6 +62,7 @@ export function RouteErrorFallback({ reset }: { reset: () => void }) {
 export function RouteNotFoundFallback() {
   return (
     <div className="flex min-h-[50vh] flex-col items-center justify-center gap-4 px-6 py-16 text-center">
+      <RouteSketch seed="not-found" stops={3} className="h-16 w-40 opacity-70" />
       <h1 className="font-display text-2xl text-ink">
         {m.app_not_found_title()}
       </h1>

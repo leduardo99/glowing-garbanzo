@@ -85,7 +85,7 @@ export function ItineraryHero({ data }: { data: ItineraryDetail }) {
               className="h-64 w-full object-cover"
             />
           ) : (
-            <CoverPlaceholder className="h-64 w-full" />
+            <CoverPlaceholder seed={data.slug} className="h-64 w-full" />
           )}
 
           <button
@@ -131,7 +131,7 @@ export function ItineraryHero({ data }: { data: ItineraryDetail }) {
             className="h-72 w-full rounded-lg object-cover"
           />
         ) : (
-          <CoverPlaceholder className="h-72 w-full rounded-lg" />
+          <CoverPlaceholder seed={data.slug} className="h-72 w-full rounded-lg" />
         )}
 
         <div className="flex flex-col gap-2">

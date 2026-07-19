@@ -14,6 +14,7 @@ import {
 import { ItineraryCard } from '#/components/ItineraryCard'
 import { ItineraryGridSkeleton } from '#/components/ItineraryCardSkeleton'
 import { Pagination } from '#/components/Pagination'
+import { RouteSketch } from '#/components/RouteSketch'
 import { Badge } from '#/components/ui/badge'
 import { Button } from '#/components/ui/button'
 import {
@@ -72,15 +73,15 @@ const DURATION_BOUNDS: Record<
 /**
  * Rounded, pill-shaped filter chip — the horizontally scrollable row's one
  * visual unit, shared by the duration buckets, active tag chips, and the
- * "Filtros" sheet trigger. Selected state flips to terracotta-soft/
- * terracotta text (DESIGN.md's Chips/Tags spec); unselected chips stay on
+ * "Filtros" sheet trigger. Selected state flips to mata-soft/
+ * mata text (DESIGN.md's Chips/Tags spec); unselected chips stay on
  * surface-sunken so the row reads as calm until something's active.
  */
 function filterChipClassName(selected: boolean) {
   return cn(
     'inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full px-3.5 text-label font-medium whitespace-nowrap transition-colors',
     selected
-      ? 'bg-terracotta-soft text-terracotta-deep'
+      ? 'bg-mata-soft text-mata-soft-foreground'
       : 'bg-surface-sunken text-ink-soft hover:text-ink',
   )
 }
@@ -226,7 +227,7 @@ function HomePage() {
       <Input
         id="home-search-mobile"
         aria-label={m.home_search_placeholder()}
-        className="h-11 rounded-full border-transparent bg-surface-sunken pl-10 shadow-none focus-visible:border-terracotta"
+        className="h-11 rounded-full border-transparent bg-surface-sunken pl-10 shadow-none focus-visible:border-mata"
         placeholder={m.home_search_placeholder()}
         value={draftQuery}
         onChange={(event) => setDraftQuery(event.target.value)}
@@ -321,7 +322,7 @@ function HomePage() {
             {hasActiveFilters ? (
               <span
                 aria-hidden="true"
-                className="size-1.5 rounded-full bg-terracotta"
+                className="size-1.5 rounded-full bg-mata"
               />
             ) : null}
           </button>
@@ -362,7 +363,8 @@ function HomePage() {
         {/* Mobile: compact hero, the search bar above already carries the
             primary action so this stays short. */}
         <div className="flex flex-col gap-1 pt-1 md:hidden">
-          <h1 className="text-headline font-semibold text-ink">
+          {/* Same one-off Fraunces brand moment as the desktop hero. */}
+          <h1 className="font-display text-headline text-ink">
             {m.home_hero_title()}
           </h1>
           <p className="text-label text-ink-soft">{m.home_hero_subtitle()}</p>
@@ -371,7 +373,10 @@ function HomePage() {
         {/* Desktop (md+): unchanged stacked hero + inline filter form. */}
         <section className="hidden flex-col gap-6 py-4 md:flex sm:py-8">
           <div className="flex flex-col gap-2">
-            <h1 className="max-w-2xl text-display font-semibold text-ink">
+            {/* Brand moment: like the auth pages, the discovery hero is a
+                deliberate one-off Fraunces exception to the Editorial
+                Title Rule — the "magazine cover" of the app. */}
+            <h1 className="max-w-2xl font-display text-display text-ink">
               {m.home_hero_title()}
             </h1>
             <p className="measure-prose text-body text-ink-soft">
@@ -515,8 +520,8 @@ function SearchResults({
   if (data.items.length === 0) {
     return (
       <Empty>
-        <EmptyMedia variant="icon">
-          <SearchIcon />
+        <EmptyMedia>
+          <RouteSketch seed="home-empty" stops={3} className="h-16 w-40 opacity-70" />
         </EmptyMedia>
         <EmptyTitle>{m.home_empty()}</EmptyTitle>
         <EmptyDescription>{m.home_empty_description()}</EmptyDescription>

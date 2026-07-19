@@ -1,5 +1,6 @@
 import {
   HeadContent,
+  ScriptOnce,
   Scripts,
   createRootRouteWithContext,
 } from '@tanstack/react-router'
@@ -80,12 +81,12 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
       // theme-color support for oklch() isn't universal yet.
       {
         name: 'theme-color',
-        content: '#f8f4f1',
+        content: '#f9f5ef',
         media: '(prefers-color-scheme: light)',
       },
       {
         name: 'theme-color',
-        content: '#201915',
+        content: '#0b1510',
         media: '(prefers-color-scheme: dark)',
       },
       {
@@ -132,6 +133,17 @@ function RootDocument({ children }: { children: React.ReactNode }) {
     <html lang={getLocale()}>
       <head>
         <HeadContent />
+        {/*
+          Theme is class-driven (`.dark` on <html>, see styles.css) and
+          follows the system preference. Applied in a blocking inline
+          script so the very first paint is already themed — a media-query-
+          only approach was rejected because the `dark:` Tailwind variant
+          and any future manual toggle both need the class. The listener
+          keeps a long-lived tab in sync when the OS switches themes.
+        */}
+        <ScriptOnce>
+          {`(function(){var m=window.matchMedia('(prefers-color-scheme: dark)');var apply=function(){document.documentElement.classList.toggle('dark',m.matches)};apply();m.addEventListener('change',apply)})()`}
+        </ScriptOnce>
       </head>
       <body>
         {/*

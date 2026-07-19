@@ -2,7 +2,10 @@ import { Link } from '@tanstack/react-router'
 import { BookOpenIcon, HomeIcon, PlusCircleIcon } from 'lucide-react'
 
 import { UserMenu } from '#/components/navigation/UserMenu'
-import { tabLinkClassName } from '#/components/navigation/tabLinkClassName'
+import {
+  tabIconClassName,
+  tabLinkClassName,
+} from '#/components/navigation/tabLinkClassName'
 import { m } from '#/paraglide/messages'
 
 /**
@@ -13,6 +16,11 @@ import { m } from '#/paraglide/messages'
  * to the same 64px row, so all four share one optical baseline. No
  * floating FAB: the earlier half-raised "+" circle overlapped page
  * content (pagination) and broke the row's symmetry.
+ *
+ * Active-tab treatment (DESIGN.md §5 Navigation): mata text plus a soft
+ * mata pill behind the icon — the Material-3/native pattern, driven purely
+ * by the Link's `data-status` via the `group` classes in
+ * `tabLinkClassName.ts`.
  *
  * Box model: the bar is a fixed `4rem` (64px) content row plus
  * `env(safe-area-inset-bottom)` — `h-[calc(4rem+env(...))]` on the `<nav>`
@@ -31,19 +39,25 @@ export function BottomNav() {
       className="fixed inset-x-0 bottom-0 z-40 flex h-[calc(4rem+env(safe-area-inset-bottom))] items-stretch border-t border-line-strong bg-surface pb-[env(safe-area-inset-bottom)] md:hidden"
     >
       <Link to="/" activeOptions={{ exact: true }} className={tabLinkClassName}>
-        <HomeIcon className="size-6" aria-hidden="true" />
+        <span className={tabIconClassName}>
+          <HomeIcon className="size-6" aria-hidden="true" />
+        </span>
         <span className="text-[11px] font-medium">{m.nav_home()}</span>
       </Link>
 
       <Link to="/my" className={tabLinkClassName}>
-        <BookOpenIcon className="size-6" aria-hidden="true" />
+        <span className={tabIconClassName}>
+          <BookOpenIcon className="size-6" aria-hidden="true" />
+        </span>
         <span className="text-[11px] font-medium">
           {m.nav_my_itineraries()}
         </span>
       </Link>
 
       <Link to="/new" className={tabLinkClassName}>
-        <PlusCircleIcon className="size-6" aria-hidden="true" />
+        <span className={tabIconClassName}>
+          <PlusCircleIcon className="size-6" aria-hidden="true" />
+        </span>
         <span className="text-[11px] font-medium">{m.nav_new_short()}</span>
       </Link>
 

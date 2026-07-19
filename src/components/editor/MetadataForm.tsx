@@ -162,7 +162,7 @@ export function MetadataForm({ itinerary }: { itinerary: EditorItinerary }) {
                     coverMutation.isPending && 'pointer-events-none opacity-70',
                     itinerary.coverImageUrl
                       ? 'bg-surface-sunken'
-                      : 'border border-dashed border-line-strong bg-surface-sunken hover:border-terracotta',
+                      : 'border border-dashed border-line-strong bg-surface-sunken hover:border-mata',
                   )}
                 >
                   {itinerary.coverImageUrl ? (

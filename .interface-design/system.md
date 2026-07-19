@@ -1,77 +1,85 @@
 # Roteiros — interface-design system memory
 
-Source of truth shared with `PRODUCT.md` / `DESIGN.md` (impeccable skill). Read this before touching any UI; keep values in sync if either file changes.
+Source of truth shared with `PRODUCT.md` / `DESIGN.md`. Read this before touching any UI; keep values in sync if either file changes.
 
 ## Direction and feel
 
-**"The Shared Logbook."** Elegant, calm, editorial — a well-kept travel journal passed from traveler to traveler (fork, annotate, carry forward), not a booking dashboard. Warm paper tones, one deliberate terracotta accent, a serif hand reserved for content (itinerary/day titles) over a quiet sans that runs the interface. Mobile is the primary surface and must feel like a native app: bottom tab bar, safe-area insets, ≥44px targets, app-like route transitions. PWA standalone is planned.
+**"Trilha Tropical" (the drawn route).** A route sketched on a map and handed from traveler to traveler — the product's literal signature (fork a route, carry it forward) is the visual signature: a dashed amber route through numbered stops, over deep mata green and warm cream. Brazilian without costume — specialty-coffee-label register, not tourist trinket. References deliberately carried: **Airbnb** (bright cards floating on a warm page, generous radii, chrome recedes behind content) and **Polarsteps** (map and route are protagonists; the trip is a line through places). Mobile is the primary surface: bottom tab bar, safe-area insets, ≥44px targets, app-like transitions. PWA standalone.
+
+Supersedes the earlier "Shared Logbook" terracotta direction (user verdict 2026-07-19: implemented app still read as "shadcn with a brown button"; colors didn't land). Typography pairing (Fraunces/Karla) survives the pivot; palette, surface relationships, and the signature element do not.
 
 Explicitly rejected: Inter-for-everything, purple→blue gradients, cards nested in cards, gray text on colored backgrounds, rounded-square icon tiles above headings, generic SaaS-dashboard chrome, mobile-as-afterthought.
 
 ## Depth strategy and spacing
 
-- **Depth strategy: shadow-based elevation, borders reserved for dividers/inputs/rows only.** Never combine a border and a shadow on the same card (the "ghost card" tell). Dark mode collapses all shadow levels to a single `0 0 0 1px rgba(255,255,255,0.08)` ring.
-- **Spacing base unit: 4px.** Scale: `xs 4 · sm 8 · md 16 · lg 24 · xl 32 · 2xl 48`. Standard component padding 16px; section gaps 24px; major area gaps 32-48px desktop, tighter (12-16px) on mobile. Density target is airy-calm, not workbench-tight — this is a reading/planning product, not a data tool.
-- **Radius scale:** `sm 6px` (inputs) · `md 10px` (buttons) · `lg 14px` (cards) · `xl 20px` (modals/sheets) · `full` (tags, chips, floating mobile CTA). Never exceed 20px except full-pill. Nested elements stay concentric (`outerRadius = innerRadius + padding`) — e.g. a card cover photo's radius is the card radius minus its padding.
+- **Depth strategy: shadow float.** Cards are *lighter* than the page (near-white surface on visible cream paper) and lift with green-ink-tinted layered shadows (`shadow-resting/lifted/elevated` utilities). Borders reserved for dividers/inputs/rows only; never border+shadow on the same card. Dark mode collapses all levels to a light hairline ring (`0 0 0 1px oklch(1 0 0 / 0.08-0.12)`).
+- **Spacing base unit: 4px.** Scale: `xs 4 · sm 8 · md 16 · lg 24 · xl 32 · 2xl 48`. Component padding 16px; section gaps 24px; major gaps 32-48px desktop, 12-16px mobile. Density: airy-calm.
+- **Radius scale:** `sm 8px` (inputs) · `md 12px` (buttons) · `lg 16px` (cards) · `xl 24px` (modals/sheets) · `full` (chips, floating CTA). One step more generous than the old system (the Airbnb friendliness). Nested elements concentric (`outer = inner + padding`).
 
 ## Hierarchy decisions
 
-- **Type scale ratio:** ~1.2, fixed rem (not fluid/clamped) for interface type — product register, consistent DPI. Base body 15px (`0.9375rem`).
-- **Steps:** caption 12 · label 13 · body 15 · title 17 · headline 22 · display 32 (up to 40 on the itinerary hero only).
-- **Density:** one sans family (Karla) carries essentially the whole interface; the serif (Fraunces) appears only on content titles — see the Editorial Title Rule below. This keeps product-register legibility while still delivering the editorial feel the brief asked for.
-- **Focal pattern:** on any screen, the itinerary content (title, cover photo, day/stop timeline) is the focal element — sized, weighted, and given whitespace to win over nav, filters, and metadata, which stay in Label/Caption tiers.
+- **Type scale ratio:** ~1.2, fixed rem. Steps: caption 12 · label 13 · body 15 · title 17 · headline 22 · display 36 (up to 44 on the itinerary hero only).
+- **Focal pattern:** the itinerary content (title, route/map, timeline) is the focal element on every screen; nav, filters, metadata stay in Label/Caption tiers.
+- Karla carries the whole interface; Fraunces only on content titles (Editorial Title Rule).
 
-## Color tokens (OKLCH, canonical — matches this project's existing shadcn OKLCH doctrine)
+## Color tokens (OKLCH, canonical — mirrors `src/styles.css` exactly)
 
-| Token                      | Value                                  | Role                                                           |
-| -------------------------- | -------------------------------------- | -------------------------------------------------------------- |
-| `--ink`                    | `oklch(0.24 0.02 45)`                  | primary text                                                   |
-| `--ink-soft`               | `oklch(0.45 0.02 45)`                  | secondary/meta text                                            |
-| `--paper`                  | `oklch(0.985 0.004 60)`                | page background                                                |
-| `--surface`                | `oklch(0.97 0.006 55)`                 | cards, top nav, bottom tab bar                                 |
-| `--surface-sunken`         | `oklch(0.94 0.008 55)`                 | inputs, search, tag pills (always darker than surroundings)    |
-| `--terracotta`             | `oklch(0.58 0.15 38)`                  | the one accent: primary actions, selection, focus rings, links |
-| `--terracotta-deep`        | `oklch(0.49 0.16 35)`                  | accent hover/active                                            |
-| `--terracotta-soft`        | `oklch(0.93 0.04 45)`                  | tinted accent backgrounds (selected chip fill)                 |
-| `--rating-gold`            | `oklch(0.78 0.15 85)`                  | star ratings only — semantic exception, never on buttons/nav   |
-| `--line` / `--line-strong` | `oklch(0.24 0.02 45 / 0.12)` / `/ 0.2` | dividers, input borders, table/list rows                       |
-| `--success`                | `oklch(0.6 0.12 145)`                  | semantic                                                       |
-| `--warning`                | `oklch(0.75 0.14 80)`                  | semantic                                                       |
-| `--destructive`            | `oklch(0.55 0.2 15)`                   | semantic                                                       |
+| Token                      | Light                                    | Dark                          | Role                                                        |
+| -------------------------- | ---------------------------------------- | ----------------------------- | ----------------------------------------------------------- |
+| `--ink`                    | `oklch(0.27 0.035 155)`                  | `oklch(0.955 0.008 90)`       | primary text (green-black ink / cream)                      |
+| `--ink-soft`               | `oklch(0.47 0.025 150)`                  | `oklch(0.72 0.015 130)`       | secondary/meta text                                         |
+| `--paper`                  | `oklch(0.972 0.009 84)`                  | `oklch(0.185 0.02 160)`       | page background (visible warm cream / night forest)         |
+| `--surface`                | `oklch(0.988 0.005 88)`                  | `oklch(0.225 0.022 158)`      | cards, popovers, nav chrome — **lighter than page** (float) |
+| `--surface-sunken`         | `oklch(0.945 0.012 84)`                  | `oklch(0.16 0.018 160)`       | inputs, search, tag pills (darker than surroundings)        |
+| `--mata`                   | `oklch(0.40 0.09 152)`                   | `oklch(0.70 0.11 150)`        | THE brand voice: actions, selection, focus, links           |
+| `--mata-deep`              | `oklch(0.34 0.09 152)`                   | `oklch(0.76 0.11 150)`        | hover/active (dark mode brightens instead)                  |
+| `--mata-soft`              | `oklch(0.93 0.03 150)`                   | `oklch(0.30 0.045 152)`       | selected-chip fill                                          |
+| `--mata-soft-foreground`   | `oklch(0.34 0.09 152)`                   | `oklch(0.80 0.09 150)`        | text on mata-soft                                           |
+| `--amber`                  | `oklch(0.60 0.13 70)`                    | `oklch(0.75 0.12 75)`         | rating stars + the drawn route line ONLY                    |
+| `--coral`                  | `oklch(0.55 0.16 30)`                    | `oklch(0.70 0.14 30)`         | filled favorite heart ONLY                                  |
+| `--line` / `--line-strong` | ink at `/ 0.12` / `/ 0.2`                | ink at `/ 0.12` / `/ 0.2`     | dividers, input borders, rows                               |
+| `--success` / `--warning` / `--destructive` | `0.52 0.11 150` / `0.70 0.13 80` / `0.50 0.19 25` | `0.70 0.12 150` / `0.78 0.14 80` / `0.68 0.17 25` | semantic |
 
-Dark mode: same hierarchy, inverted lightness, one hue kept per token — base `oklch(0.18 0.012 45)`, surface `oklch(0.22 0.014 45)`, surface-sunken `oklch(0.16 0.012 45)`, text `oklch(0.96 0.006 60)` / `oklch(0.72 0.012 55)`, accent desaturated slightly to `oklch(0.68 0.13 40)`.
+Primary-foreground: cream `oklch(0.985 0.006 88)` in light; near-black `oklch(0.16 0.02 160)` in dark (bright leaf button flips its text).
 
-**Named rules:** _One Warm Voice_ (terracotta is the only saturated brand color; rating-gold is a scoped semantic exception) · _No-Cream-Default_ (paper is true off-white at chroma 0.004, not a saturated sand/parchment tone — warmth comes from the accent and Fraunces, not the body background).
+**Named rules:** _One Green Voice_ (mata is the only color with authority; amber scoped to stars+route, coral to the favorite heart — a fourth saturated color anywhere is a bug) · _Visible Warmth_ (the cream page must be perceivably warm next to a white card; never flatten paper toward pure white).
+
+**Contrast:** every pair above is AA-verified computationally in both themes (see DESIGN.md §2's table; checker script converts oklch→sRGB→luminance). Re-run when touching tokens.
+
+**Dark mode mechanics:** class-driven (`.dark` on `<html>`), set before paint by a `ScriptOnce` in `__root.tsx` from `prefers-color-scheme` (listener keeps long-lived tabs in sync). Media-query-only was rejected: the Tailwind `dark:` variant and a future manual toggle both need the class.
 
 ## Typography
 
-- **Display:** Fraunces (variable optical-size axis), weight 500, `letter-spacing -0.02em`, `line-height 1.1`. Package: `@fontsource-variable/fraunces`.
+- **Display:** Fraunces (variable optical-size axis), weight 500, `letter-spacing -0.02em`. Package: `@fontsource-variable/fraunces`.
 - **Body/UI:** Karla, weights 400/500/600. Package: `@fontsource/karla`.
-- **No third/mono family** — dynamic numbers (day counts, ratings, prices) use Karla with `font-variant-numeric: tabular-nums`.
-- **The Editorial Title Rule:** Fraunces is reserved for content titles (itinerary name, day headers) only. Every piece of interface chrome — nav, buttons, labels, badges, table/list data — stays in Karla. This is the one deliberate display-font exception in an otherwise single-family product UI.
-- **The 70ch Rule:** long-form prose (stop notes, comments, bios) wraps at ≤70ch regardless of viewport.
-- Fonts are **not installed yet** — this is design-context only, no restyle performed. See `DESIGN.md` §3 for the full hierarchy table.
+- **No third/mono family** — dynamic numbers use Karla + `tabular-nums`.
+- **The Editorial Title Rule:** Fraunces on content titles (itinerary name, day headers) only; all chrome in Karla.
+- **The 70ch Rule:** long-form prose ≤70ch (`.measure-prose`, which also sets `text-wrap: pretty`).
 
 ## Key component patterns
 
-- **Button primary** — 40px h (44px on mobile floating CTA) · 10px/20px pad · 10px radius · terracotta bg / paper text · `scale(0.97)` on active · terracotta-deep on hover.
-- **Itinerary card** — 14px radius · no border · Resting shadow → Lifted shadow on hover · cover photo radius concentric with card · title in Fraunces 17px/600, destination in Karla 13px ink-soft.
-- **Input** — 40px h · surface-sunken bg (darker than surroundings) · 1px line border · 6px radius · terracotta border + 20%-opacity ring on focus.
-- **Tag/chip** — full radius · surface-sunken bg / ink-soft text at rest · terracotta-soft bg / terracotta-deep text when selected.
-- **Bottom tab bar (mobile nav)** — fixed, surface bg, `env(safe-area-inset-bottom)` padding, 56px+ height, icon+11px label per tab, active tab in terracotta with filled icon, all targets ≥44×44px.
-- **Day/Stop timeline (signature component)** — vertical `line`-colored spine; day markers in Karla 600/17px break the spine; stops are quiet rows (thumbnail + Title-weight name + Body-weight note), never boxed as nested cards. This is the one structural element unique to Roteiros.
+- **Button primary** — 40px h (44px mobile CTA) · 10px/20px pad · 12px radius · mata bg / cream text (dark: leaf bg / near-black text) · `scale(0.97)` active · mata-deep hover.
+- **Itinerary card** — 16px radius · no border · Resting→Lifted shadow · cover concentric · title Fraunces 17/500, destination Karla 13 ink-soft.
+- **Input** — 40px h · surface-sunken bg · 1px line border · 8px radius · mata border + 20% ring on focus.
+- **Tag/chip** — full radius · surface-sunken/ink-soft at rest · mata-soft/mata-soft-foreground selected.
+- **Bottom tab bar** — fixed, surface bg, safe-area-inset-bottom, icon+11px label, active in mata with filled icon, ≥44px targets.
+- **The Drawn Route (signature system, three registers):**
+  1. `ItineraryMap` — dashed **amber** route line connecting stops in visit order; numbered circular markers (mata disc, cream numeral) identical to the timeline's.
+  2. `RouteSketch` — generative SVG (dashed amber path through numbered mata dots) as cover placeholder, empty-state art, and auth brand mark. Never a gray box.
+  3. `DayTimeline` — vertical line spine, day titles in Fraunces breaking it, stops as quiet rows off the same numbered discs. Map and timeline are two views of one journey.
+- **MapLibre chrome** re-skinned in styles.css (popup/controls inherit surface/ink/radius/elevation) so the map never reads as a foreign widget.
 
 ## Motion
 
-- 150-250ms, `cubic-bezier(0.23, 1, 0.32, 1)` (ease-out-expo) for entrances/reveals, `cubic-bezier(0.77, 0, 0.175, 1)` for on-screen movement.
-- Mobile route push/pop: 260ms slide+fade. Bottom-tab switches: crossfade only (tabs are peers, not a stack).
-- No choreographed page-load sequences — product loads into a task.
-- `prefers-reduced-motion`: every animation has a crossfade/instant fallback.
+- 150-250ms, `cubic-bezier(0.23, 1, 0.32, 1)` entrances, `cubic-bezier(0.77, 0, 0.175, 1)` movement.
+- Route push/pop: 220ms slide+fade; tab switches crossfade only.
+- RouteSketch is deliberately static (a dashed path can't draw in via `stroke-dashoffset` without double-path masking — not worth it for a placeholder); it appears with whatever surface contains it.
+- No choreographed page-load sequences; `prefers-reduced-motion` honored globally.
 
 ## Visual direction notes
 
-- Font pairing chosen for real self-hostable availability (proxy blocks Google Fonts CDN): `@fontsource-variable/fraunces` (display) + `@fontsource/karla` (body/UI), both verified present on the npm registry (`fraunces@5.2.9`, `karla@5.2.8` at time of writing). Karla was picked over the project's previous Manrope pairing specifically to avoid the extremely common "Fraunces + Manrope" editorial-SaaS template combo while keeping the same warm-humanist contrast axis.
-- The project's current `src/styles.css` already contains an earlier, unwired attempt at a coastal teal/green theme (`--sea-ink`, `--lagoon`, `--palm`...) loading Fraunces/Manrope from the Google Fonts CDN — which the environment's proxy blocks, so those fonts never actually load. That earlier direction is superseded by this system; it was not "committed" in the sense of a settled, working brand (the user explicitly asked to kill the current raw/generic look), so this document defines the new target rather than documenting the old one. No code was changed as part of this task.
+- Font pairing kept from the previous direction (real self-hostable availability; proxy blocks Google Fonts CDN): `@fontsource-variable/fraunces` + `@fontsource/karla`. Karla over Manrope to avoid the "Fraunces + Manrope" template combo.
+- Palette pivot rationale (2026-07-19): the terracotta system as implemented read as generic ("shadcn with a brown button") — near-white paper carried no warmth, the accent was too muted to have a voice, and no signature element existed. The tropical system fixes all three: visible cream, a deep green with authority, and the drawn-route motif repeated across map, placeholder, and timeline.
 
 ## Implementation log — UI overhaul part 1 (foundation + shell)
 
