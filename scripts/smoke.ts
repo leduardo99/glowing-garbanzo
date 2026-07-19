@@ -118,10 +118,22 @@ async function visit(context: BrowserContext, route: string, label: string): Pro
     findings.push({ route: tag, kind: 'pageerror', text: error.message })
   })
   page.on('requestfailed', (request) => {
+    const errorText = request.failure()?.errorText ?? '?'
+    // `net::ERR_ABORTED` is Chromium's signal that the *browser* canceled
+    // the request — via navigation, an app-level AbortController (e.g.
+    // TanStack Query dropping a stale fetch), or `page.close()` below —
+    // not a network/server failure. Routes with live external resources
+    // (maplibre tiles on /explore) routinely still have requests in
+    // flight when the 4s settle window ends and the page closes; that's
+    // expected browser behavior, not an app defect, and reporting it as
+    // one is a flaky false positive. Genuine failures (DNS, timeout,
+    // connection refused, blocked) use other `net::ERR_*` codes and are
+    // still reported below.
+    if (errorText === 'net::ERR_ABORTED') return
     findings.push({
       route: tag,
       kind: 'requestfailed',
-      text: `${request.method()} ${request.url()} — ${request.failure()?.errorText ?? '?'}`,
+      text: `${request.method()} ${request.url()} — ${errorText}`,
     })
   })
   await page.goto(`${BASE_URL}${route}`, { waitUntil: 'load', timeout: 60_000 })
