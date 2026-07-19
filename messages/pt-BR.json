@@ -312,5 +312,12 @@
   "landing_faq_private_q": "Posso manter um roteiro privado?",
   "landing_faq_private_a": "Sim. Roteiros privados ficam acessíveis só por link de convite, para você e seus companheiros de viagem.",
   "landing_faq_ai_q": "Como funciona a geração com IA?",
-  "landing_faq_ai_a": "Você descreve destino, duração e estilo; a IA monta um rascunho dia a dia que você revisa e edita antes de publicar."
+  "landing_faq_ai_a": "Você descreve destino, duração e estilo; a IA monta um rascunho dia a dia que você revisa e edita antes de publicar.",
+  "explore_map_open": "Mapa",
+  "explore_map_close": "Fechar mapa",
+  "explore_map_no_routes": "Nenhuma rota geocodificada para esses filtros.",
+  "explore_panel_collapse": "Recolher painel",
+  "explore_panel_expand": "Mostrar painel",
+  "explore_results_count": "{count} roteiros",
+  "home_filters_show_results_count": "Mostrar {count} roteiros"
 }

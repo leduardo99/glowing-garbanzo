@@ -20,6 +20,7 @@ import {
   listMyFavorites,
   listMyItineraries,
   searchItineraries,
+  searchRoutePolylines,
 } from '#/server/itineraries'
 import type {
   GetItineraryBySlugInput,
@@ -27,6 +28,7 @@ import type {
   ListMyFavoritesInput,
   ListMyItinerariesInput,
   SearchItinerariesInput,
+  SearchRoutePolylinesInput,
 } from '#/server/itineraries'
 import { listMembers } from '#/server/members'
 import type { ListMembersInput } from '#/server/members'
@@ -36,6 +38,18 @@ export function searchQueryOptions(params: SearchItinerariesInput) {
   return queryOptions({
     queryKey: ['itineraries', 'search', params] as const,
     queryFn: () => searchItineraries({ data: params }),
+  })
+}
+
+/**
+ * Geocoded route polylines matching the discovery filters — the explore
+ * workspace's map canvas. Keyed by the same filter set (minus sort/page)
+ * so the canvas follows the panel's filters, not its pagination.
+ */
+export function searchRoutesQueryOptions(params: SearchRoutePolylinesInput) {
+  return queryOptions({
+    queryKey: ['itineraries', 'search-routes', params] as const,
+    queryFn: () => searchRoutePolylines({ data: params }),
   })
 }
 

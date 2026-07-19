@@ -22,6 +22,7 @@ import {
   gte,
   ilike,
   inArray,
+  isNotNull,
   lte,
   or,
   sql,
@@ -184,18 +185,23 @@ const searchItinerariesSchema = z.object({
 
 export type SearchItinerariesInput = z.infer<typeof searchItinerariesSchema>
 
-/** Public discovery search: published + public itineraries only. */
-export async function searchItinerariesImpl(
-  db: Database,
-  input: SearchItinerariesInput,
-): Promise<{ items: ItineraryCard[]; total: number }> {
-  // NOTE: `${itinerary.id}` renders as a bare, unqualified `"id"` when
-  // embedded in a `sql` template (drizzle only qualifies columns it knows
-  // are ambiguous within the *outer* select, not inside a nested subquery
-  // it can't see into) — which here would collide with itinerary_day's own
-  // `id` column inside the subquery's FROM. Force explicit qualification.
-  const dayCountExpr = sql<number>`(select count(*)::int from ${itineraryDay} where ${itineraryDay.itineraryId} = ${sql.raw('"itinerary"."id"')})`
+/**
+ * The discovery filter set (text, tags, duration) as drizzle conditions —
+ * shared by the paged card search below and the map workspace's route
+ * polylines (`searchRoutePolylinesImpl`), so the panel's list and the
+ * canvas's drawn routes can never disagree about what matches.
+ *
+ * NOTE: `${itinerary.id}` renders as a bare, unqualified `"id"` when
+ * embedded in a `sql` template (drizzle only qualifies columns it knows
+ * are ambiguous within the *outer* select, not inside a nested subquery
+ * it can't see into) — which here would collide with itinerary_day's own
+ * `id` column inside the subquery's FROM. Force explicit qualification.
+ */
+const discoveryDayCount = sql<number>`(select count(*)::int from ${itineraryDay} where ${itineraryDay.itineraryId} = ${sql.raw('"itinerary"."id"')})`
 
+function buildDiscoveryConditions(
+  input: Pick<SearchItinerariesInput, 'q' | 'tags' | 'minDays' | 'maxDays'>,
+) {
   const conditions = [
     eq(itinerary.status, 'published'),
     eq(itinerary.visibility, 'public'),
@@ -217,13 +223,21 @@ export async function searchItinerariesImpl(
   }
 
   if (input.minDays !== undefined) {
-    conditions.push(gte(dayCountExpr, input.minDays))
+    conditions.push(gte(discoveryDayCount, input.minDays))
   }
   if (input.maxDays !== undefined) {
-    conditions.push(lte(dayCountExpr, input.maxDays))
+    conditions.push(lte(discoveryDayCount, input.maxDays))
   }
 
-  const whereClause = and(...conditions)!
+  return conditions
+}
+
+/** Public discovery search: published + public itineraries only. */
+export async function searchItinerariesImpl(
+  db: Database,
+  input: SearchItinerariesInput,
+): Promise<{ items: ItineraryCard[]; total: number }> {
+  const whereClause = and(...buildDiscoveryConditions(input))!
 
   // A single sort column isn't a stable sort key — rows can tie (equal
   // ratings, equal publish timestamps), which would make page boundaries
@@ -254,7 +268,7 @@ export async function searchItinerariesImpl(
         ratingAvg: itinerary.ratingAvg,
         ratingCount: itinerary.ratingCount,
         publishedAt: itinerary.publishedAt,
-        dayCount: dayCountExpr,
+        dayCount: discoveryDayCount,
       })
       .from(itinerary)
       .where(whereClause)
@@ -287,6 +301,99 @@ export async function searchItinerariesImpl(
 export const searchItineraries = createServerFn({ method: 'GET' })
   .validator(searchItinerariesSchema)
   .handler(async ({ data }) => searchItinerariesImpl(appDb, data))
+
+// ---------------------------------------------------------------------------
+// searchRoutePolylines — the map workspace's canvas data
+// ---------------------------------------------------------------------------
+
+/** Max routes drawn on the explore canvas — enough to feel alive, capped for payload size. */
+export const EXPLORE_MAP_ROUTE_LIMIT = 40
+/** Max points per drawn route (stops beyond this are simply not drawn). */
+const EXPLORE_MAP_STOPS_PER_ROUTE = 20
+
+const searchRoutePolylinesSchema = searchItinerariesSchema.omit({
+  sort: true,
+  page: true,
+})
+
+export type SearchRoutePolylinesInput = z.infer<
+  typeof searchRoutePolylinesSchema
+>
+
+export interface RoutePolyline {
+  slug: string
+  title: string
+  /** Geocoded stops in visit order (day, then position). */
+  points: Array<{ lat: number; lng: number }>
+}
+
+/**
+ * The geocoded routes matching the current discovery filters, for the
+ * explore workspace's map canvas. Same conditions as the card search
+ * (minus paging/sort — the map shows the whole matching set up to the
+ * cap), so list and canvas always agree. Routes with fewer than two
+ * geocoded stops can't be drawn and are skipped.
+ */
+export async function searchRoutePolylinesImpl(
+  db: Database,
+  input: SearchRoutePolylinesInput,
+): Promise<RoutePolyline[]> {
+  const matching = await db
+    .select({ id: itinerary.id, slug: itinerary.slug, title: itinerary.title })
+    .from(itinerary)
+    .where(and(...buildDiscoveryConditions(input)))
+    .orderBy(desc(itinerary.publishedAt), desc(itinerary.id))
+    .limit(EXPLORE_MAP_ROUTE_LIMIT)
+
+  if (matching.length === 0) {
+    return []
+  }
+
+  const stopRows = await db
+    .select({
+      itineraryId: itineraryDay.itineraryId,
+      lat: stop.lat,
+      lng: stop.lng,
+    })
+    .from(stop)
+    .innerJoin(itineraryDay, eq(stop.dayId, itineraryDay.id))
+    .where(
+      and(
+        inArray(
+          itineraryDay.itineraryId,
+          matching.map((row) => row.id),
+        ),
+        isNotNull(stop.lat),
+        isNotNull(stop.lng),
+      ),
+    )
+    .orderBy(
+      asc(itineraryDay.itineraryId),
+      asc(itineraryDay.dayNumber),
+      asc(stop.position),
+    )
+
+  const pointsByItinerary = new Map<string, Array<{ lat: number; lng: number }>>()
+  for (const row of stopRows) {
+    const points = pointsByItinerary.get(row.itineraryId) ?? []
+    if (points.length < EXPLORE_MAP_STOPS_PER_ROUTE) {
+      points.push({ lat: row.lat as number, lng: row.lng as number })
+    }
+    pointsByItinerary.set(row.itineraryId, points)
+  }
+
+  return matching.flatMap((row) => {
+    const points = pointsByItinerary.get(row.id) ?? []
+    if (points.length < 2) {
+      return []
+    }
+    return [{ slug: row.slug, title: row.title, points }]
+  })
+}
+
+export const searchRoutePolylines = createServerFn({ method: 'GET' })
+  .validator(searchRoutePolylinesSchema)
+  .handler(async ({ data }) => searchRoutePolylinesImpl(appDb, data))
 
 // ---------------------------------------------------------------------------
 // getItineraryBySlug
