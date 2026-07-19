@@ -321,5 +321,12 @@
   "explore_results_count": "{count} itineraries",
   "home_filters_show_results_count": "Show {count} itineraries",
   "editor_stop_field_time": "Time (optional)",
-  "view_stop_time_label": "Time"
+  "view_stop_time_label": "Time",
+  "editor_field_currency": "Cost currency",
+  "editor_trip_total": "Estimated trip total: {amount}",
+  "editor_day_subtotal": "Subtotal: {amount}",
+  "view_trip_total": "Estimated total: {amount}",
+  "home_filter_budget": "Budget up to",
+  "home_filter_budget_placeholder": "e.g. 1500",
+  "home_filter_currency": "Currency"
 }

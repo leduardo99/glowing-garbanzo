@@ -14,7 +14,15 @@ import {
   FieldLabel,
 } from '#/components/ui/field'
 import { Input } from '#/components/ui/input'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '#/components/ui/select'
 import { Textarea } from '#/components/ui/textarea'
+import { CURRENCY_OPTIONS } from '#/lib/currency'
 import { maybeDownscaleCoverImage } from '#/lib/image-downscale'
 import { cn } from '#/lib/utils'
 import { m } from '#/paraglide/messages'
@@ -39,6 +47,7 @@ export function MetadataForm({ itinerary }: { itinerary: EditorItinerary }) {
   const queryClient = useQueryClient()
   const [tags, setTags] = useState<string[]>(itinerary.tags)
   const [tagDraft, setTagDraft] = useState('')
+  const [currency, setCurrency] = useState(itinerary.currency)
 
   // Broad invalidation — title/summary/destination/tags/cover all surface
   // in the `/my` list cards and (once published) discovery search, not just
@@ -62,6 +71,7 @@ export function MetadataForm({ itinerary }: { itinerary: EditorItinerary }) {
           summary: values.summary || null,
           destination: values.destination,
           tags,
+          currency,
         },
       }),
     onSuccess: () => {
@@ -329,6 +339,24 @@ export function MetadataForm({ itinerary }: { itinerary: EditorItinerary }) {
                     ))}
                   </div>
                 ) : null}
+              </Field>
+
+              <Field>
+                <FieldLabel htmlFor="editor-currency">
+                  {m.editor_field_currency()}
+                </FieldLabel>
+                <Select value={currency} onValueChange={setCurrency}>
+                  <SelectTrigger id="editor-currency" className="w-full sm:max-w-40">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {CURRENCY_OPTIONS.map((code) => (
+                      <SelectItem key={code} value={code}>
+                        {code}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </Field>
 
               <form.Subscribe

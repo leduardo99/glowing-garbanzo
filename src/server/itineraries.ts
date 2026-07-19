@@ -19,6 +19,7 @@ import {
   asc,
   desc,
   eq,
+  gt,
   gte,
   ilike,
   inArray,
@@ -76,6 +77,10 @@ export interface ItineraryCard {
   ratingAvg: number | null
   ratingCount: number
   dayCount: number
+  /** Sum of every stop's cost, in cents of `currency` (0 = no cost data). */
+  costTotalCents: number
+  /** ISO 4217 code of the itinerary's costs. */
+  currency: string
   publishedAt: Date | null
 }
 
@@ -120,6 +125,7 @@ export interface ItineraryDetail {
   destination: string | null
   tags: string[]
   coverImageUrl: string | null
+  currency: string
   status: 'draft' | 'published'
   visibility: 'public' | 'private'
   authorId: string
@@ -181,6 +187,10 @@ const searchItinerariesSchema = z.object({
   tags: z.array(z.string()).optional(),
   minDays: z.number().int().positive().optional(),
   maxDays: z.number().int().positive().optional(),
+  /** Budget ceiling in cents of `currency`; only trips WITH cost data qualify. */
+  maxCostCents: z.number().int().positive().optional(),
+  /** Currency the budget filter compares in (cross-currency comparison is out of scope). */
+  currency: z.string().regex(/^[A-Z]{3}$/).optional(),
   sort: z.enum(['recent', 'top']),
   page: z.number().int().min(1),
 })
@@ -201,8 +211,14 @@ export type SearchItinerariesInput = z.infer<typeof searchItinerariesSchema>
  */
 const discoveryDayCount = sql<number>`(select count(*)::int from ${itineraryDay} where ${itineraryDay.itineraryId} = ${sql.raw('"itinerary"."id"')})`
 
+/** Trip cost total: SUM of stop costs across all days (0 when no cost data). Same forced qualification as the day count. */
+const costTotalExpr = sql<number>`(select coalesce(sum(s."cost_cents"), 0)::int from "stop" s join "itinerary_day" d on s."day_id" = d."id" where d."itinerary_id" = "itinerary"."id")`
+
 function buildDiscoveryConditions(
-  input: Pick<SearchItinerariesInput, 'q' | 'tags' | 'minDays' | 'maxDays'>,
+  input: Pick<
+    SearchItinerariesInput,
+    'q' | 'tags' | 'minDays' | 'maxDays' | 'maxCostCents' | 'currency'
+  >,
 ) {
   const conditions = [
     eq(itinerary.status, 'published'),
@@ -229,6 +245,15 @@ function buildDiscoveryConditions(
   }
   if (input.maxDays !== undefined) {
     conditions.push(lte(discoveryDayCount, input.maxDays))
+  }
+
+  if (input.maxCostCents !== undefined) {
+    // Budget compares within one currency only (plan decision: no
+    // cross-currency conversion); trips without any cost data are
+    // excluded — "unknown" is not "free".
+    conditions.push(eq(itinerary.currency, input.currency ?? 'BRL'))
+    conditions.push(gt(costTotalExpr, 0))
+    conditions.push(lte(costTotalExpr, input.maxCostCents))
   }
 
   return conditions
@@ -271,6 +296,8 @@ export async function searchItinerariesImpl(
         ratingCount: itinerary.ratingCount,
         publishedAt: itinerary.publishedAt,
         dayCount: discoveryDayCount,
+        costTotalCents: costTotalExpr,
+        currency: itinerary.currency,
       })
       .from(itinerary)
       .where(whereClause)
@@ -294,6 +321,8 @@ export async function searchItinerariesImpl(
     ratingAvg: row.ratingAvg === null ? null : parseFloat(row.ratingAvg),
     ratingCount: row.ratingCount,
     dayCount: row.dayCount,
+    costTotalCents: row.costTotalCents,
+    currency: row.currency,
     publishedAt: row.publishedAt,
   }))
 
@@ -553,6 +582,7 @@ export async function getItineraryBySlugImpl(
     destination: row.destination,
     tags: row.tags ?? [],
     coverImageUrl: row.coverImageUrl,
+    currency: row.currency,
     status: row.status,
     visibility: row.visibility,
     authorId: row.authorId,
@@ -641,6 +671,7 @@ const updateItinerarySchema = z.object({
   tags: z.array(z.string()).optional(),
   visibility: z.enum(['public', 'private']).optional(),
   coverImageUrl: z.string().nullable().optional(),
+  currency: z.string().regex(/^[A-Z]{3}$/).optional(),
 })
 
 export type UpdateItineraryInput = z.infer<typeof updateItinerarySchema>
@@ -658,6 +689,7 @@ export async function updateItineraryImpl(
   if (input.summary !== undefined) updates.summary = input.summary
   if (input.destination !== undefined) updates.destination = input.destination
   if (input.tags !== undefined) updates.tags = input.tags
+  if (input.currency !== undefined) updates.currency = input.currency
   if (input.visibility !== undefined) updates.visibility = input.visibility
   if (input.coverImageUrl !== undefined)
     updates.coverImageUrl = input.coverImageUrl
@@ -899,6 +931,8 @@ export async function listMyItinerariesImpl(
         publishedAt: itinerary.publishedAt,
         createdAt: itinerary.createdAt,
         dayCount: dayCountExpr,
+        costTotalCents: costTotalExpr,
+        currency: itinerary.currency,
       })
       .from(itinerary)
       .where(whereClause)
@@ -928,6 +962,8 @@ export async function listMyItinerariesImpl(
     ratingAvg: row.ratingAvg === null ? null : parseFloat(row.ratingAvg),
     ratingCount: row.ratingCount,
     dayCount: row.dayCount,
+    costTotalCents: row.costTotalCents,
+    currency: row.currency,
     publishedAt: row.publishedAt,
   }))
 
@@ -999,6 +1035,8 @@ export async function listMyFavoritesImpl(
         ratingCount: itinerary.ratingCount,
         publishedAt: itinerary.publishedAt,
         dayCount: dayCountExpr,
+        costTotalCents: costTotalExpr,
+        currency: itinerary.currency,
       })
       .from(favorite)
       .innerJoin(itinerary, eq(favorite.itineraryId, itinerary.id))
@@ -1030,6 +1068,8 @@ export async function listMyFavoritesImpl(
     ratingAvg: row.ratingAvg === null ? null : parseFloat(row.ratingAvg),
     ratingCount: row.ratingCount,
     dayCount: row.dayCount,
+    costTotalCents: row.costTotalCents,
+    currency: row.currency,
     publishedAt: row.publishedAt,
   }))
 
@@ -1059,6 +1099,7 @@ export interface EditorItinerary {
   destination: string | null
   tags: string[]
   coverImageUrl: string | null
+  currency: string
   status: 'draft' | 'published'
   visibility: 'public' | 'private'
   inviteToken: string | null
@@ -1092,6 +1133,7 @@ export async function getMyItineraryImpl(
     destination: row.destination,
     tags: row.tags ?? [],
     coverImageUrl: row.coverImageUrl,
+    currency: row.currency,
     status: row.status,
     visibility: row.visibility,
     inviteToken: row.inviteToken,

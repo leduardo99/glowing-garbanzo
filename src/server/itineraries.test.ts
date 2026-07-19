@@ -870,6 +870,65 @@ describe('itineraries server functions', () => {
       return created
     }
 
+    it('sums stop costs into costTotalCents and filters by budget within a currency', async () => {
+      const author = await createTestUser()
+      const cheap = await publishedItinerary({
+        authorId: author.id,
+        title: 'Cheap trip',
+        destination: 'Paraty',
+      })
+      const pricey = await publishedItinerary({
+        authorId: author.id,
+        title: 'Pricey trip',
+        destination: 'Fernando de Noronha',
+      })
+      const noCosts = await publishedItinerary({
+        authorId: author.id,
+        title: 'Unpriced trip',
+        destination: 'Curitiba',
+      })
+      const [cheapDay] = await testDb
+        .select()
+        .from(itineraryDay)
+        .where(eq(itineraryDay.itineraryId, cheap.id))
+      const [priceyDay] = await testDb
+        .select()
+        .from(itineraryDay)
+        .where(eq(itineraryDay.itineraryId, pricey.id))
+      await testDb.insert(stop).values([
+        { dayId: cheapDay.id, position: 0, name: 'a', category: 'food', costCents: 5000 },
+        { dayId: cheapDay.id, position: 1, name: 'b', category: 'other', costCents: 7000 },
+        { dayId: priceyDay.id, position: 0, name: 'c', category: 'lodging', costCents: 300000 },
+      ])
+
+      const all = await searchItinerariesImpl(testDb, {
+        sort: 'recent',
+        page: 1,
+      })
+      const cheapCard = all.items.find((i) => i.id === cheap.id)
+      expect(cheapCard?.costTotalCents).toBe(12000)
+      expect(cheapCard?.currency).toBe('BRL')
+      expect(all.items.find((i) => i.id === noCosts.id)?.costTotalCents).toBe(0)
+
+      // Budget ceiling: only trips WITH cost data at or under it qualify —
+      // "unknown" is not "free", so the unpriced trip is excluded too.
+      const budgeted = await searchItinerariesImpl(testDb, {
+        maxCostCents: 20000,
+        sort: 'recent',
+        page: 1,
+      })
+      expect(budgeted.items.map((i) => i.id)).toEqual([cheap.id])
+
+      // A different currency matches nothing (no cross-currency compare).
+      const usd = await searchItinerariesImpl(testDb, {
+        maxCostCents: 20000,
+        currency: 'USD',
+        sort: 'recent',
+        page: 1,
+      })
+      expect(usd.items).toEqual([])
+    })
+
     it('excludes drafts and private itineraries from results', async () => {
       const author = await createTestUser()
       await createItineraryImpl(

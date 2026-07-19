@@ -14,7 +14,6 @@ import { DayTimeline } from '#/components/itinerary/DayTimeline'
 import { EngagementBar } from '#/components/itinerary/EngagementBar'
 import { ItineraryHero } from '#/components/itinerary/ItineraryHero'
 import { ItineraryViewProvider } from '#/components/itinerary/ItineraryViewContext'
-import type { ItineraryMapStop } from '#/components/map/ItineraryMap'
 import { Button } from '#/components/ui/button'
 import {
   Card,
@@ -39,9 +38,9 @@ import { Separator } from '#/components/ui/separator'
 import { Skeleton } from '#/components/ui/skeleton'
 import { useIsMobile } from '#/hooks/use-is-mobile'
 import { commentsQueryOptions, itineraryQueryOptions } from '#/lib/queries'
+import { collectMapStops } from '#/lib/map-stops'
 import { m } from '#/paraglide/messages'
 import { joinByInviteToken } from '#/server/members'
-import type { DayView } from '#/server/itineraries'
 
 // Lazy so `maplibre-gl` only loads for itineraries that actually have
 // mappable stops — `ItineraryView` below skips rendering (and thus
@@ -49,30 +48,6 @@ import type { DayView } from '#/server/itineraries'
 const ItineraryMap = lazy(() => import('#/components/map/ItineraryMap'))
 
 /** Every stop across all days that has both `lat` and `lng` set, flattened with its day number for the map's popups. */
-function collectMapStops(days: DayView[]): ItineraryMapStop[] {
-  const stops: ItineraryMapStop[] = []
-  // `sequence` counts EVERY stop (not just geocoded ones) so the map's
-  // numbered discs always agree with the timeline's numbering — a stop
-  // without a pin simply skips its number on the map.
-  let sequence = 0
-  for (const day of days) {
-    for (const stop of day.stops) {
-      sequence += 1
-      if (stop.lat !== null && stop.lng !== null) {
-        stops.push({
-          id: stop.id,
-          name: stop.name,
-          lat: stop.lat,
-          lng: stop.lng,
-          dayNumber: day.dayNumber,
-          startTime: stop.startTime ? stop.startTime.slice(0, 5) : null,
-          sequence,
-        })
-      }
-    }
-  }
-  return stops
-}
 
 const viewSearchSchema = z.object({
   invite: z.string().optional(),
@@ -287,7 +262,7 @@ function ItineraryView() {
           ) : null}
 
           <div className="min-w-0 md:col-start-1 md:row-start-1">
-            <DayTimeline days={data.days} />
+            <DayTimeline days={data.days} currency={data.currency} />
           </div>
         </div>
 

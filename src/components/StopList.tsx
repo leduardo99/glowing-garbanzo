@@ -7,6 +7,7 @@ import {
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 
+import { formatCost } from '#/lib/currency'
 import { m } from '#/paraglide/messages'
 import type { StopView } from '#/server/itineraries'
 
@@ -26,11 +27,6 @@ const CATEGORY_LABEL: Record<StopView['category'], () => string> = {
   other: m.stop_category_other,
 }
 
-const costFormatter = new Intl.NumberFormat('pt-BR', {
-  style: 'currency',
-  currency: 'BRL',
-})
-
 /**
  * Read-only ordered list of a day's stops. Each stop's marker is the
  * numbered mata disc — the exact visual `ItineraryMap` uses for its pins
@@ -46,9 +42,12 @@ const costFormatter = new Intl.NumberFormat('pt-BR', {
 export function StopList({
   stops,
   startSequence = 1,
+  currency = 'BRL',
 }: {
   stops: StopView[]
   startSequence?: number
+  /** ISO 4217 code the stop costs are in (from the itinerary). */
+  currency?: string
 }) {
   return (
     <ol className="flex flex-col gap-4">
@@ -90,7 +89,7 @@ export function StopList({
                 {stop.costCents !== null ? (
                   <span>
                     {m.view_cost_estimate({
-                      amount: costFormatter.format(stop.costCents / 100),
+                      amount: formatCost(stop.costCents, currency),
                     })}
                   </span>
                 ) : null}

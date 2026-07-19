@@ -47,6 +47,7 @@ import {
   SelectValue,
 } from '#/components/ui/select'
 import { Tabs, TabsList, TabsTrigger } from '#/components/ui/tabs'
+import { CURRENCY_OPTIONS } from '#/lib/currency'
 import { cn } from '#/lib/utils'
 import { searchQueryOptions, searchRoutesQueryOptions } from '#/lib/queries'
 import { m } from '#/paraglide/messages'
@@ -113,6 +114,8 @@ function toSearchInput(search: {
   q?: string
   tags: string[]
   duration: DurationBucket
+  budget: number | null
+  cur: string
   sort: SortOption
   page: number
 }): SearchItinerariesInput {
@@ -122,6 +125,8 @@ function toSearchInput(search: {
     tags: search.tags.length > 0 ? search.tags : undefined,
     minDays,
     maxDays,
+    maxCostCents: search.budget !== null ? search.budget * 100 : undefined,
+    currency: search.budget !== null ? search.cur : undefined,
     sort: search.sort,
     page: search.page,
   }
@@ -132,6 +137,8 @@ function toRoutesInput(search: {
   q?: string
   tags: string[]
   duration: DurationBucket
+  budget: number | null
+  cur: string
 }): SearchRoutePolylinesInput {
   const { minDays, maxDays } = DURATION_BOUNDS[search.duration]
   return {
@@ -139,6 +146,8 @@ function toRoutesInput(search: {
     tags: search.tags.length > 0 ? search.tags : undefined,
     minDays,
     maxDays,
+    maxCostCents: search.budget !== null ? search.budget * 100 : undefined,
+    currency: search.budget !== null ? search.cur : undefined,
   }
 }
 
@@ -190,6 +199,10 @@ const homeSearchSchema = z.object({
   q: z.string().optional(),
   tags: z.string().optional(),
   duration: z.enum(DURATION_VALUES).default('any'),
+  /** Budget ceiling in whole currency units (converted to cents server-side). */
+  budget: z.number().int().positive().optional(),
+  /** Currency the budget compares in. */
+  cur: z.string().default('BRL'),
   sort: z.enum(SORT_VALUES).default('recent'),
   page: z.number().int().min(1).default(1),
 })
@@ -200,7 +213,11 @@ export const Route = createFileRoute('/explore')({
   loader: async ({ deps, context }) => {
     await context.queryClient.ensureQueryData(
       searchQueryOptions(
-        toSearchInput({ ...deps, tags: parseTagsParam(deps.tags) }),
+        toSearchInput({
+          ...deps,
+          tags: parseTagsParam(deps.tags),
+          budget: deps.budget ?? null,
+        }),
       ),
     )
   },
@@ -211,6 +228,8 @@ const homeQueryParsers = {
   q: parseAsString.withDefault(''),
   tags: parseAsArrayOf(parseAsString).withDefault([]),
   duration: parseAsStringEnum([...DURATION_VALUES]).withDefault('any'),
+  budget: parseAsInteger,
+  cur: parseAsString.withDefault('BRL'),
   sort: parseAsStringEnum([...SORT_VALUES]).withDefault('recent'),
   page: parseAsInteger.withDefault(1),
 }
@@ -294,10 +313,11 @@ function HomePage() {
   }
 
   function clearFilters() {
-    void setQuery({ tags: [], duration: 'any' })
+    void setQuery({ tags: [], duration: 'any', budget: null, cur: null })
   }
 
-  const hasActiveFilters = query.duration !== 'any' || query.tags.length > 0
+  const hasActiveFilters =
+    query.duration !== 'any' || query.tags.length > 0 || query.budget !== null
 
   const searchField = (
     <div className="relative">
@@ -725,6 +745,49 @@ function HomePage() {
             </Field>
 
             <Field>
+              <FieldLabel htmlFor="home-budget-sheet">
+                {m.home_filter_budget()}
+              </FieldLabel>
+              <div className="flex gap-2">
+                <Input
+                  id="home-budget-sheet"
+                  inputMode="numeric"
+                  placeholder={m.home_filter_budget_placeholder()}
+                  value={query.budget ?? ''}
+                  onChange={(event) => {
+                    const parsed = parseInt(event.target.value, 10)
+                    void setQuery({
+                      budget:
+                        Number.isFinite(parsed) && parsed > 0 ? parsed : null,
+                      page: 1,
+                    })
+                  }}
+                  className="flex-1"
+                />
+                <Select
+                  value={query.cur}
+                  onValueChange={(value) =>
+                    void setQuery({ cur: value, page: 1 })
+                  }
+                >
+                  <SelectTrigger
+                    aria-label={m.home_filter_currency()}
+                    className="w-28"
+                  >
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {CURRENCY_OPTIONS.map((code) => (
+                      <SelectItem key={code} value={code}>
+                        {code}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </Field>
+
+            <Field>
               <FieldLabel>{m.home_sort_label()}</FieldLabel>
               {sortControl}
             </Field>
@@ -761,6 +824,8 @@ function SearchResults({
     q: string
     tags: string[]
     duration: DurationBucket
+    budget: number | null
+    cur: string
     sort: SortOption
     page: number
   }

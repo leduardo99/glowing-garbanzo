@@ -32,6 +32,7 @@ import { Input } from '#/components/ui/input'
 import { Textarea } from '#/components/ui/textarea'
 import { cn } from '#/lib/utils'
 import { formatCentsToCostInput } from '#/lib/cost'
+import { formatCost } from '#/lib/currency'
 import { m } from '#/paraglide/messages'
 import {
   addDay,
@@ -60,11 +61,6 @@ const CATEGORY_LABEL: Record<StopView['category'], () => string> = {
   other: m.stop_category_other,
 }
 
-const costFormatter = new Intl.NumberFormat('pt-BR', {
-  style: 'currency',
-  currency: 'BRL',
-})
-
 function stopFormValuesFrom(stop: StopView): StopFormValues {
   return {
     name: stop.name,
@@ -89,9 +85,12 @@ function stopFormValuesFrom(stop: StopView): StopFormValues {
 export function DayEditor({
   itineraryId,
   days,
+  currency,
 }: {
   itineraryId: string
   days: DayView[]
+  /** ISO 4217 code all stop costs are in (itinerary-level selector). */
+  currency: string
 }) {
   const queryClient = useQueryClient()
 
@@ -173,6 +172,7 @@ export function DayEditor({
         <DayCard
           key={day.id}
           day={day}
+          currency={currency}
           canRemove={days.length > 1}
           onUpdateDay={(values) =>
             updateDayMutation.mutate({ id: day.id, ...values })
@@ -207,6 +207,7 @@ interface StopMutationValues {
 
 function DayCard({
   day,
+  currency,
   canRemove,
   onUpdateDay,
   onRemoveDay,
@@ -216,6 +217,7 @@ function DayCard({
   onReorderStop,
 }: {
   day: DayView
+  currency: string
   canRemove: boolean
   onUpdateDay: (values: { title?: string | null; note?: string | null }) => void
   onRemoveDay: () => Promise<void>
@@ -276,6 +278,19 @@ function DayCard({
               m.editor_day_label({ number: day.dayNumber })
             )}
           </CardTitle>
+          {(() => {
+            const dayTotal = day.stops.reduce(
+              (sum, s) => sum + (s.costCents ?? 0),
+              0,
+            )
+            return dayTotal > 0 ? (
+              <span className="shrink-0 text-caption text-ink-soft tabular-nums">
+                {m.editor_day_subtotal({
+                  amount: formatCost(dayTotal, currency),
+                })}
+              </span>
+            ) : null
+          })()}
           <ChevronDownIcon
             aria-hidden="true"
             className={cn(
@@ -363,7 +378,7 @@ function DayCard({
                           ) : null}
                           {stop.costCents !== null ? (
                             <span>
-                              {costFormatter.format(stop.costCents / 100)}
+                              {formatCost(stop.costCents, currency)}
                             </span>
                           ) : null}
                         </div>

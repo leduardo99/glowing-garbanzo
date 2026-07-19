@@ -3,6 +3,7 @@ import { CalendarDaysIcon, StarIcon } from 'lucide-react'
 import { CoverPlaceholder } from '#/components/CoverPlaceholder'
 import { Badge } from '#/components/ui/badge'
 import { Card, CardContent } from '#/components/ui/card'
+import { formatCost } from '#/lib/currency'
 import { m } from '#/paraglide/messages'
 import type { ItineraryCard as ItineraryCardData } from '#/server/itineraries'
 
@@ -73,9 +74,14 @@ export function ItineraryCard({ item }: { item: ItineraryCardData }) {
         <h3 className="truncate font-display text-title text-ink">
           {item.title}
         </h3>
-        {item.destination ? (
-          <p className="truncate text-label text-ink-soft">
-            {item.destination}
+        {item.destination || item.costTotalCents > 0 ? (
+          <p className="flex items-baseline justify-between gap-2 text-label text-ink-soft">
+            <span className="min-w-0 truncate">{item.destination}</span>
+            {item.costTotalCents > 0 ? (
+              <span className="shrink-0 tabular-nums">
+                {formatCost(item.costTotalCents, item.currency)}
+              </span>
+            ) : null}
           </p>
         ) : null}
 
