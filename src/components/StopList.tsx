@@ -31,19 +31,36 @@ const costFormatter = new Intl.NumberFormat('pt-BR', {
   currency: 'BRL',
 })
 
-/** Read-only ordered list of a day's stops: category icon, name, tip, cost, place. */
-export function StopList({ stops }: { stops: StopView[] }) {
+/**
+ * Read-only ordered list of a day's stops. Each stop's marker is the
+ * numbered mata disc — the exact visual `ItineraryMap` uses for its pins
+ * (DESIGN.md §5 "The Drawn Route": map and timeline are two views of the
+ * same journey, so they share one numbering). `startSequence` is the
+ * global 1-based number of this day's first stop, threaded in by
+ * `DayTimeline` so numbering runs continuously across days.
+ *
+ * The category moved from the (former) icon disc into the meta row —
+ * a small icon + label next to place/cost, where identification beats
+ * decoration.
+ */
+export function StopList({
+  stops,
+  startSequence = 1,
+}: {
+  stops: StopView[]
+  startSequence?: number
+}) {
   return (
     <ol className="flex flex-col gap-4">
-      {stops.map((stop) => {
+      {stops.map((stop, index) => {
         const Icon = CATEGORY_ICON[stop.category]
         return (
           <li key={stop.id} className="flex gap-3">
             <span
-              className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-full bg-muted text-ink"
-              title={CATEGORY_LABEL[stop.category]()}
+              aria-hidden="true"
+              className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-full bg-mata text-sm font-semibold tabular-nums text-primary-foreground"
             >
-              <Icon className="size-4" />
+              {startSequence + index}
             </span>
             <div className="flex min-w-0 flex-1 flex-col gap-0.5">
               <span className="text-title font-medium text-ink">
@@ -54,7 +71,11 @@ export function StopList({ stops }: { stops: StopView[] }) {
                   {stop.description}
                 </span>
               ) : null}
-              <div className="flex flex-wrap gap-x-3 gap-y-0.5 text-caption tabular-nums text-ink-soft">
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-caption tabular-nums text-ink-soft">
+                <span className="inline-flex items-center gap-1">
+                  <Icon aria-hidden="true" className="size-3" />
+                  {CATEGORY_LABEL[stop.category]()}
+                </span>
                 {stop.placeLabel ? <span>{stop.placeLabel}</span> : null}
                 {stop.costCents !== null ? (
                   <span>

@@ -1,27 +1,28 @@
 ---
 name: Roteiros
-description: A community platform for publishing, forking, and rating travel itineraries — built like a shared travel journal, not a booking dashboard.
+description: A community platform for publishing, forking, and rating travel itineraries — a drawn route handed from traveler to traveler, not a booking dashboard.
 colors:
-  ink: "oklch(0.24 0.02 45)"
-  ink-soft: "oklch(0.45 0.02 45)"
-  paper: "oklch(0.985 0.004 60)"
-  surface: "oklch(0.97 0.006 55)"
-  surface-sunken: "oklch(0.94 0.008 55)"
-  terracotta: "oklch(0.58 0.15 38)"
-  terracotta-deep: "oklch(0.49 0.16 35)"
-  terracotta-soft: "oklch(0.93 0.04 45)"
-  rating-gold: "oklch(0.78 0.15 85)"
-  line: "oklch(0.24 0.02 45 / 0.12)"
-  line-strong: "oklch(0.24 0.02 45 / 0.2)"
-  success: "oklch(0.6 0.12 145)"
-  warning: "oklch(0.75 0.14 80)"
-  destructive: "oklch(0.55 0.2 15)"
+  ink: "oklch(0.27 0.035 155)"
+  ink-soft: "oklch(0.47 0.025 150)"
+  paper: "oklch(0.972 0.009 84)"
+  surface: "oklch(0.988 0.005 88)"
+  surface-sunken: "oklch(0.945 0.012 84)"
+  mata: "oklch(0.40 0.09 152)"
+  mata-deep: "oklch(0.34 0.09 152)"
+  mata-soft: "oklch(0.93 0.03 150)"
+  amber: "oklch(0.60 0.13 70)"
+  coral: "oklch(0.55 0.16 30)"
+  line: "oklch(0.27 0.035 155 / 0.12)"
+  line-strong: "oklch(0.27 0.035 155 / 0.2)"
+  success: "oklch(0.52 0.11 150)"
+  warning: "oklch(0.70 0.13 80)"
+  destructive: "oklch(0.50 0.19 25)"
 typography:
   display:
     fontFamily: "Fraunces, Georgia, serif"
-    fontSize: "2rem"
+    fontSize: "2.25rem"
     fontWeight: 500
-    lineHeight: 1.1
+    lineHeight: 1.08
     letterSpacing: "-0.02em"
   headline:
     fontFamily: "Karla, ui-sans-serif, system-ui, sans-serif"
@@ -50,10 +51,10 @@ typography:
     fontWeight: 400
     letterSpacing: "0.01em"
 rounded:
-  sm: "6px"
-  md: "10px"
-  lg: "14px"
-  xl: "20px"
+  sm: "8px"
+  md: "12px"
+  lg: "16px"
+  xl: "24px"
   full: "9999px"
 spacing:
   xs: "4px"
@@ -64,20 +65,20 @@ spacing:
   2xl: "48px"
 components:
   button-primary:
-    backgroundColor: "{colors.terracotta}"
-    textColor: "{colors.paper}"
+    backgroundColor: "{colors.mata}"
+    textColor: "{colors.surface}"
     rounded: "{rounded.md}"
     padding: "10px 20px"
     height: "40px"
   button-primary-hover:
-    backgroundColor: "{colors.terracotta-deep}"
+    backgroundColor: "{colors.mata-deep}"
   button-secondary:
     backgroundColor: "{colors.surface}"
     textColor: "{colors.ink}"
     rounded: "{rounded.md}"
     padding: "10px 20px"
   card-itinerary:
-    backgroundColor: "{colors.paper}"
+    backgroundColor: "{colors.surface}"
     textColor: "{colors.ink}"
     rounded: "{rounded.lg}"
     padding: "0px"
@@ -98,122 +99,129 @@ components:
 
 ## 1. Overview
 
-**Creative North Star: "The Shared Logbook"**
+**Creative North Star: "Trilha Tropical" (the drawn route)**
 
-Roteiros feels like a well-kept travel logbook that gets handed from traveler to traveler, each one annotating, forking, and carrying it forward. That's the literal product (fork an itinerary, make it yours) and it's the visual idea too: warm paper tones, a serif hand for the things that matter (trip and day titles), a quiet sans for everything you use to navigate and act, and a single warm accent — terracotta, the color of a well-worn passport cover, sunbaked roof tiles, a leather journal strap — spent only where it means something.
+Roteiros is a route sketched on a map and handed from traveler to traveler — each one forks it, annotates it, and carries it forward. The product's literal signature IS its visual signature: a dashed amber route connecting numbered stops, drawn over deep forest green and warm cream. The palette is Brazilian without costume: the green of mata atlântica, the amber of late-afternoon light and cerrado earth, cream like cotton paper — the register of a specialty-coffee label or a botanical field guide, never a tourist trinket.
+
+References carried in, deliberately: **Airbnb** for the warm float (bright cards on a warm page, generous radii, photography treated kindly, interface that recedes behind content) and **Polarsteps** for the travel-native structure (the map and the route are protagonists; the trip is a line through places, and the app celebrates that line).
 
 This system explicitly rejects the generic AI-tool look: no Inter-everywhere, no purple-to-blue gradient, no cards nested inside cards, no gray text sitting on a colored background, no rounded-square icon tile perched above every heading, no dense boxed-metric SaaS-dashboard chrome. It also rejects "responsive as an afterthought" — most people open Roteiros on a phone, so the mobile layout is the native-feeling one (bottom tab bar, safe-area insets, ≥44px targets), not a squeezed desktop page.
 
 **Key Characteristics:**
-- Warm, editorial, unhurried — a travel journal, not a booking dashboard
-- One accent (terracotta) carries every call to action and every selected state; nothing else competes with it
-- Serif (Fraunces) marks *content* — itinerary titles, day headers; sans (Karla) runs the *interface* — nav, buttons, labels, data
-- Cards are quiet: shadow and warm-paper tone do the separating, not borders or nested boxes
-- Mobile is a native-feeling app shell: bottom tabs, safe areas, generous touch targets
+- Warm, unhurried, travel-native — a drawn route, not a booking dashboard
+- One brand voice (deep mata green) carries every call to action and selected state
+- The route itself is the recurring visual motif: on the map, in cover placeholders, in empty states, echoed by the numbered timeline
+- Serif (Fraunces) marks *content* — itinerary titles, day headers; sans (Karla) runs the *interface*
+- Cards float bright on a cream page (shadow, not borders); mobile is a native-feeling app shell
 
 ## 2. Colors
 
-Restrained strategy: warm-tinted neutrals carry almost the entire surface; terracotta is the only saturated color, spent on primary actions, current selection, and rating stars only.
+Restrained strategy: warm cream neutrals carry almost the entire surface; deep mata green is the only voice with authority; amber and coral are scoped semantics, never brand accents.
 
 ### Primary
-- **Terracotta** (`oklch(0.58 0.15 38)`): the one accent. Primary buttons, active tab/nav state, focus rings, selected filter chips, links inside prose. Nothing else is this saturated.
+- **Mata** (`oklch(0.40 0.09 152)`): the one brand voice. Primary buttons, active tab/nav state, focus rings, selected filter chips, links. Deep enough to read as ink, green enough to read as forest. Dark mode flips it to a bright leaf green (`oklch(0.70 0.11 150)`) with near-black text.
 
-### Secondary
-- **Rating Gold** (`oklch(0.78 0.15 85)`): a second, deliberately distinct warm hue reserved for the star-rating system only (filled stars, average-rating badge). It is a semantic color, not a second brand accent — it never appears on a button or a nav item.
+### Scoped semantics (never on buttons or nav)
+- **Amber** (`oklch(0.60 0.13 70)`): rating stars AND the drawn route line — the two places the product "glows." A route sketched in amber pencil over the map is the signature; stars share the hue so "quality" and "journey" feel like the same warm material.
+- **Coral** (`oklch(0.55 0.16 30)`): the favorite heart's filled state only. A single point of delight, Airbnb-style.
 
 ### Neutral
-- **Ink** (`oklch(0.24 0.02 45)`): primary text, on both paper and surface.
-- **Ink Soft** (`oklch(0.45 0.02 45)`): secondary text — metadata, captions, muted labels. Always checked against its background at ≥4.5:1; never the washed-out light-gray-on-tint failure the interface could easily fall into.
-- **Paper** (`oklch(0.985 0.004 60)`): the page background. A true off-white with only a hair of the accent's own hue (0.004 chroma) — deliberately not the saturated "AI cream/sand" default; warmth here comes from typography and the terracotta accent, not a tinted body background.
-- **Surface** (`oklch(0.97 0.006 55)`): cards, the top nav bar, the bottom tab bar — one calm step off paper, distinguishing "chrome" from "page" without a hard edge.
-- **Surface Sunken** (`oklch(0.94 0.008 55)`): inputs, search fields, tag pills — inset surfaces that read as "you act here," always slightly *darker* than their surroundings, never lighter.
-- **Line** (`oklch(0.24 0.02 45 / 0.12)`) / **Line Strong** (`oklch(0.24 0.02 45 / 0.2)`): dividers, input borders, table rows. Low-opacity so they disappear until you look for them.
+- **Ink** (`oklch(0.27 0.035 155)`): primary text — green-black, like bottle-green ink, on both paper and surface.
+- **Ink Soft** (`oklch(0.47 0.025 150)`): secondary text — metadata, captions, muted labels. AA-verified ≥4.5:1 on paper, surface, and sunken.
+- **Paper** (`oklch(0.972 0.009 84)`): the page background — a *visible* warm cream (this is deliberate: the previous system's near-white paper read as generic shadcn; warmth must be perceivable at a glance).
+- **Surface** (`oklch(0.988 0.005 88)`): cards, popovers, nav chrome — *lighter* than the page, floating on it with shadow (the Airbnb float). This inverts the old paper/surface relationship on purpose.
+- **Surface Sunken** (`oklch(0.945 0.012 84)`): inputs, search fields, tag pills — inset surfaces that read as "you act here," always darker than their surroundings.
+- **Line / Line Strong** (`oklch(0.27 0.035 155 / 0.12 · 0.2)`): dividers, input borders, list rows. Green-ink at low opacity so they disappear until you look for them.
+
+### Contrast (verified, WCAG AA)
+All pairs checked computationally in both themes (script: oklch → sRGB → relative luminance): ink/paper 13.7, ink-soft/paper 6.2, ink-soft/sunken 5.7, cream-on-mata button 8.5, mata-as-link/paper 8.1, destructive/paper 6.1; dark: ink/paper 16.3, ink-soft/surface 6.9, dark-text-on-mata button 7.6, amber large-text 8.2. Re-run the check when touching any token.
 
 ### Named Rules
-**The One Warm Voice Rule.** Terracotta is the only saturated brand color on any screen. Rating Gold is a semantic exception scoped strictly to ratings. If a third saturated color shows up anywhere else, it's a bug, not a feature.
+**The One Green Voice Rule.** Mata is the only color with authority on any screen. Amber is scoped to stars + the route line; coral to the filled favorite heart. A fourth saturated color anywhere is a bug.
 
-**The No-Cream-Default Rule.** The page background is a true off-white (chroma 0.004), not a saturated sand/parchment tone. Warmth is carried by the terracotta accent and the Fraunces display type, never by tinting the whole canvas beige "for elegance."
+**The Visible Warmth Rule.** The cream page must be perceivably warm next to a white card — that adjacency (bright card floating on cream) is what separates this from default-shadcn white-on-white. Never flatten paper back toward pure white "for cleanliness."
 
 ## 3. Typography
 
 **Display Font:** Fraunces (variable, optical size axis), with Georgia/serif fallback
 **Body Font:** Karla, with ui-sans-serif/system-ui fallback
-**Label/Mono Font:** Karla with `font-variant-numeric: tabular-nums` for any dynamic number (day counts, ratings, prices) — no separate mono family; one UI sans keeps the interface calm.
+**Label/Mono Font:** Karla with `font-variant-numeric: tabular-nums` for any dynamic number (day counts, ratings, prices) — no separate mono family.
 
-**Character:** Fraunces brings the editorial, slightly wonky warmth of a hand-set travel journal to the things a traveler actually reads for — trip titles, day headers. Karla is a humanist grotesk with generous diacritic support for pt-BR, carrying every interface surface (nav, buttons, forms, data, badges) so the tool itself stays quiet and legible.
+**Character:** Fraunces brings the editorial warmth of a field journal to the things a traveler reads for — trip titles, day headers. Karla is a humanist grotesk with generous diacritic support for pt-BR, carrying every interface surface so the tool stays quiet.
 
 ### Hierarchy
-- **Display** (Fraunces 500, 32px page/itinerary titles up to 40px on the itinerary hero, line-height 1.1, letter-spacing -0.02em): the trip or itinerary's own name — the one thing on the page that gets to be a serif headline.
-- **Headline** (Karla 600, 22px, line-height 1.25): section headers — "Days," "Comments," "Similar itineraries."
-- **Title** (Karla 600, 17px, line-height 1.3): card titles in the discovery grid, day headers ("Day 3 · Rio de Janeiro"), stop names.
-- **Body** (Karla 400, 15px, line-height 1.55, capped 70ch): stop descriptions, comments, bios. Never drops below 4.5:1 contrast against paper or surface.
-- **Label** (Karla 500, 13px, letter-spacing 0.02em): form labels, nav items, tab labels, button text.
-- **Caption** (Karla 400, 12px): timestamps, rating counts, tag text, day/stop metadata.
+- **Display** (Fraunces 500, 36px, up to 44px on the itinerary hero, line-height 1.08, letter-spacing -0.02em): the trip's own name — the one serif headline on a page.
+- **Headline** (Karla 600, 22px): section headers — "Days," "Comments."
+- **Title** (Karla 600, 17px): card titles, day headers ("Day 3 · Rio"), stop names.
+- **Body** (Karla 400, 15px, line-height 1.55, capped 70ch): descriptions, comments.
+- **Label** (Karla 500, 13px, letter-spacing 0.02em): form labels, nav, buttons.
+- **Caption** (Karla 400, 12px): timestamps, counts, tags, metadata.
 
 ### Named Rules
-**The Editorial Title Rule.** Fraunces is reserved for *content* titles a traveler wrote or is reading — the itinerary name and nothing else. Every piece of interface chrome (buttons, nav, badges, form labels, table/list data) stays in Karla. This is the one deliberate display-font exception in an otherwise single-family product UI, and it doesn't leak past titles.
+**The Editorial Title Rule.** Fraunces marks *content* titles a traveler wrote or is reading — itinerary and day names, nothing else. All chrome stays in Karla.
 
-**The 70ch Rule.** Day and stop descriptions, comments, and any long-form prose wrap at ≤70ch regardless of viewport width.
+**The 70ch Rule.** Long-form prose wraps at ≤70ch regardless of viewport.
 
 ## 4. Elevation
 
-Roteiros uses soft, warm-tinted ambient shadows for lifted surfaces — cards, dropdowns, sheets, modals — rather than borders. Borders are reserved for dividers, input outlines, and table/list rows; cards never carry a visible border on top of their shadow (the "ghost card" combination of a hard 1px border plus a wide soft shadow is explicitly avoided). In dark mode, shadows barely register, so elevation collapses to a single 1px light-ring per surface instead.
+Light mode floats cards off the cream page with green-ink-tinted layered shadows (ring + two soft depths); borders are reserved for dividers, input outlines, and rows. Dark mode collapses all elevation to a light hairline ring. Never a visible border *and* a shadow on the same card.
 
-### Shadow Vocabulary
-- **Resting** (`box-shadow: 0 1px 2px rgba(36,20,10,0.04), 0 1px 1px rgba(36,20,10,0.03)`): itinerary cards, list rows at rest.
-- **Lifted** (`box-shadow: 0 4px 12px rgba(36,20,10,0.08), 0 1px 2px rgba(36,20,10,0.04)`): card hover, open dropdown/menu.
-- **Elevated** (`box-shadow: 0 12px 32px rgba(36,20,10,0.14), 0 2px 6px rgba(36,20,10,0.06)`): modal, sheet, popover.
-- **Dark-mode ring** (`box-shadow: 0 0 0 1px rgba(255,255,255,0.08)`): replaces all three above when `.dark` is active — depth shadows don't read on dark surfaces, so a light hairline ring carries the same "lifted" meaning instead.
+### Shadow Vocabulary (as `shadow-resting` / `shadow-lifted` / `shadow-elevated` utilities)
+- **Resting**: cards, list rows at rest — hairline ring + soft 1-2px depth.
+- **Lifted**: card hover, open dropdown/menu.
+- **Elevated**: modal, sheet, popover.
+- **Dark-mode ring** (`0 0 0 1px oklch(1 0 0 / 0.08-0.12)`): replaces all three when `.dark` is active.
 
 ### Named Rules
-**The Quiet Lift Rule.** Shadow is how a surface separates from the page; borders are reserved for dividers, inputs, and rows. Never both a border and a shadow on the same card.
+**The Quiet Lift Rule.** Shadow separates surface from page; borders are for dividers, inputs, and rows. Never both on the same card.
 
 ## 5. Components
 
 ### Buttons
-- **Shape:** 10px radius (`rounded.md`); pill (`rounded.full`) only for the floating "New itinerary" mobile action.
-- **Primary:** terracotta background, paper text, 10px×20px padding, 40px height (44px on the mobile bottom-bar CTA). Hover → terracotta-deep. Active → `transform: scale(0.97)`.
-- **Secondary / Ghost:** surface background (or transparent for ghost), ink text, line border on secondary only; ghost has no border, just a surface-tint hover.
-- **Hover / Focus:** background shift + a 2px terracotta focus ring offset 2px, never a border-color-only change (fails the squint test on this palette).
+- **Shape:** 12px radius (`rounded.md`); pill only for chips and the floating mobile CTA.
+- **Primary:** mata background, cream text; hover → mata-deep; active → `scale(0.97)`. Dark mode: bright leaf green with near-black text.
+- **Secondary / Ghost:** surface with line border / transparent with sunken hover.
+- **Focus:** 2px mata ring offset 2px — never a border-color-only change.
 
 ### Chips / Tags
-- **Style:** surface-sunken background, ink-soft text, full radius, no border. Selected/active filter chips flip to terracotta-soft background with terracotta text — the only place a tag carries color.
+- Surface-sunken background, ink-soft text, full radius, no border. Selected filter chips flip to mata-soft background with mata-soft-foreground text — the only place a tag carries color.
 
 ### Cards / Containers
-- **Corner Style:** 14px radius (`rounded.lg`); a cover photo inside a card uses `outerRadius − padding` so the image corner and card corner stay concentric, never sharing the same radius flush against each other.
-- **Background:** paper, lifted with the Resting shadow; Lifted shadow on hover, no color or border change.
-- **Shadow Strategy:** see Elevation — shadow only, never combined with a border.
-- **Internal Padding:** 16px standard, 24px between major content blocks within a card.
+- 16px radius (`rounded.lg`); cover photos use concentric radii (`outer − padding`).
+- Surface (near-white) background floating on cream paper with the Resting shadow; Lifted on hover. No borders.
+- Internal padding 16px standard, 24px between major blocks.
 
 ### Inputs / Fields
-- **Style:** surface-sunken (inset, always darker than its surroundings) background, 1px line border, 6px radius (`rounded.sm`), 40px height, 10px/12px padding.
-- **Focus:** border shifts to terracotta plus a 2px terracotta ring at 20% opacity — no glow/blur effects.
-- **Error:** border and label switch to destructive; helper text below in destructive at label size.
+- Surface-sunken background, 1px line border, 8px radius, 40px height.
+- Focus: border → mata plus a 2px mata ring at 20% opacity. Error: destructive border + helper text.
 
 ### Navigation
-- **Desktop:** a quiet top bar — wordmark in Label-weight Karla (not Fraunces; navigation is chrome, not content), search, primary nav links, avatar menu. Surface background, Line-strong bottom border, no shadow.
-- **Mobile (native-feeling):** a fixed bottom tab bar — Home/Search, My Itineraries, New (elevated pill button), Profile — surface background, safe-area-inset-bottom padding, icon + 11px label per tab, active tab in terracotta with a filled icon variant, all tap targets ≥44×44px.
-- **Transitions:** route pushes/pops use a 200-280ms slide+fade; switching bottom tabs is a same-level crossfade only (tabs are peers, not a stack) — see Do's and Don'ts for the full motion rule.
+- **Desktop:** quiet top bar — wordmark in Karla, nav links, avatar. Surface background, line bottom border.
+- **Mobile:** fixed bottom tab bar — surface background, safe-area-inset-bottom, icon + 11px label, active tab in mata with filled icon, ≥44px targets.
+- **Transitions:** route pushes 220ms slide+fade; tab switches crossfade only.
 
-### Day/Stop Timeline (signature component)
-The itinerary detail page's core structure: a vertical "logbook spine." A thin `line` runs down the left edge; each day is a Title-weight Karla marker ("Day 3 · Rio de Janeiro") breaking the spine, with its stops listed beneath as quiet rows — thumbnail, stop name (Title), notes (Body) — never boxed into a card-within-a-card. This is the one structural element unique to Roteiros and the clearest place the "logbook" idea should be visible.
+### The Drawn Route (signature system)
+The one element that could only be Roteiros', appearing in three registers that echo each other:
+1. **On the map** (`ItineraryMap`): stops connected in visit order by a dashed **amber** route line; each stop is a numbered circular marker — mata disc, cream numeral — matching the timeline's numbering exactly, so map and list read as two views of the same journey (the Polarsteps DNA).
+2. **As a sketch** (`RouteSketch`): a small generative SVG — dashed amber path wandering through numbered mata dots on cream — used as the cover placeholder for itineraries without photos, in empty states, and as the auth pages' brand mark. Never a gray box.
+3. **As the timeline spine** (`DayTimeline`): the detail page's vertical line with numbered stop markers, same discs as the map pins.
+
+### Day/Stop Timeline
+A thin `line` spine down the left edge; each day is a Fraunces day-title breaking the spine; stops are quiet rows off numbered mata discs — never boxed into a card-within-a-card.
 
 ## 6. Do's and Don'ts
 
 ### Do:
-- **Do** spend terracotta only on primary actions, the current selection, links, and focus rings — everywhere else stays neutral.
-- **Do** set itinerary and trip titles in Fraunces; set every other piece of UI text in Karla.
-- **Do** build the mobile nav as a real bottom tab bar with safe-area insets and ≥44px targets — mobile is the primary surface, not a fallback.
-- **Do** use shadow, not borders, to lift cards, dropdowns, sheets, and modals.
-- **Do** keep body copy ≤70ch and verify Portuguese strings (typically 20-30% longer than English) don't truncate or overflow labels, tabs, and buttons.
-- **Do** give the rating-star and duration/day-count numbers `tabular-nums` so they don't jitter.
+- **Do** spend mata only on primary actions, selection, links, focus — everywhere else stays neutral.
+- **Do** draw the route: any surface representing a trip without a photo gets the RouteSketch, never a gray void.
+- **Do** number the stops identically on the map and in the timeline — they are one system.
+- **Do** keep cards borderless and floating (shadow), and keep the cream page visibly warm behind them.
+- **Do** verify pt-BR strings (20-30% longer than English) don't truncate; keep body ≤70ch; `tabular-nums` on all dynamic numbers.
 
 ### Don't:
-- **Don't** default to Inter or any generic system-sans stack for headings — Fraunces carries content titles, Karla carries everything else.
-- **Don't** use a purple-to-blue gradient anywhere, on text or on a surface — the accent is terracotta, full stop.
-- **Don't** nest a card inside a card. Use the Day/Stop timeline's quiet-row pattern instead.
-- **Don't** put ink-soft (or any gray) text directly on a terracotta or rating-gold background — use paper text on saturated fills, or a darker shade of the fill's own hue.
-- **Don't** put a rounded-square icon tile above section headings as a default decoration.
-- **Don't** combine a 1px border and a wide soft box-shadow on the same card (the "ghost card" tell) — pick the shadow, drop the border.
-- **Don't** exceed 20px corner radius on cards, inputs, or sections; full-pill radius is reserved for tags, chips, and the floating mobile CTA.
-- **Don't** run choreographed page-load animations — Roteiros loads into a task, it doesn't perform an entrance.
+- **Don't** put amber or coral on a button, nav item, or link — they are scoped to stars/route and the favorite heart.
+- **Don't** default to Inter or size-only hierarchy; Fraunces carries content titles, Karla everything else.
+- **Don't** nest cards, add icon-tile section headers, or combine border+shadow on one card.
+- **Don't** use a purple-blue gradient anywhere; don't tint text gray on colored fills (cream text on mata, always).
+- **Don't** exceed 24px radius on containers; pills are for chips and the floating CTA only.
+- **Don't** run choreographed page-load animations. The one drawn animation is the RouteSketch path drawing itself in (240ms, once, reduced-motion safe).

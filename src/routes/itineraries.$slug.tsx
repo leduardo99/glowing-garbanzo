@@ -51,8 +51,13 @@ const ItineraryMap = lazy(() => import('#/components/map/ItineraryMap'))
 /** Every stop across all days that has both `lat` and `lng` set, flattened with its day number for the map's popups. */
 function collectMapStops(days: DayView[]): ItineraryMapStop[] {
   const stops: ItineraryMapStop[] = []
+  // `sequence` counts EVERY stop (not just geocoded ones) so the map's
+  // numbered discs always agree with the timeline's numbering — a stop
+  // without a pin simply skips its number on the map.
+  let sequence = 0
   for (const day of days) {
     for (const stop of day.stops) {
+      sequence += 1
       if (stop.lat !== null && stop.lng !== null) {
         stops.push({
           id: stop.id,
@@ -60,6 +65,7 @@ function collectMapStops(days: DayView[]): ItineraryMapStop[] {
           lat: stop.lat,
           lng: stop.lng,
           dayNumber: day.dayNumber,
+          sequence,
         })
       }
     }
@@ -210,7 +216,7 @@ function ItineraryView() {
         canRate,
       }}
     >
-      <div className="mx-auto flex max-w-4xl flex-col gap-8 p-4 sm:p-6">
+      <div className="mx-auto flex max-w-4xl flex-col gap-8 p-4 sm:p-6 md:max-w-6xl">
         {showInviteLoginCta ? (
           <Card>
             <CardHeader>
@@ -249,21 +255,40 @@ function ItineraryView() {
 
         <Separator className="hidden md:block" />
 
-        {mapStops.length > 0 ? (
-          <Suspense
-            fallback={
-              <Skeleton
-                role="status"
-                aria-label={m.app_loading()}
-                className="h-80 w-full rounded-lg"
-              />
-            }
-          >
-            <ItineraryMap stops={mapStops} />
-          </Suspense>
-        ) : null}
+        {/*
+          The route is the protagonist (DESIGN.md "The Drawn Route",
+          Polarsteps reference): on desktop the map becomes a sticky
+          right-hand column that rides along while the day timeline
+          scrolls — list and map as two live views of the same journey.
+          On mobile the map keeps its full-width slot above the timeline.
+          One DOM node for both layouts (CSS grid placement only), so the
+          map never re-initializes across the breakpoint; MapLibre's own
+          ResizeObserver absorbs the size change.
+        */}
+        <div className="flex flex-col gap-8 md:grid md:grid-cols-[minmax(0,1fr)_minmax(300px,380px)] md:items-start md:gap-10">
+          {mapStops.length > 0 ? (
+            <div className="md:sticky md:top-6 md:col-start-2 md:row-start-1">
+              <Suspense
+                fallback={
+                  <Skeleton
+                    role="status"
+                    aria-label={m.app_loading()}
+                    className="h-80 w-full rounded-lg md:h-[70vh]"
+                  />
+                }
+              >
+                <ItineraryMap
+                  stops={mapStops}
+                  className="md:h-[70vh] md:max-h-[42rem]"
+                />
+              </Suspense>
+            </div>
+          ) : null}
 
-        <DayTimeline days={data.days} />
+          <div className="min-w-0 md:col-start-1 md:row-start-1">
+            <DayTimeline days={data.days} />
+          </div>
+        </div>
 
         <Separator />
 

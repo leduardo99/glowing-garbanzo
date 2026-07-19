@@ -6,9 +6,9 @@ import {
   createFileRoute,
   redirect,
 } from '@tanstack/react-router'
-import { MapIcon } from 'lucide-react'
 
 import { ItineraryCard } from '#/components/ItineraryCard'
+import { RouteSketch } from '#/components/RouteSketch'
 import { ItineraryGridSkeleton } from '#/components/ItineraryCardSkeleton'
 import { Pagination } from '#/components/Pagination'
 import { Badge } from '#/components/ui/badge'
@@ -115,8 +115,12 @@ function MineTab({ page }: { page: number }) {
   if (data.items.length === 0) {
     return (
       <Empty>
-        <EmptyMedia variant="icon">
-          <MapIcon />
+        <EmptyMedia>
+          <RouteSketch
+            seed="my-empty"
+            stops={3}
+            className="h-16 w-40 opacity-70"
+          />
         </EmptyMedia>
         <EmptyTitle>{m.myitineraries_empty_mine()}</EmptyTitle>
         <EmptyDescription>
@@ -160,8 +164,12 @@ function FavoritesTab({ page }: { page: number }) {
   if (data.items.length === 0) {
     return (
       <Empty>
-        <EmptyMedia variant="icon">
-          <MapIcon />
+        <EmptyMedia>
+          <RouteSketch
+            seed="favorites-empty"
+            stops={3}
+            className="h-16 w-40 opacity-70"
+          />
         </EmptyMedia>
         <EmptyTitle>{m.myitineraries_empty_favorites()}</EmptyTitle>
         <EmptyDescription>

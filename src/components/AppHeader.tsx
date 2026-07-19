@@ -5,7 +5,34 @@ import LocaleSwitcher from '#/components/LocaleSwitcher'
 import { m } from '#/paraglide/messages'
 
 const navLinkClassName =
-  'text-sm font-medium text-ink-soft transition-colors hover:text-ink data-[status=active]:text-terracotta'
+  'text-sm font-medium text-ink-soft transition-colors hover:text-ink data-[status=active]:text-mata'
+
+/**
+ * The wordmark's route glyph: two stops and a dashed leg between them —
+ * the drawn-route signature at its smallest register (DESIGN.md §5 "The
+ * Drawn Route"). Hand-authored (not `RouteSketch`) because at 20px a
+ * generative meander turns to noise; this is the fixed, iconic form.
+ */
+function BrandGlyph() {
+  return (
+    <svg
+      aria-hidden="true"
+      viewBox="0 0 24 16"
+      className="h-4 w-6 shrink-0"
+    >
+      <path
+        d="M 4 12 C 9 12, 10 4, 20 4"
+        fill="none"
+        stroke="var(--amber)"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeDasharray="0.1 4.5"
+      />
+      <circle cx="4" cy="12" r="3" fill="var(--mata)" />
+      <circle cx="20" cy="4" r="2.4" fill="none" stroke="var(--mata)" strokeWidth="1.8" />
+    </svg>
+  )
+}
 
 /**
  * Site header. Desktop (`md:` and up) carries the wordmark, primary nav
@@ -16,15 +43,18 @@ const navLinkClassName =
  * simplified on mobile" rule.
  *
  * Surface background with a Line-strong bottom border and no shadow, per
- * DESIGN.md's Navigation section — chrome, not a lifted card.
+ * DESIGN.md's Navigation section — chrome, not a lifted card. The wordmark
+ * stays in Karla (navigation is chrome, not content) but carries the route
+ * glyph, the one place brand identity lives in the chrome.
  */
 export function AppHeader() {
   return (
     <header className="flex items-center justify-between gap-4 border-b border-line-strong bg-surface px-4 py-3 md:px-6">
       <Link
         to="/"
-        className="text-[0.9375rem] font-semibold tracking-tight text-ink"
+        className="flex items-center gap-2 text-[0.9375rem] font-semibold tracking-tight text-ink"
       >
+        <BrandGlyph />
         {m.app_name()}
       </Link>
 

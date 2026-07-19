@@ -33,7 +33,7 @@ export function ItineraryCard({ item }: { item: ItineraryCardData }) {
             className="h-full w-full object-cover"
           />
         ) : (
-          <CoverPlaceholder className="h-full w-full" />
+          <CoverPlaceholder seed={item.slug} className="h-full w-full" />
         )}
 
         <div className="absolute inset-x-2 top-2 flex items-center justify-between gap-1">
@@ -60,7 +60,7 @@ export function ItineraryCard({ item }: { item: ItineraryCardData }) {
           >
             <StarIcon
               aria-hidden="true"
-              className="size-3 shrink-0 fill-current text-rating-gold"
+              className="size-3 shrink-0 fill-current text-amber"
             />
             <span aria-hidden="true" className="tabular-nums">
               {item.ratingAvg !== null ? item.ratingAvg.toFixed(1) : '—'}

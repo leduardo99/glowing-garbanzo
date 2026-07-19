@@ -85,10 +85,13 @@ export function FavoriteButton({
     )
   }
 
+  // The filled heart is coral — DESIGN.md's one point of delight, scoped
+  // to exactly this state (never the button chrome itself, which stays
+  // neutral so mata keeps its one-voice authority).
   return (
     <Button
       type="button"
-      variant={isFavorite ? 'default' : 'outline'}
+      variant="outline"
       size="sm"
       disabled={mutation.isPending}
       aria-pressed={isFavorite}
@@ -96,7 +99,9 @@ export function FavoriteButton({
     >
       <HeartIcon
         data-icon="inline-start"
-        className={isFavorite ? 'fill-current' : undefined}
+        className={
+          isFavorite ? 'fill-coral stroke-coral transition-colors' : 'transition-colors'
+        }
       />
       {isFavorite ? m.favorite_remove() : m.favorite_add()}
     </Button>

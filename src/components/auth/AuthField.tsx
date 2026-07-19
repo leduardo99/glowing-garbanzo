@@ -55,7 +55,7 @@ export function AuthField({
         aria-invalid={errors.length > 0}
         onBlur={field.handleBlur}
         onChange={(event) => field.handleChange(event.target.value)}
-        className="h-11 rounded-sm border-line bg-surface-sunken text-body focus-visible:border-terracotta"
+        className="h-11 rounded-sm border-line bg-surface-sunken text-body focus-visible:border-mata"
       />
       <FieldError
         errors={errors.map((message) => ({ message }))}
