@@ -38,6 +38,8 @@ export interface ItineraryMapStop {
   lat: number
   lng: number
   dayNumber: number
+  /** 'HH:MM' display time, when the author set one. */
+  startTime?: string | null
   /** Global 1-based stop number across the whole trip — matches the timeline's numbering. */
   sequence: number
 }
@@ -161,7 +163,13 @@ export default function ItineraryMap({
 
     for (const stop of stops) {
       const popup = new maplibregl.Popup({ offset: 18 }).setText(
-        `${m.view_day_label({ number: stop.dayNumber })} · ${stop.name}`,
+        [
+          m.view_day_label({ number: stop.dayNumber }),
+          stop.startTime ?? null,
+          stop.name,
+        ]
+          .filter(Boolean)
+          .join(' · '),
       )
       const marker = new maplibregl.Marker({
         element: createStopMarkerElement(stop.sequence),

@@ -124,6 +124,7 @@ describe('buildDraftRows', () => {
       name: 'Pastéis de Belém',
       category: 'food',
       description: null,
+      startTime: null,
       costCents: null,
     })
   })

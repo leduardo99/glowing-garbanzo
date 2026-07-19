@@ -55,6 +55,13 @@ export function buildAiItinerarySchema(dayCount: number) {
                   .min(1)
                   .optional()
                   .describe('Why it is worth visiting, 1-2 sentences'),
+                startTime: z
+                  .string()
+                  .regex(/^([01]\d|2[0-3]):[0-5]\d$/)
+                  .optional()
+                  .describe(
+                    "Plausible visit time as 24h 'HH:MM' (e.g. '09:30'), in chronological order within the day; omit when unclear",
+                  ),
                 costCents: z
                   .number()
                   .int()
@@ -131,6 +138,7 @@ export interface DraftRows {
       name: string
       category: 'attraction' | 'food' | 'lodging' | 'transport' | 'other'
       description: string | null
+      startTime: string | null
       costCents: number | null
     }>
   }>
@@ -160,6 +168,7 @@ export function buildDraftRows(
         name: stop.name,
         category: stop.category,
         description: stop.description ?? null,
+        startTime: stop.startTime ?? null,
         costCents: stop.costCents ?? null,
       })),
     })),

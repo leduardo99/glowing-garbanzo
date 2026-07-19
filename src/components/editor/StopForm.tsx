@@ -36,6 +36,8 @@ export interface StopFormValues {
   name: string
   category: StopCategory
   description: string
+  /** 'HH:MM' or empty — native time input value. */
+  startTime: string
   cost: string
   placeLabel: string
   lat: number | null
@@ -47,6 +49,7 @@ export interface StopFormSubmitValues {
   name: string
   category: StopCategory
   description: string | null
+  startTime: string | null
   costCents: number | null
   placeLabel: string | null
   lat: number | null
@@ -73,6 +76,7 @@ export const EMPTY_STOP_FORM_VALUES: StopFormValues = {
   name: '',
   category: 'attraction',
   description: '',
+  startTime: '',
   cost: '',
   placeLabel: '',
   lat: null,
@@ -110,6 +114,7 @@ export function StopForm({
         name: value.name.trim(),
         category: value.category,
         description: value.description.trim() || null,
+        startTime: value.startTime || null,
         costCents: parseCostToCents(value.cost),
         placeLabel: value.placeLabel.trim() || null,
         lat: value.lat,
@@ -178,6 +183,24 @@ export function StopForm({
                   ))}
                 </SelectContent>
               </Select>
+            </Field>
+          )}
+        </form.Field>
+
+        <form.Field name="startTime">
+          {(field) => (
+            <Field>
+              <FieldLabel htmlFor={field.name}>
+                {m.editor_stop_field_time()}
+              </FieldLabel>
+              <Input
+                id={field.name}
+                name={field.name}
+                type="time"
+                value={field.state.value}
+                onBlur={field.handleBlur}
+                onChange={(event) => field.handleChange(event.target.value)}
+              />
             </Field>
           )}
         </form.Field>

@@ -9,6 +9,7 @@ function stop(overrides: Partial<StopCopy> = {}): StopCopy {
     name: 'Museu Nacional',
     category: 'attraction',
     description: 'A history museum',
+    startTime: '10:00:00',
     costCents: 1500,
     lat: -22.9,
     lng: -43.2,

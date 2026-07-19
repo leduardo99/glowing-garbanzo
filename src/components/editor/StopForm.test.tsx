@@ -94,6 +94,7 @@ describe('StopForm', () => {
           name: 'Poço Azul',
           category: 'attraction',
           description: 'Bring a swimsuit',
+          startTime: '09:30',
           cost: '25.50',
           placeLabel: 'Chapada Diamantina',
           lat: null,

@@ -70,6 +70,7 @@ function stopFormValuesFrom(stop: StopView): StopFormValues {
     name: stop.name,
     category: stop.category,
     description: stop.description ?? '',
+    startTime: stop.startTime ? stop.startTime.slice(0, 5) : '',
     cost: formatCentsToCostInput(stop.costCents),
     placeLabel: stop.placeLabel ?? '',
     lat: stop.lat,
@@ -197,6 +198,7 @@ interface StopMutationValues {
   name: string
   category: StopView['category']
   description: string | null
+  startTime: string | null
   costCents: number | null
   placeLabel: string | null
   lat: number | null

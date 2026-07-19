@@ -319,5 +319,7 @@
   "explore_panel_collapse": "Recolher painel",
   "explore_panel_expand": "Mostrar painel",
   "explore_results_count": "{count} roteiros",
-  "home_filters_show_results_count": "Mostrar {count} roteiros"
+  "home_filters_show_results_count": "Mostrar {count} roteiros",
+  "editor_stop_field_time": "Horário (opcional)",
+  "view_stop_time_label": "Horário"
 }
