@@ -19,7 +19,9 @@
     "db:studio": "drizzle-kit studio",
     "lint": "eslint",
     "format": "prettier --write . && eslint --fix",
-    "check": "prettier --check ."
+    "check": "prettier --check .",
+    "smoke": "tsx scripts/smoke.ts",
+    "smoke:preview": "tsx scripts/smoke.ts --preview"
   },
   "dependencies": {
     "@ai-sdk/google": "^4.0.18",
@@ -83,6 +85,7 @@
     "eslint": "^9.20.0",
     "jsdom": "^28.1.0",
     "nitro": "npm:nitro-nightly@3.0.1-20260717-080150-bfc2f5ef",
+    "playwright": "1.61.1",
     "prettier": "^3.8.1",
     "sharp": "^0.35.3",
     "tsx": "^4.21.0",
