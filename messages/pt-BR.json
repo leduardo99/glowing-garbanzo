@@ -321,5 +321,12 @@
   "explore_results_count": "{count} roteiros",
   "home_filters_show_results_count": "Mostrar {count} roteiros",
   "editor_stop_field_time": "Horário (opcional)",
-  "view_stop_time_label": "Horário"
+  "view_stop_time_label": "Horário",
+  "editor_field_currency": "Moeda dos custos",
+  "editor_trip_total": "Total estimado da viagem: {amount}",
+  "editor_day_subtotal": "Subtotal: {amount}",
+  "view_trip_total": "Total estimado: {amount}",
+  "home_filter_budget": "Orçamento até",
+  "home_filter_budget_placeholder": "ex.: 1500",
+  "home_filter_currency": "Moeda"
 }

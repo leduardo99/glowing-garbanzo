@@ -1,3 +1,4 @@
+import { Suspense, lazy, useMemo } from 'react'
 import { useSuspenseQuery } from '@tanstack/react-query'
 import {
   Link,
@@ -18,10 +19,16 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from '#/components/ui/empty'
+import { formatCost, sumTripCostCents } from '#/lib/currency'
+import { collectMapStops } from '#/lib/map-stops'
 import { myItineraryQueryOptions } from '#/lib/queries'
 import { cn } from '#/lib/utils'
 import { m } from '#/paraglide/messages'
 import type { EditorItinerary } from '#/server/itineraries'
+
+// Lazy so `maplibre-gl` only loads once the editor actually has a pin to
+// show (same rationale as the detail page's map).
+const ItineraryMap = lazy(() => import('#/components/map/ItineraryMap'))
 
 /**
  * Editor route, loaded by id (author-only — see `getMyItineraryImpl`'s
@@ -115,9 +122,11 @@ function EditorStatusPill({
 function EditorPage() {
   const { id } = Route.useParams()
   const { data } = useSuspenseQuery(myItineraryQueryOptions({ id }))
+  const mapStops = useMemo(() => collectMapStops(data.days), [data.days])
+  const tripTotalCents = useMemo(() => sumTripCostCents(data.days), [data.days])
 
   return (
-    <div className="mx-auto flex max-w-4xl flex-col gap-8 p-4 sm:p-6">
+    <div className="mx-auto flex max-w-4xl flex-col gap-8 p-4 sm:p-6 xl:max-w-7xl">
       <Link
         to="/my"
         className="flex items-center gap-1 text-label text-ink-soft hover:text-ink"
@@ -140,34 +149,64 @@ function EditorPage() {
           {data.destination ? (
             <p className="text-title text-ink-soft">{data.destination}</p>
           ) : null}
+          {tripTotalCents > 0 ? (
+            <p className="text-label text-ink-soft tabular-nums">
+              {m.editor_trip_total({
+                amount: formatCost(tripTotalCents, data.currency),
+              })}
+            </p>
+          ) : null}
         </div>
         <EditorStatusPill status={data.status} visibility={data.visibility} />
       </header>
 
-      <MetadataForm itinerary={data} />
-
       {/*
-        Days are the itinerary's actual content and the thing an author
-        spends the most time on — they come right after the title/cover
-        form and ahead of publish/member settings, which are secondary,
-        occasional actions (DESIGN.md's "content leads, chrome recedes"
-        principle applied to the editor itself).
+        Route Studio split (xl+): the editing column beside a live, sticky
+        map of the draft — every geocoded stop pins with the timeline's
+        own number, and updates land as mutations invalidate. Below xl the
+        map simply isn't mounted (the per-stop PlacePicker already covers
+        location editing on small screens).
       */}
-      <DayEditor itineraryId={data.id} days={data.days} />
+      <div className="flex flex-col gap-8 xl:grid xl:grid-cols-[minmax(0,1fr)_minmax(320px,420px)] xl:items-start">
+        <div className="flex min-w-0 flex-col gap-8">
+          <MetadataForm itinerary={data} />
 
-      <PublishCard
-        itineraryId={data.id}
-        status={data.status}
-        visibility={data.visibility}
-      />
+          {/*
+            Days are the itinerary's actual content and the thing an author
+            spends the most time on — they come right after the title/cover
+            form and ahead of publish/member settings, which are secondary,
+            occasional actions (DESIGN.md's "content leads, chrome recedes"
+            principle applied to the editor itself).
+          */}
+          <DayEditor
+            itineraryId={data.id}
+            days={data.days}
+            currency={data.currency}
+          />
 
-      {data.visibility === 'private' ? (
-        <MembersCard
-          itineraryId={data.id}
-          slug={data.slug}
-          inviteToken={data.inviteToken}
-        />
-      ) : null}
+          <PublishCard
+            itineraryId={data.id}
+            status={data.status}
+            visibility={data.visibility}
+          />
+
+          {data.visibility === 'private' ? (
+            <MembersCard
+              itineraryId={data.id}
+              slug={data.slug}
+              inviteToken={data.inviteToken}
+            />
+          ) : null}
+        </div>
+
+        {mapStops.length > 0 ? (
+          <div className="hidden xl:block xl:sticky xl:top-6">
+            <Suspense fallback={null}>
+              <ItineraryMap stops={mapStops} className="h-[70vh] w-full" />
+            </Suspense>
+          </div>
+        ) : null}
+      </div>
     </div>
   )
 }

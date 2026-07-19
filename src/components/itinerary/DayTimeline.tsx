@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 
 import { StopList } from '#/components/StopList'
 import { cn } from '#/lib/utils'
+import { formatCost } from '#/lib/currency'
 import { m } from '#/paraglide/messages'
 import type { DayView } from '#/server/itineraries'
 
@@ -24,7 +25,14 @@ const DAY_TABS_MIN_DAYS = 3
  * swapping — deep links and reading flow survive); an IntersectionObserver
  * scroll-spy keeps the active chip in sync while scrolling.
  */
-export function DayTimeline({ days }: { days: DayView[] }) {
+export function DayTimeline({
+  days,
+  currency = 'BRL',
+}: {
+  days: DayView[]
+  /** ISO 4217 code the trip's costs are in. */
+  currency?: string
+}) {
   let sequence = 1
   const showTabs = days.length >= DAY_TABS_MIN_DAYS
   const [activeDay, setActiveDay] = useState<number | null>(null)
@@ -77,9 +85,23 @@ export function DayTimeline({ days }: { days: DayView[] }) {
 
   return (
     <div className="flex flex-col gap-2">
-      <h2 className="text-headline font-semibold text-ink">
-        {m.view_days_title()}
-      </h2>
+      <div className="flex flex-wrap items-baseline justify-between gap-2">
+        <h2 className="text-headline font-semibold text-ink">
+          {m.view_days_title()}
+        </h2>
+        {(() => {
+          const total = days.reduce(
+            (sum, day) =>
+              sum + day.stops.reduce((s, stop) => s + (stop.costCents ?? 0), 0),
+            0,
+          )
+          return total > 0 ? (
+            <span className="text-label text-ink-soft tabular-nums">
+              {m.view_trip_total({ amount: formatCost(total, currency) })}
+            </span>
+          ) : null
+        })()}
+      </div>
 
       {showTabs ? (
         <nav
@@ -140,7 +162,11 @@ export function DayTimeline({ days }: { days: DayView[] }) {
                 </p>
               ) : null}
               {day.stops.length > 0 ? (
-                <StopList stops={day.stops} startSequence={startSequence} />
+                <StopList
+                  stops={day.stops}
+                  startSequence={startSequence}
+                  currency={currency}
+                />
               ) : null}
             </li>
           )

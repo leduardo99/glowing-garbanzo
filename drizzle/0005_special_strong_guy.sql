@@ -1,0 +1,1 @@
+ALTER TABLE "itinerary" ADD COLUMN "currency" char(3) DEFAULT 'BRL' NOT NULL;

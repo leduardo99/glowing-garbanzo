@@ -40,6 +40,7 @@ export interface LandingHighlights {
 }
 
 const dayCountExpr = sql<number>`(select count(*)::int from ${itineraryDay} where ${itineraryDay.itineraryId} = ${sql.raw('"itinerary"."id"')})`
+const costTotalExpr = sql<number>`(select coalesce(sum(s."cost_cents"), 0)::int from "stop" s join "itinerary_day" d on s."day_id" = d."id" where d."itinerary_id" = "itinerary"."id")`
 
 const cardColumns = {
   id: itinerary.id,
@@ -53,6 +54,8 @@ const cardColumns = {
   ratingCount: itinerary.ratingCount,
   publishedAt: itinerary.publishedAt,
   dayCount: dayCountExpr,
+  costTotalCents: costTotalExpr,
+  currency: itinerary.currency,
 }
 
 function toCard(row: {
@@ -67,6 +70,8 @@ function toCard(row: {
   ratingCount: number
   publishedAt: Date | null
   dayCount: number
+  costTotalCents: number
+  currency: string
 }): ItineraryCard {
   return {
     id: row.id,
@@ -79,6 +84,8 @@ function toCard(row: {
     ratingAvg: row.ratingAvg === null ? null : parseFloat(row.ratingAvg),
     ratingCount: row.ratingCount,
     dayCount: row.dayCount,
+    costTotalCents: row.costTotalCents,
+    currency: row.currency,
     publishedAt: row.publishedAt,
   }
 }

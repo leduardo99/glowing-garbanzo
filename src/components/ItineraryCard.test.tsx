@@ -24,6 +24,8 @@ function makeItem(
     ratingAvg: 4.5,
     ratingCount: 12,
     dayCount: 5,
+  costTotalCents: 0,
+  currency: 'BRL',
     publishedAt: new Date('2026-01-01'),
     ...overrides,
   }

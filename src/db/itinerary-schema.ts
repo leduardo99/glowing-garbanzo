@@ -1,6 +1,7 @@
 import { nanoid } from 'nanoid'
 import type { AnyPgColumn } from 'drizzle-orm/pg-core'
 import {
+  char,
   doublePrecision,
   index,
   integer,
@@ -41,6 +42,8 @@ export const itinerary = pgTable(
     destination: text('destination'),
     tags: text('tags').array(),
     coverImageUrl: text('cover_image_url'),
+    /** ISO 4217 code all of this itinerary's stop costs are in (per-itinerary selector, BRL default). */
+    currency: char('currency', { length: 3 }).default('BRL').notNull(),
     status: itineraryStatus('status').default('draft').notNull(),
     visibility: itineraryVisibility('visibility').default('public').notNull(),
     inviteToken: text('invite_token'),

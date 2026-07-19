@@ -25,6 +25,8 @@ export function cardFixture(): ItineraryCardData {
     ratingAvg: 4.8,
     ratingCount: 12,
     dayCount: 3,
+    costTotalCents: 68000,
+    currency: 'BRL',
     publishedAt: null,
   }
 }

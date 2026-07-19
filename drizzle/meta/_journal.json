@@ -36,6 +36,13 @@
       "when": 1784474981881,
       "tag": "0004_boring_maginty",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1784475640030,
+      "tag": "0005_special_strong_guy",
+      "breakpoints": true
     }
   ]
 }
