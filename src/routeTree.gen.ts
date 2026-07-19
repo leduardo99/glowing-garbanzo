@@ -10,26 +10,26 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as ExploreRouteImport } from './routes/explore'
+import { Route as AppRouteImport } from './routes/_app'
 import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
 import { Route as LoginRouteImport } from './routes/login'
-import { Route as NewRouteImport } from './routes/new'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as SignupRouteImport } from './routes/signup'
-import { Route as ItinerariesSlugRouteImport } from './routes/itineraries.$slug'
-import { Route as MyIndexRouteImport } from './routes/my.index'
+import { Route as AppExploreRouteImport } from './routes/_app.explore'
+import { Route as AppNewRouteImport } from './routes/_app.new'
+import { Route as AppItinerariesSlugRouteImport } from './routes/_app.itineraries.$slug'
+import { Route as AppMyIndexRouteImport } from './routes/_app.my.index'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 import { Route as ApiUploadsSplatRouteImport } from './routes/api/uploads/$'
-import { Route as MyIdEditRouteImport } from './routes/my.$id.edit'
+import { Route as AppMyIdEditRouteImport } from './routes/_app.my.$id.edit'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ExploreRoute = ExploreRouteImport.update({
-  id: '/explore',
-  path: '/explore',
+const AppRoute = AppRouteImport.update({
+  id: '/_app',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ForgotPasswordRoute = ForgotPasswordRouteImport.update({
@@ -42,11 +42,6 @@ const LoginRoute = LoginRouteImport.update({
   path: '/login',
   getParentRoute: () => rootRouteImport,
 } as any)
-const NewRoute = NewRouteImport.update({
-  id: '/new',
-  path: '/new',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
   id: '/reset-password',
   path: '/reset-password',
@@ -57,15 +52,25 @@ const SignupRoute = SignupRouteImport.update({
   path: '/signup',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ItinerariesSlugRoute = ItinerariesSlugRouteImport.update({
+const AppExploreRoute = AppExploreRouteImport.update({
+  id: '/explore',
+  path: '/explore',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppNewRoute = AppNewRouteImport.update({
+  id: '/new',
+  path: '/new',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppItinerariesSlugRoute = AppItinerariesSlugRouteImport.update({
   id: '/itineraries/$slug',
   path: '/itineraries/$slug',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => AppRoute,
 } as any)
-const MyIndexRoute = MyIndexRouteImport.update({
+const AppMyIndexRoute = AppMyIndexRouteImport.update({
   id: '/my/',
   path: '/my/',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => AppRoute,
 } as any)
 const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
   id: '/api/auth/$',
@@ -77,113 +82,111 @@ const ApiUploadsSplatRoute = ApiUploadsSplatRouteImport.update({
   path: '/api/uploads/$',
   getParentRoute: () => rootRouteImport,
 } as any)
-const MyIdEditRoute = MyIdEditRouteImport.update({
+const AppMyIdEditRoute = AppMyIdEditRouteImport.update({
   id: '/my/$id/edit',
   path: '/my/$id/edit',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => AppRoute,
 } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/explore': typeof ExploreRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/login': typeof LoginRoute
-  '/new': typeof NewRoute
   '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
-  '/itineraries/$slug': typeof ItinerariesSlugRoute
-  '/my/': typeof MyIndexRoute
+  '/explore': typeof AppExploreRoute
+  '/new': typeof AppNewRoute
+  '/itineraries/$slug': typeof AppItinerariesSlugRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/uploads/$': typeof ApiUploadsSplatRoute
-  '/my/$id/edit': typeof MyIdEditRoute
+  '/my/': typeof AppMyIndexRoute
+  '/my/$id/edit': typeof AppMyIdEditRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/explore': typeof ExploreRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/login': typeof LoginRoute
-  '/new': typeof NewRoute
   '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
-  '/itineraries/$slug': typeof ItinerariesSlugRoute
-  '/my': typeof MyIndexRoute
+  '/explore': typeof AppExploreRoute
+  '/new': typeof AppNewRoute
+  '/itineraries/$slug': typeof AppItinerariesSlugRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/uploads/$': typeof ApiUploadsSplatRoute
-  '/my/$id/edit': typeof MyIdEditRoute
+  '/my': typeof AppMyIndexRoute
+  '/my/$id/edit': typeof AppMyIdEditRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/explore': typeof ExploreRoute
+  '/_app': typeof AppRouteWithChildren
   '/forgot-password': typeof ForgotPasswordRoute
   '/login': typeof LoginRoute
-  '/new': typeof NewRoute
   '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
-  '/itineraries/$slug': typeof ItinerariesSlugRoute
-  '/my/': typeof MyIndexRoute
+  '/_app/explore': typeof AppExploreRoute
+  '/_app/new': typeof AppNewRoute
+  '/_app/itineraries/$slug': typeof AppItinerariesSlugRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/uploads/$': typeof ApiUploadsSplatRoute
-  '/my/$id/edit': typeof MyIdEditRoute
+  '/_app/my/': typeof AppMyIndexRoute
+  '/_app/my/$id/edit': typeof AppMyIdEditRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
-    | '/explore'
     | '/forgot-password'
     | '/login'
-    | '/new'
     | '/reset-password'
     | '/signup'
+    | '/explore'
+    | '/new'
     | '/itineraries/$slug'
-    | '/my/'
     | '/api/auth/$'
     | '/api/uploads/$'
+    | '/my/'
     | '/my/$id/edit'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
-    | '/explore'
     | '/forgot-password'
     | '/login'
-    | '/new'
     | '/reset-password'
     | '/signup'
+    | '/explore'
+    | '/new'
     | '/itineraries/$slug'
-    | '/my'
     | '/api/auth/$'
     | '/api/uploads/$'
+    | '/my'
     | '/my/$id/edit'
   id:
     | '__root__'
     | '/'
-    | '/explore'
+    | '/_app'
     | '/forgot-password'
     | '/login'
-    | '/new'
     | '/reset-password'
     | '/signup'
-    | '/itineraries/$slug'
-    | '/my/'
+    | '/_app/explore'
+    | '/_app/new'
+    | '/_app/itineraries/$slug'
     | '/api/auth/$'
     | '/api/uploads/$'
-    | '/my/$id/edit'
+    | '/_app/my/'
+    | '/_app/my/$id/edit'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  ExploreRoute: typeof ExploreRoute
+  AppRoute: typeof AppRouteWithChildren
   ForgotPasswordRoute: typeof ForgotPasswordRoute
   LoginRoute: typeof LoginRoute
-  NewRoute: typeof NewRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   SignupRoute: typeof SignupRoute
-  ItinerariesSlugRoute: typeof ItinerariesSlugRoute
-  MyIndexRoute: typeof MyIndexRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
   ApiUploadsSplatRoute: typeof ApiUploadsSplatRoute
-  MyIdEditRoute: typeof MyIdEditRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -195,11 +198,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/explore': {
-      id: '/explore'
-      path: '/explore'
-      fullPath: '/explore'
-      preLoaderRoute: typeof ExploreRouteImport
+    '/_app': {
+      id: '/_app'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof AppRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/forgot-password': {
@@ -216,13 +219,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LoginRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/new': {
-      id: '/new'
-      path: '/new'
-      fullPath: '/new'
-      preLoaderRoute: typeof NewRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/reset-password': {
       id: '/reset-password'
       path: '/reset-password'
@@ -237,19 +233,33 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SignupRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/itineraries/$slug': {
-      id: '/itineraries/$slug'
+    '/_app/explore': {
+      id: '/_app/explore'
+      path: '/explore'
+      fullPath: '/explore'
+      preLoaderRoute: typeof AppExploreRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/new': {
+      id: '/_app/new'
+      path: '/new'
+      fullPath: '/new'
+      preLoaderRoute: typeof AppNewRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/itineraries/$slug': {
+      id: '/_app/itineraries/$slug'
       path: '/itineraries/$slug'
       fullPath: '/itineraries/$slug'
-      preLoaderRoute: typeof ItinerariesSlugRouteImport
-      parentRoute: typeof rootRouteImport
+      preLoaderRoute: typeof AppItinerariesSlugRouteImport
+      parentRoute: typeof AppRoute
     }
-    '/my/': {
-      id: '/my/'
+    '/_app/my/': {
+      id: '/_app/my/'
       path: '/my'
       fullPath: '/my/'
-      preLoaderRoute: typeof MyIndexRouteImport
-      parentRoute: typeof rootRouteImport
+      preLoaderRoute: typeof AppMyIndexRouteImport
+      parentRoute: typeof AppRoute
     }
     '/api/auth/$': {
       id: '/api/auth/$'
@@ -265,29 +275,43 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiUploadsSplatRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/my/$id/edit': {
-      id: '/my/$id/edit'
+    '/_app/my/$id/edit': {
+      id: '/_app/my/$id/edit'
       path: '/my/$id/edit'
       fullPath: '/my/$id/edit'
-      preLoaderRoute: typeof MyIdEditRouteImport
-      parentRoute: typeof rootRouteImport
+      preLoaderRoute: typeof AppMyIdEditRouteImport
+      parentRoute: typeof AppRoute
     }
   }
 }
 
+interface AppRouteChildren {
+  AppExploreRoute: typeof AppExploreRoute
+  AppNewRoute: typeof AppNewRoute
+  AppItinerariesSlugRoute: typeof AppItinerariesSlugRoute
+  AppMyIndexRoute: typeof AppMyIndexRoute
+  AppMyIdEditRoute: typeof AppMyIdEditRoute
+}
+
+const AppRouteChildren: AppRouteChildren = {
+  AppExploreRoute: AppExploreRoute,
+  AppNewRoute: AppNewRoute,
+  AppItinerariesSlugRoute: AppItinerariesSlugRoute,
+  AppMyIndexRoute: AppMyIndexRoute,
+  AppMyIdEditRoute: AppMyIdEditRoute,
+}
+
+const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  ExploreRoute: ExploreRoute,
+  AppRoute: AppRouteWithChildren,
   ForgotPasswordRoute: ForgotPasswordRoute,
   LoginRoute: LoginRoute,
-  NewRoute: NewRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   SignupRoute: SignupRoute,
-  ItinerariesSlugRoute: ItinerariesSlugRoute,
-  MyIndexRoute: MyIndexRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
   ApiUploadsSplatRoute: ApiUploadsSplatRoute,
-  MyIdEditRoute: MyIdEditRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

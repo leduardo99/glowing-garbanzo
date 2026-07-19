@@ -30,7 +30,7 @@ const mySearchSchema = z.object({
   page: z.number().int().min(1).default(1),
 })
 
-export const Route = createFileRoute('/my/')({
+export const Route = createFileRoute('/_app/my/')({
   validateSearch: mySearchSchema,
   beforeLoad: ({ context, location }) => {
     if (!context.session) {

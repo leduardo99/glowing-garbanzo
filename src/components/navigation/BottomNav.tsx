@@ -6,7 +6,6 @@ import {
   tabIconClassName,
   tabLinkClassName,
 } from '#/components/navigation/tabLinkClassName'
-import { useIsChromelessRoute } from '#/lib/chromeless'
 import { m } from '#/paraglide/messages'
 
 /**
@@ -34,11 +33,6 @@ import { m } from '#/paraglide/messages'
  * this component doesn't duplicate that auth check, it just links there.
  */
 export function BottomNav() {
-  // Auth pages own their viewport; the landing is a marketing page with
-  // its own CTAs, not app chrome (see chromeless.ts).
-  if (useIsChromelessRoute()) {
-    return null
-  }
   return (
     <nav
       aria-label={m.nav_primary_label()}

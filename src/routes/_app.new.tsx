@@ -28,7 +28,7 @@ import { ERR_AI_QUOTA_EXCEEDED } from '#/server/errors'
 import { createItinerary } from '#/server/itineraries'
 import type { CreateItineraryInput } from '#/server/itineraries'
 
-export const Route = createFileRoute('/new')({
+export const Route = createFileRoute('/_app/new')({
   beforeLoad: ({ context, location }) => {
     if (!context.session) {
       throw redirect({ to: '/login', search: { redirect: location.href } })

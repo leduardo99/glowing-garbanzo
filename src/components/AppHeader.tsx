@@ -2,7 +2,6 @@ import { Link } from '@tanstack/react-router'
 
 import { UserMenu } from '#/components/navigation/UserMenu'
 import LocaleSwitcher from '#/components/LocaleSwitcher'
-import { useIsChromelessRoute } from '#/lib/chromeless'
 import { m } from '#/paraglide/messages'
 
 const navLinkClassName =
@@ -57,10 +56,6 @@ export function BrandGlyph({
  * glyph, the one place brand identity lives in the chrome.
  */
 export function AppHeader() {
-  // Auth pages and the landing own their whole viewport (see chromeless.ts).
-  if (useIsChromelessRoute()) {
-    return null
-  }
   return (
     <header className="flex items-center justify-between gap-4 border-b border-line-strong bg-surface px-4 py-3 md:px-6">
       <Link

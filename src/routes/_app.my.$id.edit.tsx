@@ -43,7 +43,7 @@ const AssistantPanel = lazy(() => import('#/components/editor/AssistantPanel'))
  * collapsed sentinel (this is a mutation-path server function, not a
  * read-access one).
  */
-export const Route = createFileRoute('/my/$id/edit')({
+export const Route = createFileRoute('/_app/my/$id/edit')({
   // `?assistant=1` (set by /new's AI flow) opens the editor with the
   // assistant panel already docked.
   validateSearch: z.object({ assistant: z.boolean().optional() }),

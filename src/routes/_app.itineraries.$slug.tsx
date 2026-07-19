@@ -53,7 +53,7 @@ const viewSearchSchema = z.object({
   invite: z.string().optional(),
 })
 
-export const Route = createFileRoute('/itineraries/$slug')({
+export const Route = createFileRoute('/_app/itineraries/$slug')({
   validateSearch: viewSearchSchema,
   loaderDeps: ({ search }) => ({ invite: search.invite }),
   loader: async ({ params, deps, context, preload }) => {
