@@ -8,14 +8,18 @@
 
 Roteiros becomes a **route studio**: the map stops being an illustration inside pages and becomes the surface the app works on. Panels float over it in the app's own language (bright cream cards, quiet shadows, the drawn amber route), and the same signature carries discovery → detail → editing → AI assistance. Chrome stays quiet; the trip is always the protagonist.
 
-## Inspiration synthesis (5 references)
+## Inspiration synthesis (9 references)
 
 **Adopted:**
 - *OrbitTrip (desktop/mobile)* — the map-as-workspace structure: full-viewport map, floating search/results panel, collapsible; a conversational travel assistant attached to the work surface; price summary sheet on mobile.
 - *Sage/cream mobile* — trip itinerary as **day tabs + vertical timeline with per-stop times and category icons**; chip-row shelf filters (top rated / most viewed already exist on our landing/server).
 - *Lime mobile* — the **filter bottom-sheet** pattern (ranged slider + chip groups + "Show N results" CTA); floating badges on photo cards (we already do this).
+- *Travelora (landing)* — **the product as the imagery**: real app UI (trip card, timeline, map) floating as a collage; quiet social proof line; destination chips under the CTA; problem/solution storytelling.
+- *Trippin' (landing)* — feature storytelling bands (AI planning / personalization / booking → ours: AI generation / forking / map+timeline) and the FAQ accordion. Not its illustration system.
+- *BonSanté (auth desktop)* — split-screen validated; **locale switcher on the auth page itself** (ours currently hides with the header — a real gap) and the floating content card over the brand panel.
+- *AI travel app (auth mobile, dark/lime)* — the mobile form structure: centered brand mark, welcome + subtitle, labeled fields, forgot-password link, "or continue with" divider + social buttons, sign-up hand-off line. Its lime palette and orb are rejected per identity.
 
-**Rejected (identity):** lime/marker-highlight palette and any second accent (One Green Voice Rule); OrbitTrip's desktop app sidebar (our quiet header + bottom tabs stay); floating pill bottom nav (author decision: keep the uniform 4-tab bar); glassmorphism-as-decoration.
+**Rejected (identity):** lime/marker-highlight palette and any second accent (One Green Voice Rule); OrbitTrip's desktop app sidebar (our quiet header + bottom tabs stay); floating pill bottom nav (author decision: keep the uniform 4-tab bar); glassmorphism-as-decoration; Trippin's illustrated-mascot/full-scene style (no illustration assets; sketchy SVG is a banned fallback — our legitimate illustration is the drawn route and the real map/product).
 
 ## Decisions locked (owner Q&A, 2026-07-19)
 
@@ -25,6 +29,7 @@ Roteiros becomes a **route studio**: the map stops being an illustration inside 
 4. Currency: **per-itinerary currency selector** (BRL default). Cross-currency price filtering is explicitly out: the explore budget filter applies together with a currency choice (default BRL); badges always render in the itinerary's own currency via `Intl.NumberFormat`.
 5. Mobile navigation: keep the current fixed 4-tab bar.
 6. Phase order approved as below; each phase is its own branch + PR, with the full gate set (`pnpm lint`, `tsc --noEmit`, `pnpm build`, `pnpm test`) and Playwright screenshot verification (light/dark × 390/1440) before push.
+7. Landing + auth v3 (second Q&A, same day): hero goes **hybrid** (keep the drenched fold + route draw-in, replace the lone sketch with a floating product collage); landing gains feature bands, FAQ, destination chips + quiet social proof; auth gains a live product panel, community numbers, and **Google social login**, plus micro-polish. Runs **first, as Phase 0**.
 
 ## Design guardrails (all phases)
 
@@ -43,6 +48,26 @@ Roteiros becomes a **route studio**: the map stops being an illustration inside 
 | Computed day/trip totals | 3 | Derived in queries (SUM over `cost_cents`), never stored. Explore filter: budget range + currency (default BRL). |
 
 ## Phases
+
+### Phase 0 — Landing & auth v3 (product-forward)
+*Branch: `feat/landing-auth-v3`*
+
+Landing (builds on the journey composition from PR #38 — nothing regresses):
+- **Hero goes hybrid:** the drenched mata fold and the animated route draw-in stay; the right column's lone sketch becomes a **floating product collage** — real, hand-composed UI specimens (an `ItineraryCard`, a timeline fragment with numbered discs, a mini map-with-route panel) rendered as actual components with our card shadows, slightly rotated/stacked, the drawn route threading behind them. Static data via fixtures, not screenshots (crisp at any DPR, themeable, translatable).
+- **Feature bands (3):** AI generation ("descreva a viagem, receba o rascunho"), forking ("comece do roteiro de quem já foi"), map+timeline sync ("o mapa e a lista são a mesma viagem") — alternating text/specimen layout, each band showing a real product fragment, no mascots or scene illustration.
+- **FAQ accordion** (shadcn `accordion`): fork, pricing/free, private itineraries + invite links, how AI generation works, offline/PWA. Content in both locales.
+- **Destination chips + quiet social proof:** popular-destination chips linking to `/explore` pre-filtered searches (server-derived from real data), and a single caption-level line of community numbers (X roteiros publicados · Y destinos) — deliberately not the boxed hero-metric template.
+
+Auth:
+- Brand panel gains **the product, live**: a compact specimen (timeline fragment or mini card) floating over the panel (the BonSanté card move, in our cream-card language — no glassmorphism), plus a caption line of real community numbers (shared server fn with the landing's social proof).
+- **LocaleSwitcher on the auth pages** (BonSanté) — today the switcher hides with the header, so language can't be changed from `/login`; AuthShell gets it in the form column's top edge.
+- **Google social login** (Google only; Apple documented as future) via Better Auth's Google provider (consult Better Auth docs first per CLAUDE.md policy): "Continuar com Google" under an "ou continue com" divider on both forms, `GOOGLE_CLIENT_ID/SECRET` env (documented in DEPLOY.md), button hidden cleanly when unconfigured.
+- **Password reset, full flow**: Better Auth forget/reset-password with **Resend** as the email provider (`RESEND_API_KEY`, sender documented in DEPLOY.md); "Esqueci a senha" link on login → email → reset page; link only renders when the provider is configured. Optional "remember me" checkbox mapped to Better Auth's rememberMe.
+- Form polish per the mobile reference: labeled fields (not placeholder-only), sign-up hand-off line, focus order, motion timing — no structural change beyond the above.
+
+Server: one `getCommunityStats` fn (counts + top destinations, cached-friendly) reused by landing chips, social proof, and the auth panel.
+
+Acceptance: hero collage responsive without overflow at 390/768/1440 in both themes; specimens are real components (i18n follows locale); FAQ keyboard-navigable; Google button works locally with env set and disappears cleanly without it; AA re-verified on any new pair.
 
 ### Phase 1 — Explore as map-workspace + mobile filter sheet
 *Branch: `feat/explore-map-workspace`*
