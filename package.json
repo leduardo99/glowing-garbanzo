@@ -22,6 +22,7 @@
     "check": "prettier --check ."
   },
   "dependencies": {
+    "@ai-sdk/google": "^4.0.18",
     "@fontsource-variable/fraunces": "^5.2.9",
     "@fontsource/karla": "^5.2.8",
     "@t3-oss/env-core": "^0.13.10",
@@ -36,6 +37,7 @@
     "@tanstack/react-start": "latest",
     "@tanstack/router-plugin": "^1.132.0",
     "@vercel/blob": "^2.6.1",
+    "ai": "^7.0.31",
     "better-auth": "^1.5.3",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
