@@ -1,7 +1,8 @@
-import { Link, useRouterState } from '@tanstack/react-router'
+import { Link } from '@tanstack/react-router'
 
 import { UserMenu } from '#/components/navigation/UserMenu'
 import LocaleSwitcher from '#/components/LocaleSwitcher'
+import { useIsChromelessRoute } from '#/lib/chromeless'
 import { m } from '#/paraglide/messages'
 
 const navLinkClassName =
@@ -12,8 +13,16 @@ const navLinkClassName =
  * the drawn-route signature at its smallest register (DESIGN.md §5 "The
  * Drawn Route"). Hand-authored (not `RouteSketch`) because at 20px a
  * generative meander turns to noise; this is the fixed, iconic form.
+ * `oncolor` flips the dots to cream for the landing hero's mata fill,
+ * mirroring RouteSketch's tone prop (the amber leg reads the local
+ * `--amber` override there).
  */
-function BrandGlyph() {
+export function BrandGlyph({
+  tone = 'default',
+}: {
+  tone?: 'default' | 'oncolor'
+}) {
+  const dotInk = tone === 'oncolor' ? 'var(--primary-foreground)' : 'var(--mata)'
   return (
     <svg
       aria-hidden="true"
@@ -28,8 +37,8 @@ function BrandGlyph() {
         strokeLinecap="round"
         strokeDasharray="0.1 4.5"
       />
-      <circle cx="4" cy="12" r="3" fill="var(--mata)" />
-      <circle cx="20" cy="4" r="2.4" fill="none" stroke="var(--mata)" strokeWidth="1.8" />
+      <circle cx="4" cy="12" r="3" fill={dotInk} />
+      <circle cx="20" cy="4" r="2.4" fill="none" stroke={dotInk} strokeWidth="1.8" />
     </svg>
   )
 }
@@ -48,9 +57,8 @@ function BrandGlyph() {
  * glyph, the one place brand identity lives in the chrome.
  */
 export function AppHeader() {
-  const pathname = useRouterState({ select: (s) => s.location.pathname })
-  // The dedicated auth pages own the whole viewport (see AuthShell).
-  if (pathname === '/login' || pathname === '/signup') {
+  // Auth pages and the landing own their whole viewport (see chromeless.ts).
+  if (useIsChromelessRoute()) {
     return null
   }
   return (

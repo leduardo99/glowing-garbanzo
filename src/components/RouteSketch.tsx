@@ -79,6 +79,7 @@ export function RouteSketch({
   stops = 4,
   numbered = false,
   tone = 'default',
+  animated = false,
   className,
 }: {
   /** Stable string (slug/title) — same seed, same route. */
@@ -89,12 +90,21 @@ export function RouteSketch({
   numbered?: boolean
   /** `oncolor` flips the dots to cream for sketches drawn over a mata fill (e.g. the auth brand panel). */
   tone?: 'default' | 'oncolor'
+  /**
+   * Draw the route in on mount: the amber path traces left to right and
+   * each stop pops as the pen reaches it — DESIGN.md's one sanctioned
+   * drawn animation, at its largest register on the landing hero.
+   * CSS-only (`roteiros-route-draw` / `roteiros-stop-pop` in styles.css);
+   * the global reduced-motion rule collapses it to instantly-visible.
+   */
+  animated?: boolean
   className?: string
 }) {
   const id = useId()
   const points = generateStops(seed, Math.min(6, Math.max(2, stops)))
   const path = buildPath(points)
   const dotFill = tone === 'oncolor' ? 'var(--primary-foreground)' : 'var(--mata)'
+  const maskId = `${id}-draw`
 
   return (
     <svg
@@ -103,6 +113,27 @@ export function RouteSketch({
       preserveAspectRatio="xMidYMid meet"
       className={cn('block', className)}
     >
+      {animated ? (
+        // The dashed path is revealed by a solid stroke (wider than the
+        // dashes it uncovers) tracing the same geometry, its dashoffset
+        // animating 1 → 0 — the dashes appear progressively, as if drawn.
+        <mask id={maskId}>
+          <path
+            d={path}
+            pathLength={1}
+            fill="none"
+            stroke="#fff"
+            strokeWidth="8"
+            strokeLinecap="round"
+            strokeDasharray="1"
+            strokeDashoffset="1"
+            style={{
+              animation:
+                'roteiros-route-draw 1400ms cubic-bezier(0.23, 1, 0.32, 1) 150ms both',
+            }}
+          />
+        </mask>
+      ) : null}
       <path
         d={path}
         fill="none"
@@ -110,11 +141,28 @@ export function RouteSketch({
         strokeWidth="1.6"
         strokeLinecap="round"
         strokeDasharray="4 3.2"
+        mask={animated ? `url(#${maskId})` : undefined}
       />
       {points.map((p, i) => {
         const isLast = i === points.length - 1
+        // Approximate the pen's arrival at this stop; the draw eases out
+        // hard, so the stagger front-loads.
+        const popDelay = Math.round(
+          150 + (i / Math.max(1, points.length - 1)) * 1000,
+        )
         return (
-          <g key={`${id}-${i}`}>
+          <g
+            key={`${id}-${i}`}
+            style={
+              animated
+                ? {
+                    animation: `roteiros-stop-pop 360ms cubic-bezier(0.23, 1, 0.32, 1) ${popDelay}ms both`,
+                    transformBox: 'fill-box',
+                    transformOrigin: 'center',
+                  }
+                : undefined
+            }
+          >
             {isLast ? (
               // The destination reads as "you arrive here": a ringed dot.
               <>

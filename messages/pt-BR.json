@@ -40,6 +40,9 @@
   "landing_cta_login": "Entrar",
   "landing_map_label": "Mapa de rotas da comunidade",
   "landing_map_hint": "Rotas reais da comunidade — arraste o mapa e clique numa rota para abrir.",
+  "landing_routes_title": "Rotas reais, desenhadas por quem foi",
+  "landing_routes_intro": "Cada linha no mapa é um roteiro publicado por um viajante — arraste, aproxime e abra o que combinar com a sua próxima viagem.",
+  "landing_map_chip": "Clique numa rota para abrir",
   "landing_top_rated": "Mais bem avaliados",
   "landing_most_viewed": "Mais vistos",
   "landing_see_all": "Ver todos",
@@ -257,5 +260,6 @@
   "view_comments_open": "{count} comentários",
   "editor_day_collapse": "Recolher",
   "editor_day_expand": "Expandir",
-  "nav_new_short": "Novo"
+  "nav_new_short": "Novo",
+  "footer_tagline": "De viajante para viajante."
 }
