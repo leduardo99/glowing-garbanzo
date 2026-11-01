@@ -40,7 +40,7 @@
     "@tanstack/router-plugin": "^1.132.0",
     "@vercel/blob": "^2.6.1",
     "ai": "^7.0.31",
-    "better-auth": "^1.5.3",
+    "better-auth": "^1.7.7",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "drizzle-kit": "^0.31.9",
